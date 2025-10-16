@@ -1,0 +1,16 @@
+import multer from "multer";
+import { CloudinaryStorage } from "multer-storage-cloudinary";
+import cloudinary from "../Files/cloudinary.js";
+
+const storage = new CloudinaryStorage({
+  cloudinary,
+  params: {
+    folder: "orphan_documents",
+    resource_type: "auto",
+    allowedFormats: ["jpg", "jpeg", "png", "pdf"],
+  },
+});
+
+const upload = multer({ storage });
+
+export default upload;
