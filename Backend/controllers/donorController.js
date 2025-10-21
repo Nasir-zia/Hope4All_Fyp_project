@@ -1,14 +1,19 @@
 import Donor from '../model/donor_model.js';
+import Donation from '../model/donation_model.js';
+import Notification from '../model/notification_model.js';
+import Request from '../model/request_model.js';
+import Orphan from '../model/orphan_model.js';
 
 export const registerDonor = async (req, res) => {
   try {
-    const { name, email, phone, amount } = req.body;
+    const { userId, name, email, phone, city } = req.body;
 
     const newDonor = new Donor({
+      userId,
       name,
       email,
       phone,
-      amount,
+      city,
     });
 
     await newDonor.save();
@@ -25,4 +30,313 @@ export const getDonors = async (req, res) => {
   } catch (error) {
     res.status(500).json({ message: 'Error fetching donors', error: error.message });
   }
-}
+};
+
+export const getDonorProfile = async (req, res) => {
+  try {
+    const donor = await Donor.findOne({ userId: req.params.id });
+    if (!donor) {
+      return res.status(404).json({ message: 'Donor not found' });
+    }
+    res.status(200).json({ donor });
+  } catch (error) {
+    res.status(500).json({ message: 'Error fetching donor profile', error: error.message });
+  }
+};
+
+export const updateDonorProfile = async (req, res) => {
+  try {
+    const { name, email, phone, city, preferences, notificationSettings } = req.body;
+
+    const updateData = { name, email, phone, city, preferences, notificationSettings };
+
+    // Handle profile picture upload
+    if (req.files && req.files.profilePic && req.files.profilePic[0]) {
+      updateData.profilePic = req.files.profilePic[0].path;
+    }
+
+    // Handle document uploads
+    if (req.files && req.files.documents) {
+      const documents = req.files.documents.map(file => ({
+        name: file.originalname,
+        url: file.path,
+        type: file.mimetype,
+        uploadedAt: new Date()
+      }));
+
+      // Get existing documents and append new ones
+      const existingDonor = await Donor.findOne({ userId: req.params.id });
+      if (existingDonor) {
+        updateData.documents = [...(existingDonor.documents || []), ...documents];
+      } else {
+        updateData.documents = documents;
+      }
+    }
+
+    const updatedDonor = await Donor.findOneAndUpdate(
+      { userId: req.params.id },
+      updateData,
+      { new: true }
+    );
+
+    if (!updatedDonor) {
+      return res.status(404).json({ message: 'Donor not found' });
+    }
+
+    res.status(200).json({ message: 'Profile updated successfully', donor: updatedDonor });
+  } catch (error) {
+    res.status(500).json({ message: 'Error updating profile', error: error.message });
+  }
+};
+
+export const makeDonation = async (req, res) => {
+  try {
+    const { donorId, requestId, units, recipientName } = req.body;
+
+    // Fetch the request to get details
+    const request = await Request.findById(requestId).populate('orphanId', 'name');
+    if (!request) {
+      return res.status(404).json({ message: 'Request not found' });
+    }
+
+    const donation = new Donation({
+      donorId,
+      requestId,
+      units,
+      recipientName,
+      recipientId: request.orphanId._id,
+    });
+
+    await donation.save();
+
+    // Update donor stats
+    await Donor.findByIdAndUpdate(donorId, {
+      $inc: { totalDonated: units, childrenHelped: 1 }
+    });
+
+    // Update request status if fully fulfilled (simplified logic)
+    // In a real app, you'd track total donated units vs requested units
+    // For now, just mark as fulfilled if donation made
+    await Request.findByIdAndUpdate(requestId, { status: 'fulfilled' });
+
+    // Create notification
+    const notification = new Notification({
+      donorId,
+      type: 'delivery',
+      title: 'Donation Processed',
+      message: `Your donation of ${units} ${request.unitType} has been processed successfully.`,
+    });
+
+    await notification.save();
+
+    // Add orphan to donor's matched orphans if not already matched
+    const donor = await Donor.findById(donorId);
+    if (!donor.matchedOrphans.includes(request.orphanId._id)) {
+      donor.matchedOrphans.push(request.orphanId._id);
+      await donor.save();
+    }
+
+    res.status(201).json({ message: 'Donation successful', donation });
+  } catch (error) {
+    res.status(500).json({ message: 'Error processing donation', error: error.message });
+  }
+};
+
+export const getDonationHistory = async (req, res) => {
+  try {
+    const donations = await Donation.find({ donorId: req.params.id })
+      .populate('requestId', 'type unitType description school')
+      .populate('recipientId', 'name age gender location profilePic')
+      .sort({ createdAt: -1 });
+
+    res.status(200).json({ donations });
+  } catch (error) {
+    res.status(500).json({ message: 'Error fetching donation history', error: error.message });
+  }
+};
+
+// Get orphans that donor has donated to
+export const getDonorOrphans = async (req, res) => {
+  try {
+    const donations = await Donation.find({ donorId: req.params.id })
+      .populate('recipientId', 'name age gender location profilePic')
+      .sort({ createdAt: -1 });
+
+    // Get unique orphans
+    const orphanMap = new Map();
+    donations.forEach(donation => {
+      if (donation.recipientId && !orphanMap.has(donation.recipientId._id.toString())) {
+        orphanMap.set(donation.recipientId._id.toString(), donation.recipientId);
+      }
+    });
+
+    const orphans = Array.from(orphanMap.values());
+    res.status(200).json({ orphans });
+  } catch (error) {
+    res.status(500).json({ message: 'Error fetching donor orphans', error: error.message });
+  }
+};
+
+// Update donation
+export const updateDonation = async (req, res) => {
+  try {
+    const { units, status } = req.body;
+    
+    const donation = await Donation.findById(req.params.donationId);
+    if (!donation) {
+      return res.status(404).json({ message: 'Donation not found' });
+    }
+
+    // Update donation
+    if (units !== undefined) donation.units = units;
+    if (status !== undefined) donation.status = status;
+    
+    await donation.save();
+
+    res.status(200).json({ message: 'Donation updated successfully', donation });
+  } catch (error) {
+    res.status(500).json({ message: 'Error updating donation', error: error.message });
+  }
+};
+
+// Delete donation
+export const deleteDonation = async (req, res) => {
+  try {
+    const donation = await Donation.findByIdAndDelete(req.params.donationId);
+    
+    if (!donation) {
+      return res.status(404).json({ message: 'Donation not found' });
+    }
+
+    // Update donor stats
+    await Donor.findByIdAndUpdate(donation.donorId, {
+      $inc: { totalDonated: -donation.units, childrenHelped: -1 }
+    });
+
+    res.status(200).json({ message: 'Donation deleted successfully' });
+  } catch (error) {
+    res.status(500).json({ message: 'Error deleting donation', error: error.message });
+  }
+};
+
+export const getNotifications = async (req, res) => {
+  try {
+    const notifications = await Notification.find({ donorId: req.params.id })
+      .sort({ createdAt: -1 });
+
+    res.status(200).json({ notifications });
+  } catch (error) {
+    res.status(500).json({ message: 'Error fetching notifications', error: error.message });
+  }
+};
+
+export const markNotificationRead = async (req, res) => {
+  try {
+    await Notification.findByIdAndUpdate(req.params.notificationId, { unread: false });
+    res.status(200).json({ message: 'Notification marked as read' });
+  } catch (error) {
+    res.status(500).json({ message: 'Error updating notification', error: error.message });
+  }
+};
+
+// Get matched orphans based on donor preferences
+export const getMatchedOrphans = async (req, res) => {
+  try {
+    const donor = await Donor.findById(req.params.id);
+    if (!donor) {
+      return res.status(404).json({ message: 'Donor not found' });
+    }
+
+    // Build match criteria based on donor preferences
+    let matchCriteria = {};
+
+    // Area preference matches orphan location
+    if (donor.preferences.area && donor.preferences.area.length > 0) {
+      matchCriteria.location = { $in: donor.preferences.area };
+    }
+
+    // School level preference matches orphan age/class (simplified: age-based)
+    if (donor.preferences.schoolLevel && donor.preferences.schoolLevel.length > 0) {
+      const ageRanges = [];
+      donor.preferences.schoolLevel.forEach(level => {
+        switch (level.toLowerCase()) {
+          case 'primary':
+            ageRanges.push({ $gte: 5, $lte: 12 });
+            break;
+          case 'secondary':
+            ageRanges.push({ $gte: 13, $lte: 18 });
+            break;
+          case 'higher':
+            ageRanges.push({ $gte: 19 });
+            break;
+        }
+      });
+      if (ageRanges.length > 0) {
+        matchCriteria.$or = ageRanges.map(range => ({ age: range }));
+      }
+    }
+
+    // Find orphans matching criteria
+    let orphans = await Orphan.find(matchCriteria);
+
+    // If causeType preference, filter orphans who have requests matching causeType
+    if (donor.preferences.causeType && donor.preferences.causeType.length > 0) {
+      const causeTypeMap = {
+        'education': ['school_fees', 'books', 'stationery'],
+        'healthcare': ['medical'],
+        'clothing': ['uniforms'],
+        'other': ['other']
+      };
+
+      const matchingTypes = [];
+      donor.preferences.causeType.forEach(cause => {
+        if (causeTypeMap[cause.toLowerCase()]) {
+          matchingTypes.push(...causeTypeMap[cause.toLowerCase()]);
+        }
+      });
+
+      if (matchingTypes.length > 0) {
+        const requests = await Request.find({
+          type: { $in: matchingTypes },
+          status: 'approved'
+        }).populate('orphanId');
+
+        const orphanIds = requests.map(req => req.orphanId._id.toString());
+        orphans = orphans.filter(orphan => orphanIds.includes(orphan._id.toString()));
+      }
+    }
+
+    // Exclude already matched orphans
+    const matchedOrphanIds = donor.matchedOrphans.map(id => id.toString());
+    orphans = orphans.filter(orphan => !matchedOrphanIds.includes(orphan._id.toString()));
+
+    res.status(200).json({ orphans });
+  } catch (error) {
+    res.status(500).json({ message: 'Error fetching matched orphans', error: error.message });
+  }
+};
+
+export const getPreferenceOptions = async (req, res) => {
+  try {
+    const options = {
+      causeTypes: ['Education', 'Healthcare', 'Clothing', 'Other'],
+      schoolLevels: ['Primary', 'Secondary', 'Higher'],
+      areas: ['Karachi', 'Lahore', 'Islamabad', 'Peshawar', 'Quetta', 'Multan']
+    };
+    res.status(200).json({ options });
+  } catch (error) {
+    res.status(500).json({ message: 'Error fetching preference options', error: error.message });
+  }
+};
+
+export const deleteDonor = async (req, res) => {
+  try {
+    const donor = await Donor.findOneAndDelete({ userId: req.params.id });
+    if (!donor) {
+      return res.status(404).json({ message: 'Donor not found' });
+    }
+    res.status(200).json({ message: 'Donor deleted successfully' });
+  } catch (error) {
+    res.status(500).json({ message: 'Error deleting donor', error: error.message });
+  }
+};

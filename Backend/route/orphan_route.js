@@ -2,7 +2,7 @@ import express from "express";
 import multer from "multer";
 import { CloudinaryStorage } from "multer-storage-cloudinary";
 import cloudinary from "../Files/cloudinary.js";
-import { registerOrphan } from "../controllers/orphanController.js";
+import { registerOrphan, getOrphanProfile } from "../controllers/orphanController.js";
 
 const router = express.Router();
 
@@ -26,5 +26,7 @@ router.post(
   ]),
   registerOrphan
 );
+
+router.get("/profile/:id", getOrphanProfile);
 
 export default router;
