@@ -2,7 +2,7 @@ import 'dart:convert';
 import 'package:http/http.dart' as http;
 
 class AdminService {
-  final String baseUrl = 'http://localhost:5000/api'; // Adjust as needed
+  final String baseUrl = 'http://localhost:5000/api';
 
   Future<Map<String, dynamic>> getDashboardStats() async {
     final response = await http.get(Uri.parse('$baseUrl/admin/stats'));
