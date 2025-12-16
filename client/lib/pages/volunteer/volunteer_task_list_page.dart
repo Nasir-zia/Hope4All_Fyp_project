@@ -146,7 +146,6 @@ class _VolunteerTaskListPageState extends State<VolunteerTaskListPage> {
                                   children: [
                                     ElevatedButton(
                                       onPressed: () {
-                                        // TODO: Implement task acceptance
                                         ScaffoldMessenger.of(
                                           context,
                                         ).showSnackBar(

@@ -14,12 +14,7 @@ class DonorProfileWidget extends StatelessWidget {
         color: AppTheme.white,
         borderRadius: BorderRadius.circular(16),
         boxShadow: [
-          BoxShadow(
-            color: Colors.grey.withOpacity(0.1),
-            spreadRadius: 2,
-            blurRadius: 5,
-            offset: const Offset(0, 3),
-          ),
+          BoxShadow(spreadRadius: 2, blurRadius: 5, offset: const Offset(0, 3)),
         ],
       ),
       child: Column(
@@ -130,10 +125,7 @@ class DonorProfileWidget extends StatelessWidget {
   ) {
     return Container(
       padding: const EdgeInsets.all(12),
-      decoration: BoxDecoration(
-        color: color.withOpacity(0.1),
-        borderRadius: BorderRadius.circular(12),
-      ),
+      decoration: BoxDecoration(borderRadius: BorderRadius.circular(12)),
       child: Column(
         children: [
           Icon(icon, color: color, size: 24),

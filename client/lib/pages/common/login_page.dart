@@ -1,11 +1,11 @@
 import 'package:flutter/material.dart';
 import 'package:go_router/go_router.dart';
 import 'package:provider/provider.dart';
+
 import '../../providers/auth_provider.dart';
 import '../../services/navigation_service.dart';
 import '../../theme/app_theme.dart';
 import '../../widgets/animated_card.dart';
-import '../../widgets/education_illustration.dart';
 
 class LoginPage extends StatefulWidget {
   const LoginPage({super.key});
@@ -19,6 +19,7 @@ class _LoginPageState extends State<LoginPage>
   final _formKey = GlobalKey<FormState>();
   final _emailController = TextEditingController();
   final _passwordController = TextEditingController();
+
   bool _isLoading = false;
   String? _errorMessage;
 
@@ -29,13 +30,15 @@ class _LoginPageState extends State<LoginPage>
   @override
   void initState() {
     super.initState();
+
     _animationController = AnimationController(
       duration: const Duration(milliseconds: 1200),
       vsync: this,
     );
 
-    _fadeAnimation = Tween<double>(begin: 0.0, end: 1.0).animate(
-      CurvedAnimation(parent: _animationController, curve: Curves.easeIn),
+    _fadeAnimation = CurvedAnimation(
+      parent: _animationController,
+      curve: Curves.easeIn,
     );
 
     _slideAnimation =
@@ -62,27 +65,22 @@ class _LoginPageState extends State<LoginPage>
       _errorMessage = null;
     });
 
-    final authProvider = Provider.of<AuthProvider>(context, listen: false);
-    final success = await authProvider.login(
+    final auth = Provider.of<AuthProvider>(context, listen: false);
+    final success = await auth.login(
       _emailController.text.trim(),
       _passwordController.text,
     );
 
-    setState(() {
-      _isLoading = false;
-    });
+    setState(() => _isLoading = false);
 
     if (success) {
       if (mounted) {
-        final authProvider = Provider.of<AuthProvider>(context, listen: false);
-        final initialRoute = NavigationService.getInitialRoute(
-          authProvider.userRole,
-        );
+        final initialRoute = NavigationService.getInitialRoute(auth.userRole);
         context.go(initialRoute);
       }
     } else {
       setState(() {
-        _errorMessage = 'Invalid email or password. Please try again.';
+        _errorMessage = "Invalid email or password. Please try again.";
       });
     }
   }
@@ -92,222 +90,230 @@ class _LoginPageState extends State<LoginPage>
     return Scaffold(
       backgroundColor: AppTheme.white,
       appBar: AppBar(
-        title: Text('Login', style: TextStyle(color: AppTheme.white)),
+        title: const Text('Login', style: TextStyle(color: Colors.white)),
         backgroundColor: AppTheme.skyBlue,
         elevation: 0,
         leading: IconButton(
-          icon: Icon(Icons.arrow_back, color: AppTheme.white),
+          icon: const Icon(Icons.arrow_back, color: Colors.white),
           onPressed: () => context.go('/welcome'),
         ),
       ),
+
+      // ----------------------------
+      //        BODY START
+      // ----------------------------
       body: SingleChildScrollView(
-        padding: const EdgeInsets.all(20.0),
-        child: Form(
-          key: _formKey,
+        padding: const EdgeInsets.all(20),
+        child: FadeTransition(
+          opacity: _fadeAnimation,
           child: Column(
-            crossAxisAlignment: CrossAxisAlignment.stretch,
             children: [
-              FadeTransition(
-                opacity: _fadeAnimation,
-                child: EducationIllustration(size: 80, color: AppTheme.skyBlue),
-              ),
-              const SizedBox(height: 30),
+              // 📌 Top Header Image
               SlideTransition(
                 position: _slideAnimation,
-                child: FadeTransition(
-                  opacity: _fadeAnimation,
-                  child: Text(
-                    'Welcome Back',
-                    style: Theme.of(context).textTheme.headlineMedium?.copyWith(
-                      color: Colors.black87,
-                      fontWeight: FontWeight.bold,
+                child: ClipRRect(
+                  borderRadius: BorderRadius.circular(18),
+                  child: Container(
+                    height: 180,
+                    width: double.infinity,
+                    decoration: BoxDecoration(
+                      boxShadow: [
+                        BoxShadow(
+                          color: Colors.black12,
+                          blurRadius: 10,
+                          offset: Offset(0, 4),
+                        ),
+                      ],
                     ),
-                    textAlign: TextAlign.center,
+                    child: Image.asset(
+                      "assets/images/R.jpeg",
+                      fit: BoxFit.cover,
+                    ),
                   ),
                 ),
               ),
-              const SizedBox(height: 10),
+
+              const SizedBox(height: 25),
+
+              // Title
               SlideTransition(
                 position: _slideAnimation,
-                child: FadeTransition(
-                  opacity: _fadeAnimation,
-                  child: Text(
-                    'Sign in to continue your journey',
-                    style: Theme.of(
-                      context,
-                    ).textTheme.bodyLarge?.copyWith(color: Colors.grey[600]),
-                    textAlign: TextAlign.center,
+                child: Text(
+                  "Welcome Back",
+                  style: Theme.of(context).textTheme.headlineMedium?.copyWith(
+                    color: Colors.black87,
+                    fontWeight: FontWeight.bold,
                   ),
                 ),
               ),
-              const SizedBox(height: 40),
+
+              const SizedBox(height: 6),
+
+              Text(
+                "Sign in to continue your journey",
+                style: TextStyle(color: Colors.grey[600], fontSize: 15),
+                textAlign: TextAlign.center,
+              ),
+
+              const SizedBox(height: 25),
+
+              // ----------------------------
+              //     ERROR MESSAGE
+              // ----------------------------
               if (_errorMessage != null)
-                SlideTransition(
-                  position: _slideAnimation,
-                  child: AnimatedCard(
-                    child: Container(
-                      padding: const EdgeInsets.all(12),
-                      decoration: BoxDecoration(
-                        color: Colors.red.shade50,
-                        borderRadius: BorderRadius.circular(8),
-                        border: Border.all(color: Colors.red.shade200),
-                      ),
-                      child: Row(
-                        children: [
-                          Icon(Icons.error_outline, color: Colors.red),
-                          const SizedBox(width: 8),
-                          Expanded(
-                            child: Text(
-                              _errorMessage!,
-                              style: TextStyle(color: Colors.red.shade800),
-                            ),
-                          ),
-                        ],
-                      ),
+                AnimatedCard(
+                  child: Container(
+                    padding: const EdgeInsets.all(12),
+                    decoration: BoxDecoration(
+                      color: Colors.red.shade50,
+                      borderRadius: BorderRadius.circular(8),
+                      border: Border.all(color: Colors.red.shade200),
                     ),
-                  ),
-                ),
-              const SizedBox(height: 20),
-              SlideTransition(
-                position: _slideAnimation,
-                child: AnimatedCard(
-                  child: Padding(
-                    padding: const EdgeInsets.all(16.0),
-                    child: TextFormField(
-                      controller: _emailController,
-                      decoration: InputDecoration(
-                        labelText: 'Email',
-                        prefixIcon: Icon(Icons.email, color: AppTheme.skyBlue),
-                        border: OutlineInputBorder(
-                          borderRadius: BorderRadius.circular(12),
-                        ),
-                        focusedBorder: OutlineInputBorder(
-                          borderRadius: BorderRadius.circular(12),
-                          borderSide: BorderSide(
-                            color: AppTheme.skyBlue,
-                            width: 2,
+                    child: Row(
+                      children: [
+                        const Icon(Icons.error_outline, color: Colors.red),
+                        const SizedBox(width: 10),
+                        Expanded(
+                          child: Text(
+                            _errorMessage!,
+                            style: TextStyle(color: Colors.red.shade700),
                           ),
                         ),
-                      ),
-                      keyboardType: TextInputType.emailAddress,
-                      validator: (value) {
-                        if (value == null || value.isEmpty) {
-                          return 'Please enter your email';
-                        }
-                        if (!RegExp(
-                          r'^[\w-\.]+@([\w-]+\.)+[\w-]{2,4}$',
-                        ).hasMatch(value)) {
-                          return 'Please enter a valid email';
-                        }
-                        return null;
-                      },
+                      ],
                     ),
                   ),
                 ),
-              ),
+
               const SizedBox(height: 20),
-              SlideTransition(
-                position: _slideAnimation,
-                child: AnimatedCard(
-                  child: Padding(
-                    padding: const EdgeInsets.all(16.0),
-                    child: TextFormField(
-                      controller: _passwordController,
-                      decoration: InputDecoration(
-                        labelText: 'Password',
-                        prefixIcon: Icon(Icons.lock, color: AppTheme.skyBlue),
-                        border: OutlineInputBorder(
-                          borderRadius: BorderRadius.circular(12),
-                        ),
-                        focusedBorder: OutlineInputBorder(
-                          borderRadius: BorderRadius.circular(12),
-                          borderSide: BorderSide(
-                            color: AppTheme.skyBlue,
-                            width: 2,
-                          ),
-                        ),
-                      ),
-                      obscureText: true,
-                      validator: (value) {
-                        if (value == null || value.isEmpty) {
-                          return 'Please enter your password';
-                        }
-                        if (value.length < 6) {
-                          return 'Password must be at least 6 characters';
-                        }
-                        return null;
-                      },
-                    ),
-                  ),
-                ),
-              ),
-              const SizedBox(height: 30),
-              SlideTransition(
-                position: _slideAnimation,
-                child: AnimatedCard(
-                  child: Padding(
-                    padding: const EdgeInsets.all(16.0),
-                    child: ElevatedButton(
-                      onPressed: _isLoading ? null : _handleLogin,
-                      style: ElevatedButton.styleFrom(
-                        backgroundColor: AppTheme.skyBlue,
-                        padding: const EdgeInsets.symmetric(vertical: 16),
-                        shape: RoundedRectangleBorder(
-                          borderRadius: BorderRadius.circular(12),
-                        ),
-                      ),
-                      child: _isLoading
-                          ? SizedBox(
-                              height: 20,
-                              width: 20,
-                              child: CircularProgressIndicator(
-                                strokeWidth: 2,
-                                valueColor: AlwaysStoppedAnimation<Color>(
-                                  AppTheme.white,
-                                ),
-                              ),
-                            )
-                          : Row(
-                              mainAxisAlignment: MainAxisAlignment.center,
-                              children: [
-                                Icon(AppTheme.bookIcon, color: AppTheme.white),
-                                const SizedBox(width: 8),
-                                Text(
-                                  'Login',
-                                  style: TextStyle(
-                                    fontSize: 18,
-                                    color: AppTheme.white,
-                                    fontWeight: FontWeight.w600,
-                                  ),
-                                ),
-                              ],
-                            ),
-                    ),
-                  ),
-                ),
-              ),
-              const SizedBox(height: 20),
-              SlideTransition(
-                position: _slideAnimation,
-                child: Row(
-                  mainAxisAlignment: MainAxisAlignment.center,
+
+              Form(
+                key: _formKey,
+                child: Column(
                   children: [
-                    Text(
-                      "Don't have an account? ",
-                      style: TextStyle(color: Colors.grey[600]),
+                    // ----------------------------
+                    //        EMAIL FIELD
+                    // ----------------------------
+                    AnimatedCard(
+                      child: Padding(
+                        padding: const EdgeInsets.all(16),
+                        child: TextFormField(
+                          controller: _emailController,
+                          decoration: InputDecoration(
+                            labelText: "Email",
+                            prefixIcon: Icon(
+                              Icons.email,
+                              color: AppTheme.skyBlue,
+                            ),
+                            border: OutlineInputBorder(
+                              borderRadius: BorderRadius.circular(12),
+                            ),
+                          ),
+                          validator: (value) {
+                            if (value!.isEmpty) return "Enter your email";
+                            if (!RegExp(
+                              r"^[\w-.]+@([\w-]+\.)+[\w-]{2,4}$",
+                            ).hasMatch(value)) {
+                              return "Enter a valid email";
+                            }
+                            return null;
+                          },
+                        ),
+                      ),
                     ),
-                    TextButton(
-                      onPressed: () => context.go('/register'),
-                      child: Text(
-                        'Sign Up',
-                        style: TextStyle(
-                          color: AppTheme.skyBlue,
-                          fontWeight: FontWeight.w600,
+
+                    const SizedBox(height: 16),
+
+                    // ----------------------------
+                    //        PASSWORD FIELD
+                    // ----------------------------
+                    AnimatedCard(
+                      child: Padding(
+                        padding: const EdgeInsets.all(16),
+                        child: TextFormField(
+                          controller: _passwordController,
+                          obscureText: true,
+                          decoration: InputDecoration(
+                            labelText: "Password",
+                            prefixIcon: Icon(
+                              Icons.lock,
+                              color: AppTheme.skyBlue,
+                            ),
+                            border: OutlineInputBorder(
+                              borderRadius: BorderRadius.circular(12),
+                            ),
+                          ),
+                          validator: (value) {
+                            if (value!.isEmpty) return "Enter your password";
+                            if (value.length < 6) {
+                              return "Password must be 6+ characters";
+                            }
+                            return null;
+                          },
                         ),
                       ),
                     ),
                   ],
                 ),
+              ),
+
+              const SizedBox(height: 30),
+
+              // ----------------------------
+              //        LOGIN BUTTON
+              // ----------------------------
+              AnimatedCard(
+                child: ElevatedButton(
+                  onPressed: _isLoading ? null : _handleLogin,
+                  style: ElevatedButton.styleFrom(
+                    backgroundColor: AppTheme.skyBlue,
+                    padding: const EdgeInsets.symmetric(vertical: 15),
+                    shape: RoundedRectangleBorder(
+                      borderRadius: BorderRadius.circular(14),
+                    ),
+                  ),
+                  child: _isLoading
+                      ? const CircularProgressIndicator(color: Colors.white)
+                      : Row(
+                          mainAxisAlignment: MainAxisAlignment.center,
+                          children: const [
+                            Icon(Icons.login, color: Colors.white),
+                            SizedBox(width: 8),
+                            Text(
+                              "Login",
+                              style: TextStyle(
+                                fontSize: 18,
+                                fontWeight: FontWeight.w600,
+                                color: Colors.white,
+                              ),
+                            ),
+                          ],
+                        ),
+                ),
+              ),
+
+              const SizedBox(height: 22),
+
+              // ----------------------------
+              //      FOOTER LINK
+              // ----------------------------
+              Row(
+                mainAxisAlignment: MainAxisAlignment.center,
+                children: [
+                  Text(
+                    "Don't have an account?",
+                    style: TextStyle(color: Colors.grey[600]),
+                  ),
+                  TextButton(
+                    onPressed: () => context.go('/register'),
+                    child: Text(
+                      "Sign Up",
+                      style: TextStyle(
+                        color: AppTheme.skyBlue,
+                        fontWeight: FontWeight.bold,
+                      ),
+                    ),
+                  ),
+                ],
               ),
             ],
           ),

@@ -1,5 +1,8 @@
 import 'package:flutter/material.dart';
+import 'package:provider/provider.dart';
 import '../../widgets/common_app_bar.dart';
+import '../../providers/auth_provider.dart';
+import '../../orphan_service.dart';
 
 class OrphanTrackRequestsPage extends StatefulWidget {
   const OrphanTrackRequestsPage({super.key});
@@ -10,6 +13,7 @@ class OrphanTrackRequestsPage extends StatefulWidget {
 }
 
 class _OrphanTrackRequestsPageState extends State<OrphanTrackRequestsPage> {
+  final OrphanService _orphanService = OrphanService();
   List<Map<String, dynamic>> _requests = [];
   bool _isLoading = true;
 
@@ -21,37 +25,22 @@ class _OrphanTrackRequestsPageState extends State<OrphanTrackRequestsPage> {
 
   Future<void> _loadRequests() async {
     try {
-      // Placeholder: Fetch requests
-      // In real implementation, call _orphanService.getRequests()
-      setState(() {
-        _requests = [
-          {
-            'id': 1,
-            'type': 'School Fees',
-            'status': 'Approved',
-            'progress': 0.8,
-            'amount': 5000,
-            'date': '2023-10-01',
-          },
-          {
-            'id': 2,
-            'type': 'Stationery',
-            'status': 'Pending',
-            'progress': 0.2,
-            'amount': 2000,
-            'date': '2023-10-05',
-          },
-          {
-            'id': 3,
-            'type': 'Uniforms',
-            'status': 'In Progress',
-            'progress': 0.5,
-            'amount': 3000,
-            'date': '2023-09-28',
-          },
-        ];
-        _isLoading = false;
-      });
+      final authProvider = Provider.of<AuthProvider>(context, listen: false);
+      final userId = authProvider.userId;
+
+      if (userId != null) {
+        // Get orphan profile to find orphanId
+        final profile = await _orphanService.getOrphanProfile(userId);
+        final orphanId = profile['orphan']['_id'];
+
+        // Fetch requests
+        final requests = await _orphanService.getRequestsByOrphan(orphanId);
+
+        setState(() {
+          _requests = List<Map<String, dynamic>>.from(requests);
+          _isLoading = false;
+        });
+      }
     } catch (e) {
       setState(() => _isLoading = false);
       ScaffoldMessenger.of(

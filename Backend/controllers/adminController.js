@@ -4,7 +4,6 @@ import Orphan from '../model/orphan_model.js';
 import OrphanAge from '../model/orphan_age.js';
 import Donation from '../model/donation_model.js';
 import Request from '../model/request_model.js';
-import Task from '../model/task_model.js';
 import Inventory from '../model/inventory_model.js';
 import Notification from '../model/notification_model.js';
 
@@ -51,7 +50,49 @@ export const getDashboardStats = async (req, res) => {
 export const getUsers = async (req, res) => {
   try {
     const users = await User.find().select('-password').sort({ createdAt: -1 });
-    res.status(200).json({ users });
+    const usersWithData = await Promise.all(users.map(async (user) => {
+      let additionalData = {};
+      if (user.role === 'orphan') {
+        const orphan = await Orphan.findOne({ userId: user._id });
+        if (orphan) {
+          additionalData = {
+            name: orphan.name,
+            age: orphan.age,
+            gender: orphan.gender,
+            location: orphan.location,
+            profilePic: orphan.profilePic,
+            supportingDocs: orphan.supportingDocs,
+          };
+        }
+      } else if (user.role === 'donor') {
+        const donor = await Donor.findOne({ userId: user._id });
+        if (donor) {
+          additionalData = {
+            name: donor.name,
+            email: donor.email,
+            phone: donor.phone,
+            city: donor.city,
+            profilePic: donor.profilePic,
+            documents: donor.documents,
+          };
+        }
+      } else if (user.role === 'orphanage') {
+        const orphanage = await OrphanAge.findOne({ userId: user._id });
+        if (orphanage) {
+          additionalData = {
+            name: orphanage.name,
+            location: orphanage.location,
+            phone: orphanage.phone,
+            city: orphanage.city,
+            profilePic: orphanage.profilePic,
+            documents: orphanage.documents,
+          };
+        }
+      }
+      // Add for other roles if models exist
+      return { ...user.toObject(), ...additionalData };
+    }));
+    res.status(200).json({ users: usersWithData });
   } catch (error) {
     res.status(500).json({ message: 'Error fetching users', error: error.message });
   }
@@ -75,15 +116,31 @@ export const getUserById = async (req, res) => {
 export const updateUserStatus = async (req, res) => {
   try {
     const { status } = req.body;
+    const { userId } = req.params;
+
+    if (!userId || userId === 'null' || !userId.match(/^[0-9a-fA-F]{24}$/)) {
+      return res.status(400).json({ message: 'Invalid user ID' });
+    }
 
     const updatedUser = await User.findByIdAndUpdate(
-      req.params.userId,
+      userId,
       { status },
       { new: true }
     ).select('-password');
 
     if (!updatedUser) {
       return res.status(404).json({ message: 'User not found' });
+    }
+
+    // If the user is an orphanage and status is verified, approve all pending requests for this orphanage
+    if (updatedUser.role === 'orphanage' && status === 'verified') {
+      const orphanage = await OrphanAge.findOne({ userId: updatedUser._id });
+      if (orphanage) {
+        await Request.updateMany(
+          { orphanageId: orphanage._id, status: 'pending' },
+          { status: 'approved' }
+        );
+      }
     }
 
     res.status(200).json({ message: 'User status updated', user: updatedUser });

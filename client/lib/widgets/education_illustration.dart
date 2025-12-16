@@ -13,7 +13,7 @@ class EducationIllustration extends StatelessWidget {
       width: size,
       height: size,
       decoration: BoxDecoration(
-        color: (color ?? AppTheme.skyBlue).withOpacity(0.1),
+        color: (color ?? AppTheme.skyBlue),
         borderRadius: BorderRadius.circular(20),
       ),
       child: Stack(
@@ -66,7 +66,7 @@ class EducationPatternPainter extends CustomPainter {
   @override
   void paint(Canvas canvas, Size size) {
     final paint = Paint()
-      ..color = color.withOpacity(0.1)
+      ..color.withValues(alpha: 0.1)
       ..style = PaintingStyle.fill;
 
     // Draw simple geometric patterns

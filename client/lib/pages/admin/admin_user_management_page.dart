@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 import 'package:intl/intl.dart';
 import '../../admin_service.dart';
 import '../../widgets/common_app_bar.dart';
+import 'admin_user_detail_page.dart';
 
 class AdminUserManagementPage extends StatefulWidget {
   const AdminUserManagementPage({super.key});
@@ -27,6 +28,8 @@ class _AdminUserManagementPageState extends State<AdminUserManagementPage> {
     try {
       final users = await _adminService.getUsers();
 
+      if (!mounted) return; // ✅ Avoid using context if widget is disposed
+
       setState(() {
         _users = List<Map<String, dynamic>>.from(
           users.map((e) => Map<String, dynamic>.from(e)),
@@ -34,10 +37,11 @@ class _AdminUserManagementPageState extends State<AdminUserManagementPage> {
         _isLoading = false;
       });
     } catch (e) {
+      if (!mounted) return;
       setState(() => _isLoading = false);
       ScaffoldMessenger.of(
         context,
-      ).showSnackBar(SnackBar(content: Text(' Error loading users: $e')));
+      ).showSnackBar(SnackBar(content: Text('Error loading users: $e')));
     }
   }
 
@@ -47,23 +51,36 @@ class _AdminUserManagementPageState extends State<AdminUserManagementPage> {
   }
 
   Future<void> _updateUserStatus(String userId, String newStatus) async {
+    if (userId.isEmpty || userId == 'null') {
+      if (!mounted) return;
+      ScaffoldMessenger.of(
+        context,
+      ).showSnackBar(const SnackBar(content: Text('❌ Invalid user ID')));
+      return;
+    }
+
     try {
       await _adminService.updateUserStatus(userId, newStatus);
+
+      if (!mounted) return;
+
       setState(() {
         final index = _users.indexWhere(
-          (user) => user['id'].toString() == userId,
+          (user) => user['_id'].toString() == userId,
         );
         if (index != -1) {
           _users[index]['status'] = newStatus;
         }
       });
+
       ScaffoldMessenger.of(context).showSnackBar(
         SnackBar(content: Text('✅ User status updated to $newStatus')),
       );
     } catch (e) {
-      ScaffoldMessenger.of(context).showSnackBar(
-        SnackBar(content: Text(' Error updating user status: $e')),
-      );
+      if (!mounted) return;
+      ScaffoldMessenger.of(
+        context,
+      ).showSnackBar(SnackBar(content: Text('Error updating user status: $e')));
     }
   }
 
@@ -133,17 +150,43 @@ class _AdminUserManagementPageState extends State<AdminUserManagementPage> {
                                   borderRadius: BorderRadius.circular(12),
                                 ),
                                 child: ListTile(
-                                  leading: CircleAvatar(
-                                    backgroundColor: _getRoleColor(
-                                      user['role'],
-                                    ),
-                                    radius: 26,
-                                    child: Icon(
-                                      _getRoleIcon(user['role']),
-                                      color: Colors.white,
-                                      size: 22,
-                                    ),
-                                  ),
+                                  onTap: () {
+                                    Navigator.push(
+                                      context,
+                                      MaterialPageRoute(
+                                        builder: (context) =>
+                                            AdminUserDetailPage(user: user),
+                                      ),
+                                    );
+                                  },
+                                  leading:
+                                      user['profilePic'] != null &&
+                                          user['profilePic'].isNotEmpty
+                                      ? CircleAvatar(
+                                          radius: 26,
+                                          backgroundImage: NetworkImage(
+                                            user['profilePic'],
+                                          ),
+                                          onBackgroundImageError: (_, _) =>
+                                              Icon(
+                                                _getRoleIcon(user['role']),
+                                                color: Colors.white,
+                                              ),
+                                          backgroundColor: _getRoleColor(
+                                            user['role'],
+                                          ),
+                                        )
+                                      : CircleAvatar(
+                                          backgroundColor: _getRoleColor(
+                                            user['role'],
+                                          ),
+                                          radius: 26,
+                                          child: Icon(
+                                            _getRoleIcon(user['role']),
+                                            color: Colors.white,
+                                            size: 22,
+                                          ),
+                                        ),
                                   title: Text(
                                     user['username'] ?? 'Unknown User',
                                     style: const TextStyle(
@@ -168,8 +211,56 @@ class _AdminUserManagementPageState extends State<AdminUserManagementPage> {
                                           color: Colors.grey[700],
                                         ),
                                       ),
+                                      if (user['name'] != null)
+                                        Text(
+                                          'Name: ${user['name']}',
+                                          style: TextStyle(
+                                            fontSize: 12,
+                                            color: Colors.grey[700],
+                                          ),
+                                        ),
+                                      if (user['age'] != null)
+                                        Text(
+                                          'Age: ${user['age']}',
+                                          style: TextStyle(
+                                            fontSize: 12,
+                                            color: Colors.grey[700],
+                                          ),
+                                        ),
+                                      if (user['gender'] != null)
+                                        Text(
+                                          'Gender: ${user['gender']}',
+                                          style: TextStyle(
+                                            fontSize: 12,
+                                            color: Colors.grey[700],
+                                          ),
+                                        ),
+                                      if (user['location'] != null)
+                                        Text(
+                                          'Location: ${user['location']}',
+                                          style: TextStyle(
+                                            fontSize: 12,
+                                            color: Colors.grey[700],
+                                          ),
+                                        ),
+                                      if (user['phone'] != null)
+                                        Text(
+                                          'Phone: ${user['phone']}',
+                                          style: TextStyle(
+                                            fontSize: 12,
+                                            color: Colors.grey[700],
+                                          ),
+                                        ),
+                                      if (user['city'] != null)
+                                        Text(
+                                          'City: ${user['city']}',
+                                          style: TextStyle(
+                                            fontSize: 12,
+                                            color: Colors.grey[700],
+                                          ),
+                                        ),
                                       Text(
-                                        'Joined: ${_formatJoinDate(DateTime.now().toIso8601String())}',
+                                        'Joined: ${_formatJoinDate(user['createdAt'] ?? DateTime.now().toIso8601String())}',
                                         style: TextStyle(
                                           fontSize: 12,
                                           color: Colors.grey[600],
@@ -225,7 +316,7 @@ class _AdminUserManagementPageState extends State<AdminUserManagementPage> {
           .toList(),
       onChanged: (newStatus) {
         if (newStatus != null && newStatus != currentStatus) {
-          _updateUserStatus(user['id'].toString(), newStatus);
+          _updateUserStatus(user['_id'].toString(), newStatus);
         }
       },
       underline: const SizedBox(),

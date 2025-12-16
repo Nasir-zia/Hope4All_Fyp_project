@@ -19,7 +19,10 @@ class _VolunteerHomePageState extends State<VolunteerHomePage> {
   @override
   void initState() {
     super.initState();
-    _loadData();
+    // ✅ Safe way to use context after first frame
+    WidgetsBinding.instance.addPostFrameCallback((_) {
+      _loadData();
+    });
   }
 
   Future<void> _loadData() async {
@@ -29,12 +32,17 @@ class _VolunteerHomePageState extends State<VolunteerHomePage> {
       if (volunteerId == null) {
         throw Exception('User not authenticated');
       }
+
       final tasks = await _volunteerService.getAssignedTasks(volunteerId);
+
+      if (!mounted) return; // ✅ ensure widget still active
+
       setState(() {
         _assignedTasks = List<Map<String, dynamic>>.from(tasks);
         _isLoading = false;
       });
     } catch (e) {
+      if (!mounted) return;
       setState(() => _isLoading = false);
       ScaffoldMessenger.of(
         context,

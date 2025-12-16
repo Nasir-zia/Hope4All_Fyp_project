@@ -47,10 +47,9 @@ class _OrphanProfilePageState extends State<OrphanProfilePage> {
         setState(() {
           _orphanProfile = profile['orphan'];
           _nameController.text = _orphanProfile!['name'] ?? '';
-          _schoolController.text = 'Green Valley School'; // Placeholder
-          _classController.text = 'Grade 8'; // Placeholder
-          _achievementsController.text =
-              'First in Math Quiz, Science Fair Winner'; // Placeholder
+          _schoolController.text = _orphanProfile!['school'] ?? '';
+          _classController.text = _orphanProfile!['class'] ?? '';
+          _achievementsController.text = _orphanProfile!['achievements'] ?? '';
           _isLoading = false;
         });
       }
@@ -66,13 +65,23 @@ class _OrphanProfilePageState extends State<OrphanProfilePage> {
 
   Future<void> _saveProfile() async {
     try {
-      // Placeholder: Save profile
-      // In real implementation, call _orphanService.updateProfile(...)
-      await Future.delayed(const Duration(seconds: 1)); // Simulate API call
-      setState(() => _isEditing = false);
-      ScaffoldMessenger.of(context).showSnackBar(
-        const SnackBar(content: Text('Profile updated successfully!')),
-      );
+      final authProvider = Provider.of<AuthProvider>(context, listen: false);
+      final userId = authProvider.userId;
+
+      if (userId != null) {
+        final updateData = {
+          'name': _nameController.text,
+          'school': _schoolController.text,
+          'class': _classController.text,
+          'achievements': _achievementsController.text,
+        };
+
+        await _orphanService.updateOrphanProfile(userId, updateData);
+        setState(() => _isEditing = false);
+        ScaffoldMessenger.of(context).showSnackBar(
+          const SnackBar(content: Text('Profile updated successfully!')),
+        );
+      }
     } catch (e) {
       ScaffoldMessenger.of(
         context,

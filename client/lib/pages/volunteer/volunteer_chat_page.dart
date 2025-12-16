@@ -40,20 +40,18 @@ class _VolunteerChatPageState extends State<VolunteerChatPage> {
     }
   }
 
-  void _sendMessage() {
+  void _sendMessage() async {
     final message = _messageController.text.trim();
     if (message.isNotEmpty) {
-      setState(() {
-        _messages.add({
-          'id': DateTime.now().millisecondsSinceEpoch,
-          'sender': 'You',
-          'message': message,
-          'timestamp': DateTime.now().toIso8601String(),
-        });
-      });
-      _messageController.clear();
-      // TODO: Send message to backend
-      // _volunteerService.sendMessage(message);
+      try {
+        await _volunteerService.sendMessage(_otherUserId, message);
+        _messageController.clear();
+        _loadMessages(); // Reload messages after sending
+      } catch (e) {
+        ScaffoldMessenger.of(
+          context,
+        ).showSnackBar(SnackBar(content: Text('Error sending message: $e')));
+      }
     }
   }
 

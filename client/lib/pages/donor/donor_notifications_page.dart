@@ -3,6 +3,7 @@ import 'package:go_router/go_router.dart';
 import 'package:provider/provider.dart';
 import '../../providers/auth_provider.dart';
 import '../../widgets/common_app_bar.dart';
+import '../../donor_service.dart';
 
 class DonorNotificationsPage extends StatefulWidget {
   const DonorNotificationsPage({super.key});
@@ -12,6 +13,7 @@ class DonorNotificationsPage extends StatefulWidget {
 }
 
 class _DonorNotificationsPageState extends State<DonorNotificationsPage> {
+  final DonorService _donorService = DonorService();
   List<Map<String, dynamic>> _notifications = [];
   bool _isLoading = true;
 
@@ -23,40 +25,16 @@ class _DonorNotificationsPageState extends State<DonorNotificationsPage> {
 
   Future<void> _loadNotifications() async {
     try {
-      // Placeholder: Fetch notifications
-      // In real implementation, call _donorService.getNotifications()
-      setState(() {
-        _notifications = [
-          {
-            'id': 1,
-            'type': 'donation_update',
-            'title': 'Donation Delivered',
-            'message':
-                'Your donation of PKR 5000 for Ahmed\'s school fees has been delivered.',
-            'date': '2023-10-01',
-            'read': false,
-          },
-          {
-            'id': 2,
-            'type': 'delivery_notification',
-            'title': 'Delivery Update',
-            'message':
-                'Stationery items for Fatima are being prepared for delivery.',
-            'date': '2023-10-05',
-            'read': true,
-          },
-          {
-            'id': 3,
-            'type': 'thank_you',
-            'title': 'Thank You Note',
-            'message':
-                'Ahmed\'s family sent a thank you note for your generous donation.',
-            'date': '2023-09-28',
-            'read': false,
-          },
-        ];
-        _isLoading = false;
-      });
+      final authProvider = Provider.of<AuthProvider>(context, listen: false);
+      final userId = authProvider.userId;
+
+      if (userId != null) {
+        final notifications = await _donorService.getNotifications(userId);
+        setState(() {
+          _notifications = List<Map<String, dynamic>>.from(notifications);
+          _isLoading = false;
+        });
+      }
     } catch (e) {
       setState(() => _isLoading = false);
       ScaffoldMessenger.of(context).showSnackBar(

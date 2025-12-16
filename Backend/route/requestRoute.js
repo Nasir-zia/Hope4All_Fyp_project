@@ -2,6 +2,7 @@ import express from "express";
 import multer from "multer";
 import { CloudinaryStorage } from "multer-storage-cloudinary";
 import cloudinary from "../Files/cloudinary.js";
+import { authenticateToken, requireAdmin } from "../middleware/authMiddleware.js";
 import Request from "../model/request_model.js";
 import {
   submitRequest,
@@ -33,7 +34,7 @@ router.get("/orphan/:orphanId", getRequestsByOrphan);
 router.get("/", getAllRequests);
 
 // Update request status (admin)
-router.put("/:requestId/status", updateRequestStatus);
+router.put("/:requestId/status", authenticateToken, requireAdmin, updateRequestStatus);
 
 // Get approved requests for donors
 router.get("/approved", async (req, res) => {

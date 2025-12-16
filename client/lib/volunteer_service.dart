@@ -72,6 +72,19 @@ class VolunteerService {
     }
   }
 
+  Future<List<dynamic>> getMessages(String userId) async {
+    final response = await http.get(
+      Uri.parse('$baseUrl/messages/user/$userId'),
+    );
+
+    if (response.statusCode == 200) {
+      final data = jsonDecode(response.body);
+      return data['messages'];
+    } else {
+      throw Exception('Failed to fetch messages');
+    }
+  }
+
   Future<List<dynamic>> getConversations() async {
     final response = await http.get(Uri.parse('$baseUrl/messages'));
 

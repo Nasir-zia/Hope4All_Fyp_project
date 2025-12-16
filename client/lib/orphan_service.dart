@@ -119,4 +119,21 @@ class OrphanService {
       throw Exception('Failed to fetch orphan profile');
     }
   }
+
+  Future<Map<String, dynamic>> updateOrphanProfile(
+    String userId,
+    Map<String, dynamic> profileData,
+  ) async {
+    final response = await http.put(
+      Uri.parse('$baseUrl/orphan/profile/$userId'),
+      headers: {'Content-Type': 'application/json'},
+      body: jsonEncode(profileData),
+    );
+
+    if (response.statusCode == 200) {
+      return jsonDecode(response.body);
+    } else {
+      throw Exception('Failed to update orphan profile');
+    }
+  }
 }

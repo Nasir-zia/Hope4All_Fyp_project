@@ -1,5 +1,6 @@
 import 'dart:convert';
 import 'package:http/http.dart' as http;
+import 'package:shared_preferences/shared_preferences.dart';
 
 class AdminService {
   final String baseUrl = 'http://localhost:5000/api';
@@ -71,9 +72,15 @@ class AdminService {
   }
 
   Future<Map<String, dynamic>> approveRequest(String requestId) async {
+    final prefs = await SharedPreferences.getInstance();
+    final token = prefs.getString('token');
+
     final response = await http.put(
       Uri.parse('$baseUrl/requests/$requestId/status'),
-      headers: {'Content-Type': 'application/json'},
+      headers: {
+        'Content-Type': 'application/json',
+        'Authorization': 'Bearer $token',
+      },
       body: json.encode({'status': 'approved'}),
     );
 
@@ -88,9 +95,15 @@ class AdminService {
     String requestId,
     String reason,
   ) async {
+    final prefs = await SharedPreferences.getInstance();
+    final token = prefs.getString('token');
+
     final response = await http.put(
       Uri.parse('$baseUrl/requests/$requestId/status'),
-      headers: {'Content-Type': 'application/json'},
+      headers: {
+        'Content-Type': 'application/json',
+        'Authorization': 'Bearer $token',
+      },
       body: json.encode({'status': 'rejected', 'adminComments': reason}),
     );
 

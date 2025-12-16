@@ -4,8 +4,7 @@ import 'package:provider/provider.dart';
 import 'providers/auth_provider.dart';
 import 'services/navigation_service.dart';
 import 'theme/app_theme.dart';
-import 'pages/common/splash_screen.dart';
-import 'pages/common/welcome_screen.dart';
+import 'pages/common/auth_screen.dart';
 import 'pages/common/role_selection_screen.dart';
 import 'pages/common/login_page.dart';
 import 'pages/common/register_page.dart';
@@ -48,39 +47,38 @@ class MyApp extends StatelessWidget {
         title: 'Hope4All',
         theme: AppTheme.lightTheme,
         routerConfig: _router,
+        debugShowCheckedModeBanner: false,
       ),
     );
   }
 }
 
 final GoRouter _router = GoRouter(
-  initialLocation: '/splash',
+  initialLocation: '/auth',
   redirect: (context, state) {
     final authProvider = Provider.of<AuthProvider>(context, listen: false);
     final isAuthenticated = authProvider.isAuthenticated;
     final userRole = authProvider.userRole;
 
-    final isSplashRoute = state.matchedLocation == '/splash';
-    final isWelcomeRoute = state.matchedLocation == '/welcome';
+    final isAuthRoute = state.matchedLocation == '/auth';
     final isRoleSelectionRoute = state.matchedLocation == '/role-selection';
     final isLoginRoute = state.matchedLocation == '/login';
     final isRegisterRoute = state.matchedLocation == '/register';
 
-    // If not authenticated and not on initial screens, redirect to welcome
+    // If not authenticated and not on initial screens, redirect to auth
     if (!isAuthenticated &&
-        !isSplashRoute &&
-        !isWelcomeRoute &&
+        !isAuthRoute &&
         !isRoleSelectionRoute &&
         !isLoginRoute &&
         !isRegisterRoute) {
-      return '/welcome';
+      return '/auth';
     }
 
     // If authenticated and on auth screens, redirect to dashboard
     if (isAuthenticated &&
         (isLoginRoute ||
             isRegisterRoute ||
-            isWelcomeRoute ||
+            isAuthRoute ||
             isRoleSelectionRoute)) {
       return NavigationService.getInitialRoute(userRole);
     }
@@ -97,11 +95,7 @@ final GoRouter _router = GoRouter(
     return null;
   },
   routes: [
-    GoRoute(path: '/splash', builder: (context, state) => const SplashScreen()),
-    GoRoute(
-      path: '/welcome',
-      builder: (context, state) => const WelcomeScreen(),
-    ),
+    GoRoute(path: '/auth', builder: (context, state) => const AuthScreen()),
     GoRoute(
       path: '/role-selection',
       builder: (context, state) => const RoleSelectionScreen(),

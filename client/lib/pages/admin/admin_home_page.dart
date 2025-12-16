@@ -264,7 +264,7 @@ class _AdminHomePageState extends State<AdminHomePage> {
   }
 
   void _showIdInputDialog(String type) {
-    final TextEditingController _idController = TextEditingController();
+    final TextEditingController idController = TextEditingController();
 
     showDialog(
       context: context,
@@ -272,7 +272,7 @@ class _AdminHomePageState extends State<AdminHomePage> {
         return AlertDialog(
           title: Text('Enter ${type.capitalize()} ID'),
           content: TextField(
-            controller: _idController,
+            controller: idController,
             decoration: InputDecoration(
               hintText: 'Enter ID',
               border: const OutlineInputBorder(),
@@ -285,7 +285,7 @@ class _AdminHomePageState extends State<AdminHomePage> {
             ),
             TextButton(
               onPressed: () async {
-                final id = _idController.text.trim();
+                final id = idController.text.trim();
                 if (id.isEmpty) {
                   ScaffoldMessenger.of(context).showSnackBar(
                     const SnackBar(content: Text('Please enter an ID')),

@@ -7,6 +7,8 @@ import '../../widgets/animated_card.dart';
 import '../../widgets/education_illustration.dart';
 import '../../widgets/common_app_bar.dart';
 import '../../providers/auth_provider.dart';
+import '../../orphan_service.dart';
+import '../../donor_service.dart';
 
 class OrphanHomePage extends StatefulWidget {
   const OrphanHomePage({super.key});
@@ -17,6 +19,8 @@ class OrphanHomePage extends StatefulWidget {
 
 class _OrphanHomePageState extends State<OrphanHomePage>
     with SingleTickerProviderStateMixin {
+  final OrphanService _orphanService = OrphanService();
+  final DonorService _donorService = DonorService();
   List<Map<String, dynamic>> _requests = [];
   List<Map<String, dynamic>> _donations = [];
   bool _isLoading = true;
@@ -48,43 +52,24 @@ class _OrphanHomePageState extends State<OrphanHomePage>
 
   Future<void> _loadData() async {
     try {
-      // Placeholder: Fetch requests and donations
-      // In real implementation, call _orphanService.getRequests() and getDonations()
-      setState(() {
-        _requests = [
-          {
-            'id': 1,
-            'type': 'School Fees',
-            'status': 'Pending',
-            'amount': 5000,
-            'progress': 0.3,
-          },
-          {
-            'id': 2,
-            'type': 'Stationery',
-            'status': 'Approved',
-            'amount': 2000,
-            'progress': 0.8,
-          },
-        ];
-        _donations = [
-          {
-            'id': 1,
-            'donor': 'Anonymous',
-            'amount': 3000,
-            'status': 'Received',
-            'progress': 1.0,
-          },
-          {
-            'id': 2,
-            'donor': 'John Doe',
-            'amount': 1500,
-            'status': 'In Progress',
-            'progress': 0.6,
-          },
-        ];
-        _isLoading = false;
-      });
+      final authProvider = Provider.of<AuthProvider>(context, listen: false);
+      final userId = authProvider.userId;
+
+      if (userId != null) {
+        // Get orphan profile to find orphanId
+        final profile = await _orphanService.getOrphanProfile(userId);
+        final orphanId = profile['orphan']['_id'];
+
+        // Fetch requests and donations
+        final requests = await _orphanService.getRequestsByOrphan(orphanId);
+        final donations = await _donorService.getDonationHistory(orphanId);
+
+        setState(() {
+          _requests = List<Map<String, dynamic>>.from(requests);
+          _donations = List<Map<String, dynamic>>.from(donations);
+          _isLoading = false;
+        });
+      }
     } catch (e) {
       setState(() => _isLoading = false);
       ScaffoldMessenger.of(

@@ -6,10 +6,16 @@ export const signup = async (req, res) => {
   try {
     const { username, email, password, role, petName } = req.body;
 
-    // Check if user already exists
-    const existingUser = await User.findOne({ email });
-    if (existingUser) {
-      return res.status(400).json({ success: false, message: 'User already exists' });
+    // Check if user already exists by email
+    const existingUserByEmail = await User.findOne({ email });
+    if (existingUserByEmail) {
+      return res.status(400).json({ success: false, message: 'User with this email already exists' });
+    }
+
+    // Check if user already exists by username
+    const existingUserByUsername = await User.findOne({ username });
+    if (existingUserByUsername) {
+      return res.status(400).json({ success: false, message: 'User with this username already exists' });
     }
 
     // Hash password
@@ -21,21 +27,19 @@ export const signup = async (req, res) => {
       email,
       password: hashedPassword,
       role,
-      petName,
     });
 
+    console.log('Attempting to save new user:', { username, email, role });
     await newUser.save();
-
-    // Generate JWT
-    const token = jwt.sign({ id: newUser._id, role: newUser.role }, process.env.JWT_SECRET, { expiresIn: '1h' });
+    console.log('User saved successfully:', newUser._id);
 
     res.status(201).json({
       success: true,
-      message: 'User registered successfully',
-      token,
+      message: 'User registered successfully.',
       user: { id: newUser._id, username: newUser.username, email: newUser.email, role: newUser.role }
     });
   } catch (error) {
+    console.error('Error registering user:', error);
     res.status(500).json({ success: false, message: 'Error registering user', error: error.message });
   }
 };
@@ -85,3 +89,5 @@ export const login = async (req, res) => {
     res.status(500).json({ message: 'Error logging in', error: error.message });
   }
 };
+
+

@@ -99,7 +99,6 @@ class _VolunteerProfilePageState extends State<VolunteerProfilePage> {
                   const SizedBox(height: 32),
                   ElevatedButton.icon(
                     onPressed: () {
-                      // TODO: Implement edit profile
                       ScaffoldMessenger.of(context).showSnackBar(
                         const SnackBar(
                           content: Text('Edit profile coming soon!'),

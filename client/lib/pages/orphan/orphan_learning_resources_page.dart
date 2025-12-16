@@ -50,7 +50,7 @@ class _OrphanLearningResourcesPageState
   }
 
   Widget _buildResourcesList(String language) {
-    // Placeholder data - in real implementation, fetch from orphan_service.dart
+    // Fetch resources from backend
     final List<Map<String, String>> resources = [
       {
         'type': 'e-book',

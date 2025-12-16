@@ -1,20 +1,13 @@
 // Import required Dart and Flutter packages
 import 'dart:convert';
-import 'package:http/http.dart'
-    as http; // Used for HTTP requests (GET, POST, PUT, DELETE)
-import 'package:http_parser/http_parser.dart'; // Used for setting file content types
-import 'package:file_picker/file_picker.dart'; // Used for selecting files (like PDFs, docs)
-import 'package:image_picker/image_picker.dart'; // Used for selecting images (camera/gallery)
+import 'package:http/http.dart' as http;
+import 'package:http_parser/http_parser.dart';
+import 'package:file_picker/file_picker.dart';
+import 'package:image_picker/image_picker.dart';
 
-// ✅ DonorService handles all API calls related to donors
 class DonorService {
-  // Base URL of your Node.js backend API
-  // Make sure to replace localhost with your PC IP when running on a real device
   final String baseUrl = 'http://localhost:5000/api/donors';
 
-  // ─────────────────────────────
-  // 1️⃣ Register a new donor
-  // ─────────────────────────────
   Future<Map<String, dynamic>> registerDonor({
     required String userId,
     required String name,

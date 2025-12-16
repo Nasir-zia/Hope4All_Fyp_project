@@ -1,6 +1,9 @@
 import 'package:flutter/material.dart';
 import 'package:go_router/go_router.dart';
+import 'package:provider/provider.dart';
 import '../../widgets/common_app_bar.dart';
+import '../../providers/auth_provider.dart';
+import '../../orphan_service.dart';
 
 class OrphanSubmitRequestPage extends StatefulWidget {
   const OrphanSubmitRequestPage({super.key});
@@ -11,6 +14,7 @@ class OrphanSubmitRequestPage extends StatefulWidget {
 }
 
 class _OrphanSubmitRequestPageState extends State<OrphanSubmitRequestPage> {
+  final OrphanService _orphanService = OrphanService();
   final _formKey = GlobalKey<FormState>();
   String _selectedType = 'School Fees';
   final TextEditingController _amountController = TextEditingController();
@@ -38,19 +42,40 @@ class _OrphanSubmitRequestPageState extends State<OrphanSubmitRequestPage> {
 
     setState(() => _isSubmitting = true);
     try {
-      // Placeholder: Submit request
-      // In real implementation, call _orphanService.submitRequest(...)
-      await Future.delayed(const Duration(seconds: 1)); // Simulate API call
-      ScaffoldMessenger.of(context).showSnackBar(
-        const SnackBar(content: Text('Request submitted successfully!')),
-      );
-      context.go('/orphan-home');
+      final authProvider = Provider.of<AuthProvider>(context, listen: false);
+      final userId = authProvider.userId;
+
+      if (userId != null) {
+        // Get orphan profile to find orphanId and orphanageId
+        final profile = await _orphanService.getOrphanProfile(userId);
+        if (!mounted) return;
+        final orphanId = profile['orphan']['_id'];
+        final orphanageId = profile['orphan']['orphanageId'];
+
+        await _orphanService.submitRequest(
+          orphanId: orphanId,
+          orphanageId: orphanageId,
+          type: _selectedType,
+          amount: int.parse(_amountController.text),
+          description: _descriptionController.text,
+          school: '', // Add school field to form if needed
+        );
+        if (!mounted) return;
+
+        ScaffoldMessenger.of(context).showSnackBar(
+          const SnackBar(content: Text('Request submitted successfully!')),
+        );
+        context.go('/orphan-home');
+      }
     } catch (e) {
+      if (!mounted) return;
       ScaffoldMessenger.of(
         context,
       ).showSnackBar(SnackBar(content: Text('Error submitting request: $e')));
     } finally {
-      setState(() => _isSubmitting = false);
+      if (mounted) {
+        setState(() => _isSubmitting = false);
+      }
     }
   }
 

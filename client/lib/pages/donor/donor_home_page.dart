@@ -18,7 +18,6 @@ class _DonorHomePageState extends State<DonorHomePage> {
   final DonorService _donorService = DonorService();
   List<dynamic> _donors = [];
   bool _isLoading = false;
-  Map<String, dynamic>? _currentUserProfile;
 
   // Form fields for adding/editing donor
   final _formKey = GlobalKey<FormState>();
@@ -46,7 +45,6 @@ class _DonorHomePageState extends State<DonorHomePage> {
     super.initState();
     _loadDonors();
     _loadPreferenceOptions();
-    _loadCurrentUserProfile();
   }
 
   @override
@@ -79,9 +77,13 @@ class _DonorHomePageState extends State<DonorHomePage> {
       final options = await _donorService.getPreferenceOptions();
       if (mounted) {
         setState(() {
-          _causeTypes = List<String>.from(options['options']['causeTypes']);
-          _schoolLevels = List<String>.from(options['options']['schoolLevels']);
-          _areas = List<String>.from(options['options']['areas']);
+          _causeTypes = List<String>.from(
+            options['options']?['causeTypes'] ?? [],
+          );
+          _schoolLevels = List<String>.from(
+            options['options']?['schoolLevels'] ?? [],
+          );
+          _areas = List<String>.from(options['options']?['areas'] ?? []);
         });
       }
     } catch (e) {
@@ -89,19 +91,6 @@ class _DonorHomePageState extends State<DonorHomePage> {
         ScaffoldMessenger.of(context).showSnackBar(
           SnackBar(content: Text('Error loading preference options: $e')),
         );
-      }
-    }
-  }
-
-  Future<void> _loadCurrentUserProfile() async {
-    final authProvider = Provider.of<AuthProvider>(context, listen: false);
-    final userId = authProvider.userId;
-    if (userId != null) {
-      try {
-        final profile = await _donorService.getDonorProfile(userId);
-        if (mounted) setState(() => _currentUserProfile = profile['donor']);
-      } catch (e) {
-        // Handle error
       }
     }
   }
@@ -140,12 +129,12 @@ class _DonorHomePageState extends State<DonorHomePage> {
       _phoneController.text = donor['phone'] ?? '';
       _cityController.text = donor['city'] ?? '';
       _selectedCauseTypes = List<String>.from(
-        donor['preferences']['causeType'] ?? [],
+        donor['preferences']?['causeType'] ?? [],
       );
       _selectedSchoolLevels = List<String>.from(
-        donor['preferences']['schoolLevel'] ?? [],
+        donor['preferences']?['schoolLevel'] ?? [],
       );
-      _selectedAreas = List<String>.from(donor['preferences']['area'] ?? []);
+      _selectedAreas = List<String>.from(donor['preferences']?['area'] ?? []);
     });
   }
 
