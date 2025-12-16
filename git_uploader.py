@@ -60,6 +60,26 @@ def main():
     if not run_git_command(commit_command, "Committing changes"):
         return False
     
+
+    # Pull remote changes first (in case there are new commits)
+    print("🔄 Checking for remote changes...")
+    pull_result = subprocess.run("git pull origin main", shell=True, capture_output=True, text=True)
+    
+    if pull_result.returncode != 0:
+        print("⚠️  Remote has changes, attempting to merge...")
+        # Try pull with merge strategy
+        if not run_git_command("git pull origin main --no-edit", "Pulling remote changes with merge"):
+            print("❌ Failed to pull remote changes")
+            print("🔧 Manual resolution needed:")
+            print("   1. Check conflicts: git status")
+            print("   2. Resolve conflicts manually")
+            print("   3. Add resolved files: git add -A")
+            print("   4. Commit merge: git commit -m 'Merge remote changes'")
+            print("   5. Push: git push origin main")
+            return False
+    else:
+        print("✅ Remote is up-to-date or merged successfully")
+    
     # Push to remote
     if not run_git_command("git push origin main", "Pushing to GitHub"):
         print("\n🔐 If push failed due to authentication:")
