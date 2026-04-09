@@ -1,6 +1,0 @@
-PORT=5000
-MONGO_URI=mongodb+srv://Admin123:Admin123@hope4all.a8mk8y5.mongodb.net/?retryWrites=true&w=majority&appName=Hope4All
-CLOUDINARY_CLOUD_NAME=dyguf62zl
-CLOUDINARY_API_KEY=471142464469972
-CLOUDINARY_API_SECRET=nnSoeNc4klodFubhUsi0qPLg0i0JWT_SECRET=your_secure_jwt_secret_key_here
-JWT_SECRET=mynameisnasirzia

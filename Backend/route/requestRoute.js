@@ -1,6 +1,7 @@
 import express from "express";
 import multer from "multer";
-import { CloudinaryStorage } from "multer-storage-cloudinary";
+import pkg from 'multer-storage-cloudinary';
+const CloudinaryStorage = pkg; // v2.x style, no destructuring
 import cloudinary from "../Files/cloudinary.js";
 import { authenticateToken, requireAdmin } from "../middleware/authMiddleware.js";
 import Request from "../model/request_model.js";
@@ -13,13 +14,11 @@ import {
 
 const router = express.Router();
 
-// Cloudinary storage for request documents
-const storage = new CloudinaryStorage({
+// Cloudinary storage for request documents (v2.x)
+const storage = CloudinaryStorage({
   cloudinary,
-  params: {
-    folder: "request_documents",
-    resource_type: "auto",
-  },
+  folder: "request_documents", // direct property, no params object
+  resource_type: "auto",
 });
 
 const upload = multer({ storage });

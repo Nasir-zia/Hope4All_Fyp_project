@@ -1,6 +1,5 @@
 import Request from '../model/request_model.js';
 import Orphan from '../model/orphan_model.js';
-import OrphanAge from '../model/orphan_age.js';
 import Notification from '../model/notification_model.js';
 
 export const submitRequest = async (req, res) => {

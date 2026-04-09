@@ -223,8 +223,8 @@ export const getReportsData = async (req, res) => {
       keyMetrics: {
         totalDonations: totalDonations[0]?.total || 0,
         activeUsers,
-        successRate: Math.round(successRate * 100) / 100, // Round to 2 decimal places
-        avgResponseTime: Math.round(avgResponseTime * 100) / 100 // Round to 2 decimal places
+        successRate: Math.round(successRate * 100) / 100, 
+        avgResponseTime: Math.round(avgResponseTime * 100) / 100
       }
     });
   } catch (error) {

@@ -1,6 +1,8 @@
+
 import express from "express";
 import {
   registerDonor,
+  registerDonorWithFiles,
   getDonors,
   getDonorProfile,
   updateDonorProfile,
@@ -19,8 +21,15 @@ import upload from "../middleware/uploadMiddleware.js";
 
 const router = express.Router();
 
+
 // Route to register a donor
 router.post("/register", registerDonor);
+
+// Route to register a donor with file uploads
+router.post("/register-with-files", upload.fields([
+  { name: 'profilePic', maxCount: 1 },
+  { name: 'documents', maxCount: 10 }
+]), registerDonorWithFiles);
 
 // Route to get all donors
 router.get("/", getDonors);
@@ -58,8 +67,12 @@ router.put("/notifications/:notificationId/read", markNotificationRead);
 // Route to get matched orphans
 router.get("/matched-orphans/:id", getMatchedOrphans);
 
+
 // Route to get preference options
 router.get("/preferences/options", getPreferenceOptions);
+
+// Route to get donor by user ID (for checking profile existence)
+router.get("/user/:userId", getDonorProfile);
 
 // Route to delete donor
 router.delete("/:id", deleteDonor);

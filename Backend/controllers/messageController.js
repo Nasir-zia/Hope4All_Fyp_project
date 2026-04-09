@@ -6,7 +6,7 @@ export const sendMessage = async (req, res) => {
     const { receiverId, message, type } = req.body;
 
     const newMessage = new Message({
-      senderId: req.user.id, // Assuming auth middleware sets req.user
+      senderId: req.user.id, 
       receiverId,
       message,
       type: type || 'text',

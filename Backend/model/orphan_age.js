@@ -45,11 +45,11 @@ const orphanageSchema = new mongoose.Schema({
   },
   documents: {
     registrationCert: {
-      type: String, // URL from Cloudinary
+      type: String,
       required: false,
     },
     buildingImages: [{
-      type: String, // URLs from Cloudinary
+      type: String,
       required: false,
     }],
   },

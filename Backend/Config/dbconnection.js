@@ -1,46 +1,69 @@
-import mongoose from 'mongoose';
+import mongoose from "mongoose";
+
+
+const MAX_RETRIES = 5;
+const RETRY_DELAY = 5000;
 
 const dbConnection = async () => {
-  const MAX_RETRIES = 5; 
-  let attempt = 0;
+  const mongoURI = process.env.MONGO_URI;
 
-  const connectWithRetry = async () => {
+  if (!mongoURI) {
+    console.error(" MONGO_URI is not defined");
+    process.exit(1);
+  }
+
+  // Log masked URI for debugging
+  const maskedURI = mongoURI.replace(/^(mongodb[^\/]+:\/\/)([^:]+:)[^@]+@/, `$1***:***@`);
+  console.log("Attempting connection to (masked):", maskedURI);
+
+  let attempts = 0;
+
+  const connect = async () => {
     try {
-      await mongoose.connect(process.env.MONGO_URI, {
-        useNewUrlParser: true,
-        useUnifiedTopology: true,
+      attempts++;
+
+      console.log(` Connecting to MongoDB (Attempt ${attempts}/${MAX_RETRIES})...`);
+
+      await mongoose.connect(mongoURI, {
+        maxPoolSize: 10,
+        serverSelectionTimeoutMS: 30000,
+        socketTimeoutMS: 45000,
+        retryWrites: true,
+        w: 'majority',
       });
 
-      console.log('MongoDB connected successfully');
-    } catch (error) {
-      attempt++;
-      console.error(` MongoDB connection failed (Attempt ${attempt}/${MAX_RETRIES}):`, error.message);
+      console.log(" MongoDB connected");
+      console.log(" Database:", mongoose.connection.name);
 
-      if (attempt < MAX_RETRIES) {
-        console.log(' Retrying in 5 seconds...');
-        setTimeout(connectWithRetry, 5000); // retry after 5 seconds
-      } else {
-        console.error(' Maximum connection attempts reached. Exiting application.');
+    } catch (error) {
+    console.error(" MongoDB connection failed:", error.message);
+    console.error("Full error:", error);
+
+      if (attempts >= MAX_RETRIES) {
+        console.error(" Max retries reached. Exiting app.");
         process.exit(1);
       }
+
+      console.log(` Retrying in ${RETRY_DELAY / 1000}s...`);
+      setTimeout(connect, RETRY_DELAY);
     }
   };
 
-  mongoose.connection.on('disconnected', () => {
-    console.warn(' MongoDB disconnected! Trying to reconnect...');
-    connectWithRetry();
+  // Connection events (minimal & useful)
+  mongoose.connection.on("connected", () => {
+    console.log(" Mongoose connected");
   });
 
-  mongoose.connection.on('connected', () => {
-    console.log(' Mongoose connected to DB');
+  mongoose.connection.on("disconnected", () => {
+    console.warn("MongoDB disconnected. Reconnecting...");
+    connect();
   });
 
-  mongoose.connection.on('error', (err) => {
-    console.error(' Mongoose connection error:', err.message);
+  mongoose.connection.on("error", (err) => {
+    console.error(" Mongoose error:", err.message);
   });
 
-  // Initial connection
-  connectWithRetry();
+  await connect();
 };
 
 export default dbConnection;

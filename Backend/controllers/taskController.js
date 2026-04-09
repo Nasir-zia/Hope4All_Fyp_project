@@ -15,7 +15,7 @@ export const createTask = async (req, res) => {
       orphanageId,
       date,
       priority,
-      assignedBy: req.user.id, // Assuming auth middleware sets req.user
+      assignedBy: req.user.id, 
       notes,
     });
 

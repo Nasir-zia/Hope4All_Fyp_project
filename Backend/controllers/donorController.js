@@ -4,6 +4,7 @@ import Notification from '../model/notification_model.js';
 import Request from '../model/request_model.js';
 import Orphan from '../model/orphan_model.js';
 
+
 export const registerDonor = async (req, res) => {
   try {
     const { userId, name, email, phone, city } = req.body;
@@ -23,6 +24,45 @@ export const registerDonor = async (req, res) => {
   }
 };
 
+// New registration endpoint with file uploads
+export const registerDonorWithFiles = async (req, res) => {
+  try {
+    const { userId, name, email, phone, city } = req.body;
+
+    // Create base donor object
+    const donorData = {
+      userId,
+      name,
+      email,
+      phone,
+      city,
+    };
+
+    // Handle profile picture upload
+    if (req.files && req.files.profilePic && req.files.profilePic[0]) {
+      donorData.profilePic = req.files.profilePic[0].path;
+    }
+
+    // Handle document uploads
+    if (req.files && req.files.documents) {
+      const documents = req.files.documents.map(file => ({
+        name: file.originalname,
+        url: file.path,
+        type: file.mimetype,
+        uploadedAt: new Date()
+      }));
+      donorData.documents = documents;
+    }
+
+    const newDonor = new Donor(donorData);
+    await newDonor.save();
+    
+    res.status(201).json({ message: 'Donor registered successfully', donor: newDonor });
+  } catch (error) {
+    res.status(500).json({ message: 'Error registering donor with files', error: error.message });
+  }
+};
+
 export const getDonors = async (req, res) => {
   try {
     const donors = await Donor.find();
@@ -32,9 +72,24 @@ export const getDonors = async (req, res) => {
   }
 };
 
+
 export const getDonorProfile = async (req, res) => {
   try {
-    const donor = await Donor.findOne({ userId: req.params.id });
+    // Handle both userId and donorId parameters
+    const { id } = req.params;
+    let donor;
+    
+    // Check if it's a userId (string) or donorId (MongoDB ObjectId)
+    if (id.match(/^[0-9a-fA-F]{24}$/)) {
+      // It's a valid ObjectId, try as donorId first
+      donor = await Donor.findById(id);
+    }
+    
+    if (!donor) {
+      // Try as userId
+      donor = await Donor.findOne({ userId: id });
+    }
+    
     if (!donor) {
       return res.status(404).json({ message: 'Donor not found' });
     }
@@ -114,9 +169,6 @@ export const makeDonation = async (req, res) => {
       $inc: { totalDonated: units, childrenHelped: 1 }
     });
 
-    // Update request status if fully fulfilled (simplified logic)
-    // In a real app, you'd track total donated units vs requested units
-    // For now, just mark as fulfilled if donation made
     await Request.findByIdAndUpdate(requestId, { status: 'fulfilled' });
 
     // Create notification
@@ -142,9 +194,29 @@ export const makeDonation = async (req, res) => {
   }
 };
 
+
 export const getDonationHistory = async (req, res) => {
   try {
-    const donations = await Donation.find({ donorId: req.params.id })
+    // Handle both userId and donorId parameters
+    const { id } = req.params;
+    let donor;
+    
+    // Check if it's a userId (string) or donorId (MongoDB ObjectId)
+    if (id.match(/^[0-9a-fA-F]{24}$/)) {
+      // It's a valid ObjectId, try as donorId first
+      donor = await Donor.findById(id);
+    }
+    
+    if (!donor) {
+      // Try as userId
+      donor = await Donor.findOne({ userId: id });
+    }
+    
+    if (!donor) {
+      return res.status(404).json({ message: 'Donor not found' });
+    }
+
+    const donations = await Donation.find({ donorId: donor._id })
       .populate('requestId', 'type unitType description school')
       .populate('recipientId', 'name age gender location profilePic')
       .sort({ createdAt: -1 });
@@ -219,9 +291,29 @@ export const deleteDonation = async (req, res) => {
   }
 };
 
+
 export const getNotifications = async (req, res) => {
   try {
-    const notifications = await Notification.find({ donorId: req.params.id })
+    // Handle both userId and donorId parameters
+    const { id } = req.params;
+    let donor;
+    
+    // Check if it's a userId (string) or donorId (MongoDB ObjectId)
+    if (id.match(/^[0-9a-fA-F]{24}$/)) {
+      // It's a valid ObjectId, try as donorId first
+      donor = await Donor.findById(id);
+    }
+    
+    if (!donor) {
+      // Try as userId
+      donor = await Donor.findOne({ userId: id });
+    }
+    
+    if (!donor) {
+      return res.status(404).json({ message: 'Donor not found' });
+    }
+
+    const notifications = await Notification.find({ donorId: donor._id })
       .sort({ createdAt: -1 });
 
     res.status(200).json({ notifications });
@@ -239,10 +331,25 @@ export const markNotificationRead = async (req, res) => {
   }
 };
 
+
 // Get matched orphans based on donor preferences
 export const getMatchedOrphans = async (req, res) => {
   try {
-    const donor = await Donor.findById(req.params.id);
+    // Handle both userId and donorId parameters
+    const { id } = req.params;
+    let donor;
+    
+    // Check if it's a userId (string) or donorId (MongoDB ObjectId)
+    if (id.match(/^[0-9a-fA-F]{24}$/)) {
+      // It's a valid ObjectId, try as donorId first
+      donor = await Donor.findById(id);
+    }
+    
+    if (!donor) {
+      // Try as userId
+      donor = await Donor.findOne({ userId: id });
+    }
+    
     if (!donor) {
       return res.status(404).json({ message: 'Donor not found' });
     }

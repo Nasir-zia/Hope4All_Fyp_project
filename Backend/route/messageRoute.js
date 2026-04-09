@@ -8,7 +8,7 @@ import {
 
 const router = express.Router();
 
-// Send message
+// Send message (HTTP fallback, prefer Socket.io)
 router.post("/", sendMessage);
 
 // Get messages with specific user
@@ -21,3 +21,4 @@ router.get("/", getConversations);
 router.put("/:otherUserId/read", markMessagesRead);
 
 export default router;
+
