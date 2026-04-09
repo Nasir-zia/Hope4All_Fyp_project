@@ -2,7 +2,15 @@ import Orphan from '../model/orphan_model.js';
 
 export const registerOrphan = async (req, res) => {
   try {
-    const { userId, name, age, gender, location } = req.body;
+    const { userId } = req.body;
+
+    // Check if profile already exists
+    const existingOrphan = await Orphan.findOne({ userId });
+    if (existingOrphan) {
+      return res.status(400).json({ message: 'Orphan profile already exists' });
+    }
+
+    const { name, age, gender, location } = req.body;
     const profilePic = req.files && req.files.profilePic && req.files.profilePic.length > 0 ? req.files.profilePic[0].path : '';
     const supportingDocs = req.files && req.files.supportingDocs && req.files.supportingDocs.length > 0 ? req.files.supportingDocs[0].path : '';
 
