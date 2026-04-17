@@ -1,15 +1,16 @@
 import React, { createContext, useContext, useState, useEffect } from 'react';
-import AsyncStorage from '@react-native-async-storage/async-storage';
-import { View, ActivityIndicator } from 'react-native';
-
+import * as SecureStore from 'expo-secure-store';
 interface User {
   id: string;
   token: string;
   role: string;
+  username?: string;
+  email?: string;
 }
 
 interface AuthContextType {
   user: User | null;
+  loading: boolean;
   login: (token: string, userData: Partial<User>) => Promise<void>;
   logout: () => Promise<void>;
 }
@@ -24,7 +25,7 @@ export const useAuth = () => {
   return context;
 };
 
-export const AuthProvider = ({ children }: { children: React.ReactNode }) => {
+export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children }) => {
   const [user, setUser] = useState<User | null>(null);
   const [loading, setLoading] = useState(true);
 
@@ -34,8 +35,9 @@ export const AuthProvider = ({ children }: { children: React.ReactNode }) => {
 
   const loadUser = async () => {
     try {
-      const token = await AsyncStorage.getItem('token');
-      const userData = await AsyncStorage.getItem('user');
+      const token = await SecureStore.getItemAsync('token');
+      const userData = await SecureStore.getItemAsync('user');
+
       if (token && userData) {
         setUser(JSON.parse(userData));
       }
@@ -47,29 +49,28 @@ export const AuthProvider = ({ children }: { children: React.ReactNode }) => {
   };
 
   const login = async (token: string, userData: Partial<User>) => {
-    const fullUser = { id: userData.id!, token, role: userData.role || 'orphan', ...userData };
+    const fullUser = {
+      id: userData.id!,
+      token,
+      role: userData.role || 'orphan',
+      ...userData,
+    };
+
     setUser(fullUser);
-    await AsyncStorage.setItem('token', token);
-    await AsyncStorage.setItem('user', JSON.stringify(fullUser));
+    await SecureStore.setItemAsync('token', token);
+    await SecureStore.setItemAsync('user', JSON.stringify(fullUser));
   };
 
   const logout = async () => {
     setUser(null);
-    await AsyncStorage.multiRemove(['token', 'user']);
+    await SecureStore.deleteItemAsync('token');
+    await SecureStore.deleteItemAsync('user');
   };
 
-  if (loading) {
-    return (
-      <View style={{ flex: 1, justifyContent: 'center', alignItems: 'center' }}>
-        <ActivityIndicator size="large" />
-      </View>
-    );
-  }
-
+  // ✅ IMPORTANT RETURN
   return (
-    <AuthContext.Provider value={{ user, login, logout }}>
+    <AuthContext.Provider value={{ user, loading, login, logout }}>
       {children}
     </AuthContext.Provider>
   );
 };
-

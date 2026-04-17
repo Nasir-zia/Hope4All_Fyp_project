@@ -1,6 +1,6 @@
 import React from "react";
+import { SafeAreaView } from "react-native-safe-area-context";
 import {
-  SafeAreaView,
   View,
   Text,
   StyleSheet,
@@ -11,11 +11,11 @@ import { router } from "expo-router";
 
 const Page: React.FC = () => {
   const handleLogin = () => {
-    router.push('/login');
+    router.push('/login' as any);
   };
 
   const handleSignup = () => {
-    router.push('/role');
+    router.push('/signup' as any);
   };
 
   const handleImageError = () => {

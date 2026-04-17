@@ -10,7 +10,7 @@ export const registerOrphan = async (req, res) => {
       return res.status(400).json({ message: 'Orphan profile already exists' });
     }
 
-    const { name, age, gender, location } = req.body;
+    const { name, age, gender, location, orphanageId } = req.body;
     const profilePic = req.files && req.files.profilePic && req.files.profilePic.length > 0 ? req.files.profilePic[0].path : '';
     const supportingDocs = req.files && req.files.supportingDocs && req.files.supportingDocs.length > 0 ? req.files.supportingDocs[0].path : '';
 
@@ -20,6 +20,7 @@ export const registerOrphan = async (req, res) => {
       age,
       gender,
       location,
+      orphanageId,
       profilePic,
       supportingDocs,
     });

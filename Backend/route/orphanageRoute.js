@@ -1,5 +1,5 @@
 import express from "express";
-import { createOrphanAge } from "../controllers/orphan_agecontroller.js";
+import { createOrphanAge, getOrphanages } from "../controllers/orphan_agecontroller.js";
 import upload from "../middleware/uploadMiddleware.js";
 
 const router = express.Router();

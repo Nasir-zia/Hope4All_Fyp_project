@@ -1,4 +1,7 @@
-import React, { useState } from "react";
+import React, { useState, useEffect } from "react";
+import { useAuth } from "@/hooks/useAuth";
+import { useTempSignup } from "@/contexts/TempSignupContext";
+import { signupApi } from "@/constants/api";
 import {
   View,
   Text,
@@ -9,9 +12,22 @@ import {
 import { Ionicons, FontAwesome5 } from "@expo/vector-icons";
 import { router } from "expo-router";
 import * as Haptics from 'expo-haptics';
+import BackButton from "./components/BackButton";
 
 export default function RoleScreen() {
+  const { user, login, logout } = useAuth();
+  const { tempData, setTempData } = useTempSignup();
   const [selected, setSelected] = useState("orphan");
+  const [loading, setLoading] = useState(false);
+
+  useEffect(() => {
+    if (tempData) {
+      // Signup flow - temp data present
+    }
+    if (user?.role && !tempData) {
+      setSelected(user.role);
+    }
+  }, [user, tempData]);
 
   interface CardProps {
     type: string;
@@ -57,25 +73,62 @@ export default function RoleScreen() {
     );
   };
 
-  const handleContinue = () => {
-    // Navigate based on selected role (routes to be created)
-    switch (selected) {
-      case 'orphan':
-        router.push('/orphan');
-        break;
-      case 'donor':
-        router.push('/donor');
-        break;
-      case 'volunteer':
-        router.push('/volunteer');
-        break;
-      default:
-        Alert.alert('Error', 'Please select a role');
+  const handleContinue = async () => {
+    if (!selected) {
+      Alert.alert('Error', 'Please select a role');
+      return;
+    }
+
+    if (tempData) {
+      // Complete signup
+      setLoading(true);
+      try {
+        const response = await signupApi({
+          username: tempData.username,
+          email: tempData.email,
+          password: tempData.password,
+          role: selected,
+        });
+        await login(response.token!, response.user!);
+        setTempData(null);
+        Alert.alert('Success', `Welcome ${selected}!`);
+      } catch (error: any) {
+        Alert.alert('Error', error.message || 'Signup failed');
+      } finally {
+        setLoading(false);
+      }
+    } else {
+      // Post-login role selection
+      switch (selected) {
+        case 'orphan':
+          router.push('/orphan');
+          break;
+        case 'donor':
+          router.push('/donor');
+          break;
+        case 'volunteer':
+          router.push('/volunteer');
+          break;
+        default:
+          Alert.alert('Error', 'Please select a role');
+      }
     }
   };
 
   return (
     <View style={styles.container}>
+      <TouchableOpacity 
+        style={styles.logoutButton} 
+        onPress={() => {
+          Alert.alert('Logout', 'Are you sure you want to log out?', [
+            { text: 'Cancel', style: 'cancel' },
+            { text: 'Logout', style: 'destructive', onPress: logout }
+          ]);
+        }}
+      >
+        <Ionicons name="log-out-outline" size={24} color="#333" />
+      </TouchableOpacity>
+      <BackButton />
       <Text style={styles.heading}>Choose Your Role</Text>
       <Text style={styles.sub}>
         Select how you would like to Help in Hope4All
@@ -102,18 +155,20 @@ export default function RoleScreen() {
         title="Volunteer"
         desc="Help distribute educational materials and support"
         color="#33cc99"
-        icon={<FontAwesome5 name="hands-helping" size={20} color="#33cc99" />}
+        icon={<FontAwesome5 name="hand-holding-heart" size={20} color="#33cc99" />}
       />
 
       {/* Continue Button */}
       <TouchableOpacity 
         style={[
           styles.continueBtn,
-          { backgroundColor: selected === 'orphan' ? '#4da6ff' : selected === 'donor' ? '#ff66b2' : '#33cc99' }
+          { backgroundColor: selected === 'orphan' ? '#4da6ff' : selected === 'donor' ? '#ff66b2' : '#33cc99' },
+          loading && { opacity: 0.6 }
         ]}
         onPress={handleContinue}
+        disabled={loading}
       >
-        <Text style={styles.continueText}>Continue as {selected.charAt(0).toUpperCase() + selected.slice(1)}</Text>
+        <Text style={styles.continueText}>{loading ? 'Loading...' : `Continue as ${selected.charAt(0).toUpperCase() + selected.slice(1)}`}</Text>
       </TouchableOpacity>
     </View>
   );
@@ -124,6 +179,20 @@ const styles = StyleSheet.create({
     flex: 1,
     padding: 20,
     backgroundColor: "#f5f7fa",
+  },
+  logoutButton: {
+    position: 'absolute',
+    right: 20,
+    top: 50,
+    padding: 10,
+    backgroundColor: '#fff',
+    borderRadius: 12,
+    elevation: 3,
+    shadowColor: '#000',
+    shadowOffset: { width: 0, height: 2 },
+    shadowOpacity: 0.1,
+    shadowRadius: 4,
+    zIndex: 20,
   },
 
   heading: {

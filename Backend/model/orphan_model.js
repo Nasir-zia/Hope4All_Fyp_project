@@ -9,6 +9,7 @@ const orphanSchema = new mongoose.Schema({
   location: { type: String, required: true },
   profilePic: { type: String, required: true },
   supportingDocs: { type: String, required: true },
+  orphanageId: { type: mongoose.Schema.Types.ObjectId, ref: "OrphanAge", required: false },
   createdAt: { type: Date, default: Date.now },
 });
 

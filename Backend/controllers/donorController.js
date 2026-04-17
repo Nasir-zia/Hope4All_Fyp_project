@@ -339,14 +339,11 @@ export const getMatchedOrphans = async (req, res) => {
     const { id } = req.params;
     let donor;
     
-    // Check if it's a userId (string) or donorId (MongoDB ObjectId)
     if (id.match(/^[0-9a-fA-F]{24}$/)) {
-      // It's a valid ObjectId, try as donorId first
       donor = await Donor.findById(id);
     }
     
     if (!donor) {
-      // Try as userId
       donor = await Donor.findOne({ userId: id });
     }
     
@@ -354,28 +351,26 @@ export const getMatchedOrphans = async (req, res) => {
       return res.status(404).json({ message: 'Donor not found' });
     }
 
-    // Build match criteria based on donor preferences
+    // Determine if we should apply strict matching
+    const hasAreaPref = donor.preferences.area && donor.preferences.area.length > 0;
+    const hasLevelPref = donor.preferences.schoolLevel && donor.preferences.schoolLevel.length > 0;
+    const hasCausePref = donor.preferences.causeType && donor.preferences.causeType.length > 0;
+
     let matchCriteria = {};
 
-    // Area preference matches orphan location
-    if (donor.preferences.area && donor.preferences.area.length > 0) {
+    // 1. Filter by Location if preference exists
+    if (hasAreaPref) {
       matchCriteria.location = { $in: donor.preferences.area };
     }
 
-    // School level preference matches orphan age/class (simplified: age-based)
-    if (donor.preferences.schoolLevel && donor.preferences.schoolLevel.length > 0) {
+    // 2. Filter by School Level/Age if preference exists
+    if (hasLevelPref) {
       const ageRanges = [];
       donor.preferences.schoolLevel.forEach(level => {
         switch (level.toLowerCase()) {
-          case 'primary':
-            ageRanges.push({ $gte: 5, $lte: 12 });
-            break;
-          case 'secondary':
-            ageRanges.push({ $gte: 13, $lte: 18 });
-            break;
-          case 'higher':
-            ageRanges.push({ $gte: 19 });
-            break;
+          case 'primary': ageRanges.push({ $gte: 5, $lte: 12 }); break;
+          case 'secondary': ageRanges.push({ $gte: 13, $lte: 18 }); break;
+          case 'higher': ageRanges.push({ $gte: 19 }); break;
         }
       });
       if (ageRanges.length > 0) {
@@ -383,11 +378,11 @@ export const getMatchedOrphans = async (req, res) => {
       }
     }
 
-    // Find orphans matching criteria
+    // Find orphans matching base criteria (location + age)
     let orphans = await Orphan.find(matchCriteria);
 
-    // If causeType preference, filter orphans who have requests matching causeType
-    if (donor.preferences.causeType && donor.preferences.causeType.length > 0) {
+    // 3. Filter by Cause Type ONLY if explicitly requested
+    if (hasCausePref) {
       const causeTypeMap = {
         'education': ['school_fees', 'books', 'stationery'],
         'healthcare': ['medical'],
@@ -403,19 +398,23 @@ export const getMatchedOrphans = async (req, res) => {
       });
 
       if (matchingTypes.length > 0) {
-        const requests = await Request.find({
+        const activeRequests = await Request.find({
           type: { $in: matchingTypes },
           status: 'approved'
-        }).populate('orphanId');
+        }).select('orphanId');
 
-        const orphanIds = requests.map(req => req.orphanId._id.toString());
-        orphans = orphans.filter(orphan => orphanIds.includes(orphan._id.toString()));
+        const orphanWithRequests = activeRequests.map(r => r.orphanId.toString());
+        orphans = orphans.filter(o => orphanWithRequests.includes(o._id.toString()));
       }
     }
 
-    // Exclude already matched orphans
+    // 4. Exclude already matched orphans
     const matchedOrphanIds = donor.matchedOrphans.map(id => id.toString());
     orphans = orphans.filter(orphan => !matchedOrphanIds.includes(orphan._id.toString()));
+
+    // Fallback: If strict matching resulted in 0 orphans but there are orphans available, 
+    // maybe we return some relevant orphans regardless of minor preference mismatch? 
+    // For now, we stick to the more lenient base find above.
 
     res.status(200).json({ orphans });
   } catch (error) {

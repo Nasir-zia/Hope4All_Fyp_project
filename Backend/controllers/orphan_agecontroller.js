@@ -33,3 +33,12 @@ export const createOrphanAge = async (req, res) => {
     });
   }
 };
+
+export const getOrphanages = async (req, res) => {
+  try {
+    const orphanages = await OrphanAge.find({}, 'name location.city');
+    res.status(200).json({ success: true, data: orphanages });
+  } catch (error) {
+    res.status(500).json({ success: false, message: error.message });
+  }
+};
