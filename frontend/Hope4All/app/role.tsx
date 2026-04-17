@@ -109,6 +109,9 @@ export default function RoleScreen() {
         case 'volunteer':
           router.push('/volunteer');
           break;
+        case 'admin':
+          router.push('/admin');
+          break;
         default:
           Alert.alert('Error', 'Please select a role');
       }

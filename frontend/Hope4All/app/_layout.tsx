@@ -18,6 +18,7 @@ function RootLayoutNav() {
       <Stack.Screen name="orphan" options={{ headerShown: false }} />
       <Stack.Screen name="donor" options={{ headerShown: false }} />
       <Stack.Screen name="volunteer" options={{ headerShown: false }} />
+      <Stack.Screen name="admin" options={{ headerShown: false }} />
     </Stack>
   );
 }
@@ -40,6 +41,7 @@ function AuthRedirector({ children }: { children: React.ReactNode }) {
       if (user.role === 'orphan') redirectPath = '/orphan';
       else if (user.role === 'donor') redirectPath = '/donor';
       else if (user.role === 'volunteer') redirectPath = '/volunteer';
+      else if (user.role === 'admin') redirectPath = '/admin';
       
       router.replace(redirectPath as any);
     } else if (!user && isDashboardPage) {

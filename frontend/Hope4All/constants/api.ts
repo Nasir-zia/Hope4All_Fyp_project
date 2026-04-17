@@ -1,4 +1,5 @@
 const API_BASE_URL = 'http://192.168.1.3:5000/api';
+export const SOCKET_URL = 'http://192.168.1.3:5000';
 
 interface LoginCredentials {
   email: string;
@@ -346,6 +347,26 @@ export const registerOrphanProfile = async (formData: FormData) => {
   }
 };
 
+export const updateOrphanProfile = async (userId: string, formData: FormData) => {
+  try {
+    const response = await fetch(`${API_BASE_URL}/orphans/profile/${userId}`, {
+      method: 'PUT',
+      body: formData, // FormData handles the boundaries
+    });
+
+    let result: any;
+    try { result = await response.json(); } catch(e) {}
+
+    if (!response.ok) {
+      throw new Error(result?.message || `HTTP error! status: ${response.status}`);
+    }
+    return result.orphan;
+  } catch (error) {
+    console.error('Update Orphan Profile error:', error);
+    throw error;
+  }
+};
+
 export const fetchOrphanageOptions = async () => {
   try {
     const response = await fetch(`${API_BASE_URL}/orphanages/all`);
@@ -365,6 +386,35 @@ export const fetchOrphanProgress = async (orphanId: string) => {
     return data.progress || [];
   } catch (error) {
     console.error('Fetch progress error:', error);
+    throw error;
+  }
+};
+
+export const createProgressApi = async (formData: FormData) => {
+  try {
+    const response = await fetch(`${API_BASE_URL}/progress/add`, {
+      method: 'POST',
+      body: formData,
+    });
+    const result = await response.json();
+    if (!response.ok) throw new Error(result?.message || 'Error adding progress');
+    return result;
+  } catch (error) {
+    console.error('Create progress error:', error);
+    throw error;
+  }
+};
+
+export const deleteProgressApi = async (id: string) => {
+  try {
+    const response = await fetch(`${API_BASE_URL}/progress/${id}`, {
+      method: 'DELETE',
+    });
+    const result = await response.json();
+    if (!response.ok) throw new Error(result?.message || 'Error deleting progress');
+    return result;
+  } catch (error) {
+    console.error('Delete progress error:', error);
     throw error;
   }
 };
@@ -404,6 +454,18 @@ export const fetchOrphanRequests = async (orphanId: string) => {
   }
 };
 
+export const fetchOrphanAidFeed = async (orphanId: string) => {
+  try {
+    const response = await fetch(`${API_BASE_URL}/donors/aid/${orphanId}`);
+    if (!response.ok) throw new Error('Error fetching aid feed');
+    const data = await response.json();
+    return data.donations || [];
+  } catch (error) {
+    console.error('Fetch aid feed error:', error);
+    throw error;
+  }
+};
+
 // --- Volunteer & Task API Endpoints ---
 
 export const fetchVolunteerTasks = async (volunteerId: string) => {
@@ -438,6 +500,110 @@ export const updateTaskStatusApi = async (taskId: string, status: string, notes?
     return await response.json();
   } catch (error) {
     console.error('Update task status error:', error);
+    throw error;
+  }
+};
+
+// --- Admin API Endpoints ---
+
+export const fetchAdminStats = async () => {
+  try {
+    const response = await fetch(`${API_BASE_URL}/admin/stats`);
+    if (!response.ok) throw new Error('Error fetching admin stats');
+    const data = await response.json();
+    return data;
+  } catch (error) {
+    console.error('Fetch admin stats error:', error);
+    throw error;
+  }
+};
+
+export const fetchAllRequests = async () => {
+  try {
+    const response = await fetch(`${API_BASE_URL}/requests`);
+    if (!response.ok) throw new Error('Error fetching requests');
+    const data = await response.json();
+    return data.requests || [];
+  } catch (error) {
+    console.error('Fetch all requests error:', error);
+    throw error;
+  }
+};
+
+export const updateRequestStatus = async (requestId: string, status: string, token: string) => {
+  try {
+    const response = await fetch(`${API_BASE_URL}/requests/${requestId}/status`, {
+      method: 'PUT',
+      headers: { 
+        'Content-Type': 'application/json',
+        'Authorization': `Bearer ${token}`
+      },
+      body: JSON.stringify({ status }),
+    });
+    const result = await response.json();
+    if (!response.ok) throw new Error(result?.message || 'Error updating request');
+    return result;
+  } catch (error) {
+    console.error('Update request status error:', error);
+    throw error;
+  }
+};
+
+export const fetchAllVolunteers = async () => {
+  try {
+    const response = await fetch(`${API_BASE_URL}/admin/volunteers`);
+    if (!response.ok) throw new Error('Error fetching volunteers');
+    const data = await response.json();
+    return data.volunteers || [];
+  } catch (error) {
+    console.error('Fetch volunteers error:', error);
+    throw error;
+  }
+};
+
+export const createTaskApi = async (taskData: any) => {
+  try {
+    const response = await fetch(`${API_BASE_URL}/tasks`, {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify(taskData),
+    });
+    const result = await response.json();
+    if (!response.ok) throw new Error(result?.message || 'Error creating task');
+    return result;
+  } catch (error) {
+    console.error('Create task error:', error);
+    throw error;
+  }
+};
+
+export const fetchAllUsers = async () => {
+  try {
+    const response = await fetch(`${API_BASE_URL}/admin/users`);
+    if (!response.ok) throw new Error('Error fetching users');
+    const data = await response.json();
+    return data.users || [];
+  } catch (error) {
+    console.error('Fetch users error:', error);
+    throw error;
+  }
+};
+
+export const updateUserStatusApi = async (userId: string, status: string, token: string) => {
+  try {
+    const response = await fetch(`${API_BASE_URL}/admin/users/${userId}/status`, {
+      method: 'PUT',
+      headers: { 
+        'Content-Type': 'application/json',
+        'Authorization': `Bearer ${token}`
+      },
+      body: JSON.stringify({ status }),
+    });
+    const result = await response.json();
+    if (!response.ok) throw new Error(result?.message || 'Error updating user status');
+    return result;
+  } catch (error) {
+    console.error('Update user status error:', error);
     throw error;
   }
 };

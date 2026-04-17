@@ -64,7 +64,6 @@ export default function DonorDashboard() {
 
       if (profile) {
         setDonorProfile(profile);
-        // Load additional data only if registered
         loadDashboardData(profile._id || user!.id);
       }
     } catch (error) {
@@ -140,7 +139,7 @@ export default function DonorDashboard() {
 
     setSaving(true);
     try {
-      const donationResponse = await makeDonation({
+      await makeDonation({
         donorId: donorProfile._id,
         requestId: selectedRequest._id,
         units: Number(units),

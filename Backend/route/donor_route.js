@@ -15,6 +15,7 @@ import {
   markNotificationRead,
   getMatchedOrphans,
   getPreferenceOptions,
+  getOrphanAid,
   deleteDonor
 } from "../controllers/donorController.js";
 import upload from "../middleware/uploadMiddleware.js";
@@ -70,6 +71,9 @@ router.get("/matched-orphans/:id", getMatchedOrphans);
 
 // Route to get preference options
 router.get("/preferences/options", getPreferenceOptions);
+
+// Route to get aid received by an orphan
+router.get("/aid/:id", getOrphanAid);
 
 // Route to get donor by user ID (for checking profile existence)
 router.get("/user/:userId", getDonorProfile);

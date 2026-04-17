@@ -1,4 +1,4 @@
-import React, { useState, useEffect, useRef } from 'react';
+import React, { useState, useEffect, useRef, useMemo } from 'react';
 import {
   View,
   Text,
@@ -10,15 +10,19 @@ import {
   Platform,
   ActivityIndicator,
   Image,
-  Alert
+  Alert,
+  Keyboard,
+  Dimensions
 } from 'react-native';
 import { Ionicons } from '@expo/vector-icons';
 import { router, useLocalSearchParams } from 'expo-router';
 import { useAuth } from '@/hooks/useAuth';
-import { fetchConversations, fetchMessages, sendMessageApi } from '@/constants/api';
+import { fetchConversations, fetchMessages, sendMessageApi, SOCKET_URL } from '@/constants/api';
 import io from 'socket.io-client';
+import { LinearGradient } from 'expo-linear-gradient';
+import Animated, { FadeInUp, FadeInRight, FadeInLeft, Layout } from 'react-native-reanimated';
 
-const SOCKET_URL = 'http://192.168.1.3:5000'; // Make sure this matches your API IP
+const { width } = Dimensions.get('window');
 
 export default function MessagesScreen() {
   const { user } = useAuth();
@@ -30,6 +34,9 @@ export default function MessagesScreen() {
   const [newMessage, setNewMessage] = useState('');
   const [loading, setLoading] = useState(true);
   const [sending, setSending] = useState(false);
+  const [searchQuery, setSearchQuery] = useState('');
+  const [showSearch, setShowSearch] = useState(false);
+  const [isConnected, setIsConnected] = useState(false);
   
   const socketRef = useRef<any>(null);
   const flatListRef = useRef<any>(null);
@@ -38,14 +45,15 @@ export default function MessagesScreen() {
     loadConversations();
     setupSocket();
     
-    // If opened with a specific user (e.g. from Matched Orphans)
     if (params.userId && params.username) {
       setSelectedUser({ _id: params.userId, username: params.username });
       loadMessages(params.userId as string);
     }
 
     return () => {
-      if (socketRef.current) socketRef.current.disconnect();
+      if (socketRef.current) {
+        socketRef.current.disconnect();
+      }
     };
   }, []);
 
@@ -54,23 +62,20 @@ export default function MessagesScreen() {
     socketRef.current = socket;
 
     socket.on('connect', () => {
-      // In a real app, you'd send a token here
+      setIsConnected(true);
       socket.emit('join-user', user?.token); 
     });
 
-    socket.on('new-message', (message: any) => {
-      // If the message is from the user we are currently chatting with
-      if (selectedUser && (message.senderId._id === selectedUser._id || message.senderId === selectedUser._id)) {
-        setMessages(prev => [...prev, message]);
-        // Scroll to bottom
-        setTimeout(() => flatListRef.current?.scrollToEnd(), 100);
-      }
-      // Reload conversations list to show last message
-      loadConversations();
+    socket.on('disconnect', () => {
+      setIsConnected(false);
     });
 
-    socket.on('error', (err: any) => {
-      console.error('Socket error:', err);
+    socket.on('new-message', (message: any) => {
+      if (selectedUser && (String(message.senderId._id || message.senderId) === String(selectedUser._id))) {
+        setMessages(prev => [...prev, message]);
+        setTimeout(() => flatListRef.current?.scrollToEnd({ animated: true }), 100);
+      }
+      loadConversations();
     });
   };
 
@@ -90,7 +95,7 @@ export default function MessagesScreen() {
       setLoading(true);
       const data = await fetchMessages(otherUserId);
       setMessages(data);
-      setTimeout(() => flatListRef.current?.scrollToEnd(), 200);
+      setTimeout(() => flatListRef.current?.scrollToEnd({ animated: false }), 200);
     } catch (err) {
       console.log('Error loading messages:', err);
     } finally {
@@ -106,68 +111,74 @@ export default function MessagesScreen() {
     setSending(true);
 
     try {
-      // Send via socket for real-time
-      socketRef.current.emit('send-message', {
-        receiverId: selectedUser._id,
-        message: messageContent
-      });
+      // 1. Send via API (Guaranteed persistence)
+      const sentMsg = await sendMessageApi(selectedUser._id, messageContent);
+      
+      // 2. Send via Socket for real-time (if connected)
+      if (socketRef.current?.connected) {
+        socketRef.current.emit('send-message', {
+          receiverId: selectedUser._id,
+          message: messageContent
+        });
+      }
 
-      // Also call API to ensure it's saved (though socketHandler also saves it)
-      // If your socket handler already saves, you might not need this call.
-      // Based on our socketHandler.js, it DOES save to DB.
-      
-      // Local optimistic update
-      const optimisticMsg = {
-        _id: Date.now().toString(),
-        senderId: { _id: user?.id, username: user?.username },
-        receiverId: selectedUser._id,
-        message: messageContent,
-        createdAt: new Date().toISOString()
-      };
-      setMessages(prev => [...prev, optimisticMsg]);
-      setTimeout(() => flatListRef.current?.scrollToEnd(), 100);
-      
+      // 3. Local state update
+      setMessages(prev => [...prev, sentMsg.message || sentMsg]);
+      setTimeout(() => flatListRef.current?.scrollToEnd({ animated: true }), 100);
+      loadConversations();
     } catch (err) {
-      Alert.alert('Error', 'Could not send message');
+      Alert.alert('Error', 'Could not send message. Please check your connection.');
     } finally {
       setSending(false);
     }
   };
 
-  const renderConversationItem = ({ item }: { item: any }) => (
-    <TouchableOpacity 
-      style={styles.convItem} 
-      onPress={() => {
-        setSelectedUser(item.user);
-        loadMessages(item.user._id);
-      }}
-    >
-      <View style={styles.avatarPlaceholder}>
-        <Text style={styles.avatarText}>{item.user.username?.charAt(0).toUpperCase()}</Text>
-      </View>
-      <View style={styles.convDetails}>
-        <View style={styles.convHeader}>
-          <Text style={styles.convName}>{item.user.username}</Text>
-          <Text style={styles.convTime}>
-            {item.lastMessage ? new Date(item.lastMessage.createdAt).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' }) : ''}
+  const filteredConversations = useMemo(() => {
+    if (!searchQuery.trim()) return conversations;
+    return conversations.filter(conv => 
+      conv.user.username?.toLowerCase().includes(searchQuery.toLowerCase())
+    );
+  }, [conversations, searchQuery]);
+
+  const renderConversationItem = ({ item, index }: { item: any; index: number }) => (
+    <Animated.View entering={FadeInRight.delay(index * 50)}>
+      <TouchableOpacity 
+        style={styles.convItem} 
+        onPress={() => {
+          setSelectedUser(item.user);
+          loadMessages(item.user._id);
+        }}
+        activeOpacity={0.7}
+      >
+        <View style={styles.avatarContainer}>
+          <LinearGradient colors={['#4da6ff', '#0077cc']} style={styles.avatarGradient}>
+            <Text style={styles.avatarText}>{item.user.username?.charAt(0).toUpperCase()}</Text>
+          </LinearGradient>
+          <View style={[styles.onlineBadge, { backgroundColor: isConnected ? '#22c55e' : '#94a3b8' }]} />
+        </View>
+        <View style={styles.convDetails}>
+          <View style={styles.convHeader}>
+            <Text style={styles.convName}>{item.user.username}</Text>
+            <Text style={styles.convTime}>
+              {item.lastMessage ? new Date(item.lastMessage.createdAt).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' }) : ''}
+            </Text>
+          </View>
+          <Text style={styles.lastMsg} numberOfLines={1}>
+            {item.lastMessage?.message || 'Tap to chat'}
           </Text>
         </View>
-        <Text style={styles.lastMsg} numberOfLines={1}>
-          {item.lastMessage?.message || 'Started a conversation'}
-        </Text>
-      </View>
-      {item.unreadCount > 0 && (
-        <View style={styles.unreadBadge}>
-          <Text style={styles.unreadText}>{item.unreadCount}</Text>
-        </View>
-      )}
-    </TouchableOpacity>
+        <Ionicons name="chevron-forward" size={18} color="#cbd5e1" />
+      </TouchableOpacity>
+    </Animated.View>
   );
 
   const renderMessageItem = ({ item }: { item: any }) => {
-    const isMine = (item.senderId._id || item.senderId) === user?.id;
+    const isMine = String(item.senderId._id || item.senderId) === String(user?.id);
     return (
-      <View style={[styles.msgWrapper, isMine ? styles.msgMine : styles.msgTheirs]}>
+      <Animated.View 
+        entering={isMine ? FadeInRight : FadeInLeft} 
+        style={[styles.msgWrapper, isMine ? styles.msgMine : styles.msgTheirs]}
+      >
         <View style={[styles.msgBubble, isMine ? styles.bubbleMine : styles.bubbleTheirs]}>
           <Text style={[styles.msgText, isMine ? styles.textMine : styles.textTheirs]}>
             {item.message}
@@ -176,20 +187,30 @@ export default function MessagesScreen() {
         <Text style={styles.msgTime}>
           {new Date(item.createdAt).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })}
         </Text>
-      </View>
+      </Animated.View>
     );
   };
 
   if (selectedUser) {
     return (
       <View style={styles.container}>
-        <View style={styles.header}>
-          <TouchableOpacity onPress={() => setSelectedUser(null)}>
-            <Ionicons name="arrow-back" size={24} color="#333" />
+        <LinearGradient colors={['#fff', '#f8fafc']} style={styles.chatHeader}>
+          <TouchableOpacity onPress={() => setSelectedUser(null)} style={styles.backBtn}>
+            <Ionicons name="chevron-back" size={28} color="#0077cc" />
           </TouchableOpacity>
-          <Text style={styles.headerTitle}>{selectedUser.username}</Text>
-          <View style={{ width: 24 }} />
-        </View>
+          <View style={styles.headerUser}>
+            <LinearGradient colors={['#4da6ff', '#0077cc']} style={styles.headerAvatar}>
+              <Text style={styles.headerAvatarText}>{selectedUser.username?.charAt(0).toUpperCase()}</Text>
+            </LinearGradient>
+            <View>
+              <Text style={styles.headerName}>{selectedUser.username}</Text>
+              <View style={styles.statusRow}>
+                <View style={[styles.statusDot, { backgroundColor: isConnected ? '#22c55e' : '#94a3b8' }]} />
+                <Text style={styles.statusText}>{isConnected ? 'Active now' : 'Offline'}</Text>
+              </View>
+            </View>
+          </View>
+        </LinearGradient>
 
         <FlatList
           ref={flatListRef}
@@ -197,28 +218,34 @@ export default function MessagesScreen() {
           renderItem={renderMessageItem}
           keyExtractor={item => item._id}
           contentContainerStyle={styles.messageList}
-          onContentSizeChange={() => flatListRef.current?.scrollToEnd()}
+          showsVerticalScrollIndicator={false}
+          onContentSizeChange={() => flatListRef.current?.scrollToEnd({ animated: false })}
         />
 
-        <KeyboardAvoidingView
-          behavior={Platform.OS === 'ios' ? 'padding' : undefined}
-          keyboardVerticalOffset={90}
-        >
-          <View style={styles.inputArea}>
-            <TextInput
-              style={styles.input}
-              placeholder="Type a message..."
-              value={newMessage}
-              onChangeText={setNewMessage}
-              multiline
-            />
-            <TouchableOpacity 
-              style={styles.sendBtn} 
-              onPress={handleSendMessage}
-              disabled={!newMessage.trim() || sending}
-            >
-              <Ionicons name="send" size={24} color={newMessage.trim() ? "#4da6ff" : "#ccc"} />
-            </TouchableOpacity>
+        <KeyboardAvoidingView behavior={Platform.OS === 'ios' ? 'padding' : undefined}>
+          <View style={styles.inputAreaWrapper}>
+            <View style={styles.inputArea}>
+              <TextInput
+                style={styles.input}
+                placeholder="Type a message..."
+                placeholderTextColor="#94a3b8"
+                value={newMessage}
+                onChangeText={setNewMessage}
+                multiline
+              />
+              <TouchableOpacity 
+                style={[styles.sendBtn, (!newMessage.trim() || sending) && styles.sendBtnDisabled]} 
+                onPress={handleSendMessage}
+                disabled={!newMessage.trim() || sending}
+              >
+                <LinearGradient
+                  colors={newMessage.trim() ? ['#4da6ff', '#0077cc'] : ['#e2e8f0', '#cbd5e1']}
+                  style={styles.sendGradient}
+                >
+                  {sending ? <ActivityIndicator size="small" color="#fff" /> : <Ionicons name="send" size={20} color="#fff" />}
+                </LinearGradient>
+              </TouchableOpacity>
+            </View>
           </View>
         </KeyboardAvoidingView>
       </View>
@@ -227,187 +254,105 @@ export default function MessagesScreen() {
 
   return (
     <View style={styles.container}>
-      <View style={styles.header}>
-        <TouchableOpacity onPress={() => router.back()}>
-          <Ionicons name="arrow-back" size={24} color="#333" />
+      <LinearGradient colors={['#0077cc', '#005fa3']} style={styles.listHeader}>
+        <TouchableOpacity onPress={() => router.back()} style={styles.headerIcon}>
+          <Ionicons name="arrow-back" size={24} color="#fff" />
         </TouchableOpacity>
-        <Text style={styles.headerTitle}>Messages</Text>
-        <TouchableOpacity onPress={loadConversations}>
-          <Ionicons name="refresh" size={24} color="#333" />
+        {showSearch ? (
+          <TextInput
+            autoFocus
+            style={styles.headerSearchInput}
+            placeholder="Search people..."
+            placeholderTextColor="rgba(255,255,255,0.7)"
+            value={searchQuery}
+            onChangeText={setSearchQuery}
+          />
+        ) : (
+          <Text style={styles.mainTitle}>Messages</Text>
+        )}
+        <TouchableOpacity onPress={() => setShowSearch(!showSearch)} style={styles.headerIcon}>
+          <Ionicons name={showSearch ? "close" : "search-outline"} size={24} color="#fff" />
         </TouchableOpacity>
-      </View>
+      </LinearGradient>
 
       {loading ? (
         <View style={styles.centered}>
-          <ActivityIndicator size="large" color="#4da6ff" />
+          <ActivityIndicator size="large" color="#0077cc" />
         </View>
       ) : (
-        <FlatList
-          data={conversations}
-          renderItem={renderConversationItem}
-          keyExtractor={item => item.user._id}
-          ListEmptyComponent={
-            <View style={styles.centered}>
-              <Ionicons name="chatbubbles-outline" size={64} color="#ccc" />
-              <Text style={styles.emptyText}>No conversations yet</Text>
-            </View>
-          }
-        />
+        <View style={styles.listContent}>
+          <FlatList
+            data={filteredConversations}
+            renderItem={renderConversationItem}
+            keyExtractor={item => item.user._id}
+            ListEmptyComponent={
+              <View style={styles.emptyContainer}>
+                <Ionicons name="chatbubbles-outline" size={80} color="#e2e8f0" />
+                <Text style={styles.emptyTitle}>No conversations found</Text>
+                <Text style={styles.emptySub}>Try searching for another donor or orphan.</Text>
+              </View>
+            }
+          />
+        </View>
       )}
     </View>
   );
 }
 
 const styles = StyleSheet.create({
-  container: {
-    flex: 1,
-    backgroundColor: '#f5f7fa',
-  },
-  header: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    justifyContent: 'space-between',
-    paddingTop: 60,
+  container: { flex: 1, backgroundColor: '#fff' },
+  listHeader: {
+    paddingTop: Platform.OS === 'ios' ? 70 : 50,
+    paddingBottom: 25,
     paddingHorizontal: 20,
-    paddingBottom: 20,
-    backgroundColor: '#fff',
-    elevation: 2,
-    shadowColor: '#000',
-    shadowOffset: { width: 0, height: 2 },
-    shadowOpacity: 0.1,
-    shadowRadius: 4,
-  },
-  headerTitle: {
-    fontSize: 18,
-    fontWeight: 'bold',
-    color: '#333',
-  },
-  convItem: {
     flexDirection: 'row',
-    padding: 15,
-    backgroundColor: '#fff',
-    borderBottomWidth: 1,
-    borderBottomColor: '#f0f0f0',
     alignItems: 'center',
-  },
-  avatarPlaceholder: {
-    width: 50,
-    height: 50,
-    borderRadius: 25,
-    backgroundColor: '#4da6ff',
-    justifyContent: 'center',
-    alignItems: 'center',
-  },
-  avatarText: {
-    color: '#fff',
-    fontSize: 20,
-    fontWeight: 'bold',
-  },
-  convDetails: {
-    flex: 1,
-    marginLeft: 15,
-  },
-  convHeader: {
-    flexDirection: 'row',
     justifyContent: 'space-between',
-    marginBottom: 5,
+    borderBottomLeftRadius: 25,
+    borderBottomRightRadius: 25,
   },
-  convName: {
-    fontSize: 16,
-    fontWeight: '600',
-    color: '#333',
-  },
-  convTime: {
-    fontSize: 12,
-    color: '#999',
-  },
-  lastMsg: {
-    fontSize: 14,
-    color: '#666',
-  },
-  unreadBadge: {
-    backgroundColor: '#ff4444',
-    width: 20,
-    height: 20,
-    borderRadius: 10,
-    justifyContent: 'center',
-    alignItems: 'center',
-    marginLeft: 10,
-  },
-  unreadText: {
-    color: '#fff',
-    fontSize: 10,
-    fontWeight: 'bold',
-  },
-  messageList: {
-    padding: 20,
-  },
-  msgWrapper: {
-    marginBottom: 15,
-    maxWidth: '80%',
-  },
-  msgMine: {
-    alignSelf: 'flex-end',
-  },
-  msgTheirs: {
-    alignSelf: 'flex-start',
-  },
-  msgBubble: {
-    padding: 12,
-    borderRadius: 18,
-  },
-  bubbleMine: {
-    backgroundColor: '#4da6ff',
-    borderBottomRightRadius: 4,
-  },
-  bubbleTheirs: {
-    backgroundColor: '#fff',
-    borderBottomLeftRadius: 4,
-  },
-  msgText: {
-    fontSize: 15,
-  },
-  textMine: {
-    color: '#fff',
-  },
-  textTheirs: {
-    color: '#333',
-  },
-  msgTime: {
-    fontSize: 10,
-    color: '#999',
-    marginTop: 4,
-    alignSelf: 'flex-end',
-  },
-  inputArea: {
-    flexDirection: 'row',
-    padding: 15,
-    backgroundColor: '#fff',
-    alignItems: 'center',
-    borderTopWidth: 1,
-    borderTopColor: '#f0f0f0',
-  },
-  input: {
-    flex: 1,
-    backgroundColor: '#f5f7fa',
-    borderRadius: 20,
-    paddingHorizontal: 15,
-    paddingVertical: 10,
-    marginRight: 10,
-    maxHeight: 100,
-  },
-  sendBtn: {
-    padding: 5,
-  },
-  centered: {
-    flex: 1,
-    justifyContent: 'center',
-    alignItems: 'center',
-    marginTop: 50,
-  },
-  emptyText: {
-    marginTop: 10,
-    color: '#999',
-    fontSize: 16,
-  }
+  mainTitle: { fontSize: 22, fontWeight: 'bold', color: '#fff' },
+  headerIcon: { width: 40, height: 40, borderRadius: 20, backgroundColor: 'rgba(255,255,255,0.15)', justifyContent: 'center', alignItems: 'center' },
+  headerSearchInput: { flex: 1, color: '#fff', fontSize: 18, marginHorizontal: 15, paddingVertical: 5 },
+  listContent: { flex: 1 },
+  convItem: { flexDirection: 'row', paddingVertical: 15, paddingHorizontal: 20, alignItems: 'center' },
+  avatarContainer: { position: 'relative' },
+  avatarGradient: { width: 54, height: 54, borderRadius: 27, justifyContent: 'center', alignItems: 'center' },
+  avatarText: { color: '#fff', fontSize: 20, fontWeight: 'bold' },
+  onlineBadge: { position: 'absolute', bottom: 2, right: 2, width: 14, height: 14, borderRadius: 7, borderWidth: 2, borderColor: '#fff' },
+  convDetails: { flex: 1, marginLeft: 15 },
+  convHeader: { flexDirection: 'row', justifyContent: 'space-between', marginBottom: 4 },
+  convName: { fontSize: 16, fontWeight: '700', color: '#1e293b' },
+  convTime: { fontSize: 11, color: '#94a3b8' },
+  lastMsg: { fontSize: 14, color: '#64748b' },
+  chatHeader: { flexDirection: 'row', alignItems: 'center', paddingTop: Platform.OS === 'ios' ? 60 : 50, paddingBottom: 12, paddingHorizontal: 15, borderBottomWidth: 1, borderBottomColor: '#f1f5f9' },
+  backBtn: { padding: 5, marginRight: 5 },
+  headerUser: { flex: 1, flexDirection: 'row', alignItems: 'center' },
+  headerAvatar: { width: 40, height: 40, borderRadius: 20, justifyContent: 'center', alignItems: 'center', marginRight: 12 },
+  headerAvatarText: { color: '#fff', fontSize: 16, fontWeight: 'bold' },
+  headerName: { fontSize: 17, fontWeight: '700', color: '#1e293b' },
+  statusRow: { flexDirection: 'row', alignItems: 'center' },
+  statusDot: { width: 8, height: 8, borderRadius: 4, marginRight: 6 },
+  statusText: { fontSize: 12, color: '#64748b' },
+  messageList: { paddingHorizontal: 15, paddingTop: 15 },
+  msgWrapper: { marginBottom: 12, maxWidth: '80%' },
+  msgMine: { alignSelf: 'flex-end' },
+  msgTheirs: { alignSelf: 'flex-start' },
+  msgBubble: { paddingHorizontal: 16, paddingVertical: 10, borderRadius: 20 },
+  bubbleMine: { backgroundColor: '#0077cc', borderBottomRightRadius: 2 },
+  bubbleTheirs: { backgroundColor: '#f1f5f9', borderBottomLeftRadius: 2 },
+  msgText: { fontSize: 15, lineHeight: 20 },
+  textMine: { color: '#fff' },
+  textTheirs: { color: '#1e293b' },
+  msgTime: { fontSize: 9, color: '#94a3b8', marginTop: 4, alignSelf: 'flex-end' },
+  inputAreaWrapper: { paddingHorizontal: 15, paddingVertical: 12, backgroundColor: '#fff', borderTopWidth: 1, borderTopColor: '#f1f5f9' },
+  inputArea: { flexDirection: 'row', alignItems: 'center', backgroundColor: '#f8fafc', borderRadius: 25, paddingHorizontal: 5, borderWidth: 1, borderColor: '#e2e8f0' },
+  input: { flex: 1, fontSize: 15, color: '#1e293b', paddingHorizontal: 15, maxHeight: 100, paddingVertical: 10 },
+  sendBtn: { width: 42, height: 42, borderRadius: 21, overflow: 'hidden', margin: 4 },
+  sendGradient: { flex: 1, justifyContent: 'center', alignItems: 'center' },
+  sendBtnDisabled: { opacity: 0.6 },
+  centered: { flex: 1, justifyContent: 'center', alignItems: 'center' },
+  emptyContainer: { alignItems: 'center', justifyContent: 'center', padding: 50, marginTop: 50 },
+  emptyTitle: { fontSize: 18, fontWeight: 'bold', color: '#1e293b', marginTop: 15 },
+  emptySub: { fontSize: 14, color: '#64748b', textAlign: 'center', marginTop: 5 }
 });

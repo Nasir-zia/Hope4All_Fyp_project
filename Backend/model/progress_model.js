@@ -27,6 +27,10 @@ const progressSchema = new mongoose.Schema({
     type: String,
     required: false
   },
+  achievementImage: {
+    type: String,
+    required: false
+  },
   verifiedBy: {
     type: String, // Name or ID of the volunteer/admin
     required: false

@@ -446,3 +446,29 @@ export const deleteDonor = async (req, res) => {
     res.status(500).json({ message: 'Error deleting donor', error: error.message });
   }
 };
+
+// Get aid (donations) received by an orphan
+export const getOrphanAid = async (req, res) => {
+  try {
+    const { id } = req.params;
+    
+    // First find the orphan profile using the provided ID (could be userId or profile _id)
+    let orphan = await Orphan.findById(id).catch(() => null);
+    if (!orphan) {
+      orphan = await Orphan.findOne({ userId: id });
+    }
+
+    if (!orphan) {
+      return res.status(404).json({ message: 'Orphan not found' });
+    }
+    
+    const donations = await Donation.find({ recipientId: orphan._id })
+      .populate('donorId', 'name email phone avatar')
+      .populate('requestId', 'type units unitType description school')
+      .sort({ createdAt: -1 });
+
+    res.status(200).json({ donations });
+  } catch (error) {
+    res.status(500).json({ message: 'Error fetching orphan aid', error: error.message });
+  }
+};
