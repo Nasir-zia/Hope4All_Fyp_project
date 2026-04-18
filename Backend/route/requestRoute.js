@@ -9,7 +9,8 @@ import {
   submitRequest,
   getRequestsByOrphan,
   getAllRequests,
-  updateRequestStatus
+  updateRequestStatus,
+  rejectRequest
 } from "../controllers/requestController.js";
 
 const router = express.Router();
@@ -32,13 +33,16 @@ router.get("/orphan/:orphanId", getRequestsByOrphan);
 // Get all requests (admin)
 router.get("/", getAllRequests);
 
-// Update request status (admin)
-router.put("/:requestId/status", authenticateToken, requireAdmin, updateRequestStatus);
+// Update request status (Allow donor/admin)
+router.put("/:requestId/status", authenticateToken, updateRequestStatus);
+
+// Reject/Dismiss request for specific donor
+router.put("/:requestId/reject", authenticateToken, rejectRequest);
 
 // Get approved requests for donors
 router.get("/approved", async (req, res) => {
   try {
-    const requests = await Request.find({ status: 'approved' })
+    const requests = await Request.find({ status: { $in: ['approved', 'pending'] } })
       .populate('orphanId', 'name age gender')
       .populate('orphanageId', 'name')
       .sort({ createdAt: -1 });

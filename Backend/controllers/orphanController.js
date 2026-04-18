@@ -13,7 +13,7 @@ export const registerOrphan = async (req, res) => {
       return res.status(400).json({ message: 'Orphan profile already exists' });
     }
 
-    const { name, age, gender, location, orphanageId } = req.body;
+    const { name, age, gender, location, orphanageId, phone } = req.body;
     
     // Check files presence - handle various Cloudinary/Multer response structures
     const profilePic = req.files?.profilePic?.[0] 
@@ -32,6 +32,7 @@ export const registerOrphan = async (req, res) => {
       age,
       gender,
       location,
+      phone,
       orphanageId: orphanageId || undefined,
       profilePic,
       supportingDocs,

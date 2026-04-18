@@ -64,8 +64,9 @@ export default function OrphanDashboard() {
   // Registration Form State
   const [regName, setRegName] = useState('');
   const [regAge, setRegAge] = useState('');
-  const [regGender, setRegGender] = useState('male');
+  const [regGender, setRegGender] = useState<'male' | 'female' | 'other'>('male');
   const [regLocation, setRegLocation] = useState('');
+  const [regPhone, setRegPhone] = useState('');
   const [profilePicUri, setProfilePicUri] = useState<string | null>(null);
   const [docUri, setDocUri] = useState<string | null>(null);
   const [docName, setDocName] = useState('');
@@ -76,6 +77,7 @@ export default function OrphanDashboard() {
   const [editName, setEditName] = useState('');
   const [editAge, setEditAge] = useState('');
   const [editLocation, setEditLocation] = useState('');
+  const [editPhone, setEditPhone] = useState('');
   const [editGender, setEditGender] = useState('male');
   const [newProfilePicUri, setNewProfilePicUri] = useState<string | null>(null);
   const [updatingProfile, setUpdatingProfile] = useState(false);
@@ -103,8 +105,8 @@ export default function OrphanDashboard() {
       const profile = await fetchOrphanProfile(user.id);
       if (profile) {
         setOrphanProfile(profile);
-        loadFees();
-        loadExtras();
+        loadFees(profile._id);
+        loadExtras(profile._id);
       } else {
         setIsRegistering(true);
       }
@@ -117,14 +119,15 @@ export default function OrphanDashboard() {
     }
   };
 
-  const loadExtras = async () => {
-    if (!user?.id) return;
+  const loadExtras = async (profileId?: string) => {
+    const targetId = profileId || orphanProfile?._id;
+    if (!targetId) return;
     setLoadingExtras(true);
     try {
       const [reqs, progress, aid] = await Promise.all([
-        fetchOrphanRequests(user.id),
-        fetchOrphanProgress(user.id),
-        fetchOrphanAidFeed(user.id)
+        fetchOrphanRequests(targetId),
+        fetchOrphanProgress(targetId),
+        fetchOrphanAidFeed(targetId)
       ]);
       setMaterialRequests(reqs);
       setProgressReports(progress);
@@ -136,12 +139,13 @@ export default function OrphanDashboard() {
     }
   };
 
-  const loadFees = async () => {
-    if (!user?.id) return;
+  const loadFees = async (profileId?: string) => {
+    const targetId = profileId || orphanProfile?._id;
+    if (!targetId) return;
 
     setLoadingFees(true);
     try {
-      const fetchedFees = await fetchOrphanFees(user.id);
+      const fetchedFees = await fetchOrphanFees(targetId);
       setFees(fetchedFees);
     } catch (err) {
       console.log('Error fetching fees:', err);
@@ -158,7 +162,7 @@ export default function OrphanDashboard() {
     setSubmittingFee(true);
     try {
       await createOrphanFee({
-        orphanId: user!.id,
+        orphanId: orphanProfile._id,
         title: feeTitle,
         amount: Number(feeAmount),
         dueDate: feeDate
@@ -182,11 +186,9 @@ export default function OrphanDashboard() {
     }
     setSubmittingFee(true); // Reusing submitting state for simplicity in form
     try {
-      // For orphanageId, we'll try to get it from profile, using a fallback for now
-      // ideally we fetch orphan profile in useEffect
       await submitMaterialRequest({
-        orphanId: user!.id,
-        orphanageId: "650000000000000000000001", // Placeholder or fetch from profile
+        orphanId: orphanProfile._id,
+        orphanageId: orphanProfile.orphanageId || "650000000000000000000001", 
         type: reqType,
         units: Number(reqUnits),
         unitType: reqType === 'stationery' ? 'items' : 'sets',
@@ -213,8 +215,9 @@ export default function OrphanDashboard() {
     if (!orphanProfile) return;
     setEditName(orphanProfile.name);
     setEditAge(String(orphanProfile.age));
-    setEditLocation(orphanProfile.location);
-    setEditGender(orphanProfile.gender);
+    setEditGender(orphanProfile.gender || 'male');
+    setEditLocation(orphanProfile.location || '');
+    setEditPhone(orphanProfile.phone || '');
     setNewProfilePicUri(null);
     setShowEditModal(true);
   };
@@ -232,6 +235,7 @@ export default function OrphanDashboard() {
       formData.append('age', editAge);
       formData.append('gender', editGender);
       formData.append('location', editLocation);
+      formData.append('phone', editPhone);
 
       if (newProfilePicUri) {
         const picName = newProfilePicUri.split('/').pop() || 'profile.jpg';
@@ -262,7 +266,7 @@ export default function OrphanDashboard() {
     setSubmittingProg(true);
     try {
       const formData = new FormData();
-      formData.append('orphanId', user!.id);
+      formData.append('orphanId', orphanProfile._id);
       formData.append('title', progTitle);
       formData.append('category', progCategory);
       formData.append('score', progScore);
@@ -350,7 +354,7 @@ export default function OrphanDashboard() {
   };
 
   const handleProfileSubmit = async () => {
-    if (!regName || !regAge || !regLocation || !profilePicUri || !docUri) {
+    if (!regName || !regAge || !regLocation || !regPhone || !profilePicUri || !docUri) {
       Alert.alert("Missing Fields", "Please complete all fields and upload required files.");
       return;
     }
@@ -363,6 +367,7 @@ export default function OrphanDashboard() {
       formData.append('age', regAge);
       formData.append('gender', regGender);
       formData.append('location', regLocation);
+      formData.append('phone', regPhone);
 
       // Handle file uploads - ensure URI is formatted for Android
       const formatFileUri = (uri: string) => {
@@ -427,6 +432,7 @@ export default function OrphanDashboard() {
             </View>
 
             <TextInput style={[styles.input, { marginTop: 20 }]} value={regLocation} onChangeText={setRegLocation} placeholder="City (e.g. Karachi)" placeholderTextColor="#aaa" />
+            <TextInput style={[styles.input, { marginTop: 15 }]} value={regPhone} onChangeText={setRegPhone} placeholder="Phone Number (e.g. 0300-1234567)" keyboardType="phone-pad" placeholderTextColor="#aaa" />
           </View>
 
           <View style={styles.formSection}>
@@ -565,6 +571,15 @@ export default function OrphanDashboard() {
                   value={editLocation}
                   onChangeText={setEditLocation}
                   placeholder="City"
+                />
+
+                <Text style={styles.formLabel}>Phone Number</Text>
+                <TextInput
+                  style={styles.input}
+                  value={editPhone}
+                  onChangeText={setEditPhone}
+                  placeholder="Contact Number"
+                  keyboardType="phone-pad"
                 />
 
                 <TouchableOpacity
@@ -744,7 +759,14 @@ export default function OrphanDashboard() {
                       <Text style={styles.feeDate}>Requested: {new Date(req.createdAt).toLocaleDateString()}</Text>
                     </View>
                     <View style={styles.feeRight}>
-                      <Text style={styles.statusText}>{req.status.toUpperCase()}</Text>
+                      <View style={[
+                        styles.statusBadge,
+                        req.status === 'pending' ? styles.statusPendingBg : 
+                        req.status === 'approved' ? styles.statusApprovedBg : 
+                        styles.statusFulfilledBg
+                      ]}>
+                        <Text style={styles.statusBadgeText}>{req.status.toUpperCase()}</Text>
+                      </View>
                     </View>
                   </View>
                 ))}
@@ -960,7 +982,7 @@ const styles = StyleSheet.create({
   logoutButton: {
     position: 'absolute',
     right: 20,
-    top: 15,
+    top: 40,
     padding: 10,
     backgroundColor: '#f5f7fa',
     borderRadius: 12,
@@ -1475,7 +1497,7 @@ const styles = StyleSheet.create({
   settingsButton: {
     position: 'absolute',
     right: 70,
-    top: 15,
+    top: 40,
     padding: 10,
     backgroundColor: '#fff',
     borderRadius: 12,
@@ -1668,6 +1690,27 @@ const styles = StyleSheet.create({
     justifyContent: 'center',
     alignItems: 'center',
     marginTop: 8,
+  },
+  statusBadge: {
+    paddingVertical: 4,
+    paddingHorizontal: 10,
+    borderRadius: 20,
+    alignItems: 'center',
+    justifyContent: 'center',
+  },
+  statusBadgeText: {
+    fontSize: 10,
+    fontWeight: 'bold',
+    color: '#fff',
+  },
+  statusPendingBg: {
+    backgroundColor: '#f59e0b', // Amber/Orange
+  },
+  statusApprovedBg: {
+    backgroundColor: '#10b981', // Green
+  },
+  statusFulfilledBg: {
+    backgroundColor: '#3b82f6', // Blue
   },
 });
 

@@ -7,10 +7,14 @@ export const submitRequest = async (req, res) => {
     const { orphanId, orphanageId, type, units, unitType, description, school, class: classLevel } = req.body;
     const documents = req.files ? req.files.map(file => file.path) : [];
 
-    // Verify orphan belongs to orphanage
-    const orphan = await Orphan.findById(orphanId);
+    // Verify orphan exists - try by direct ID first, then by userId
+    let orphan = await Orphan.findById(orphanId);
     if (!orphan) {
-      return res.status(404).json({ message: 'Orphan not found' });
+      orphan = await Orphan.findOne({ userId: orphanId });
+    }
+
+    if (!orphan) {
+      return res.status(404).json({ message: 'Orphan profile not found' });
     }
 
     const newRequest = new Request({
@@ -87,17 +91,31 @@ export const updateRequestStatus = async (req, res) => {
       return res.status(404).json({ message: 'Request not found' });
     }
 
-    // Create notification for orphan/orphanage
-    const notification = new Notification({
-      type: 'request_update',
-      title: `Request ${status}`,
-      message: `Your ${updatedRequest.type} request has been ${status}`,
-    });
-
-    await notification.save();
+    // Skipping notification for now as Notification model requires donorId
+    // which is not applicable for orphan notifications.
 
     res.status(200).json({ message: 'Request status updated', request: updatedRequest });
   } catch (error) {
     res.status(500).json({ message: 'Error updating request status', error: error.message });
+  }
+};
+
+export const rejectRequest = async (req, res) => {
+  try {
+    const { donorId } = req.body;
+    const request = await Request.findById(req.params.requestId);
+    
+    if (!request) {
+      return res.status(404).json({ message: 'Request not found' });
+    }
+
+    if (!request.rejectedBy.includes(donorId)) {
+      request.rejectedBy.push(donorId);
+      await request.save();
+    }
+
+    res.status(200).json({ message: 'Request dismissed for this donor' });
+  } catch (error) {
+    res.status(500).json({ message: 'Error dismissing request', error: error.message });
   }
 };

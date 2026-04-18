@@ -10,10 +10,13 @@ import {
   KeyboardAvoidingView,
   Platform,
   Alert,
-  Image
+  Image,
+  Modal,
+  Linking
 } from 'react-native';
 import { Ionicons } from '@expo/vector-icons';
 import { router } from 'expo-router';
+import * as WebBrowser from 'expo-web-browser';
 import { useAuth } from '@/hooks/useAuth';
 import {
   fetchDonorProfile,
@@ -22,7 +25,9 @@ import {
   fetchMatchedOrphans,
   makeDonation,
   fetchAvailableFees,
-  pledgeFee
+  pledgeFee,
+  updateRequestStatus,
+  rejectRequestApi
 } from '@/constants/api';
 import BackButton from './components/BackButton';
 
@@ -38,6 +43,10 @@ export default function DonorDashboard() {
   const [orphans, setOrphans] = useState<any[]>([]);
   const [availableFees, setAvailableFees] = useState<any[]>([]);
   const [pledgingFee, setPledgingFee] = useState<string | null>(null);
+
+  // Profile View States
+  const [selectedOrphanForProfile, setSelectedOrphanForProfile] = useState<any>(null);
+  const [showProfileModal, setShowProfileModal] = useState(false);
 
   // Registration Form State
   const [name, setName] = useState(user?.username || '');
@@ -137,6 +146,11 @@ export default function DonorDashboard() {
       return;
     }
 
+    if (selectedRequest.status === 'pending') {
+      Alert.alert('Approval Required', 'Please approve this request first before donating.');
+      return;
+    }
+
     setSaving(true);
     try {
       await makeDonation({
@@ -163,6 +177,55 @@ export default function DonorDashboard() {
       Alert.alert('Donation Failed', error.message || 'There was an error processing your supplies.');
     } finally {
       setSaving(false);
+    }
+  };
+
+  const handleApproveRequest = async (requestId: string) => {
+    try {
+      await updateRequestStatus(requestId, 'approved', user!.token);
+      Alert.alert('Request Approved', 'This request is now approved and ready for donations.');
+      await loadDashboardData(donorProfile._id || user!.id);
+      setSelectedRequest((prev: any) => prev?._id === requestId ? { ...prev, status: 'approved' } : prev);
+    } catch (error: any) {
+      Alert.alert('Error', error.message || 'Could not approve request.');
+    }
+  };
+
+  const handleRejectRequest = async (requestId: string) => {
+    try {
+      await rejectRequestApi(requestId, donorProfile._id || user!.id, user!.token);
+      Alert.alert('Request Dismissed', 'This request has been hidden from your dashboard.');
+      setSelectedRequest(null);
+      await loadDashboardData(donorProfile._id || user!.id);
+    } catch (error: any) {
+      Alert.alert('Error', error.message || 'Could not dismiss request.');
+    }
+  };
+
+  const handleOpenDoc = async (url: string) => {
+    if (!url) {
+      Alert.alert('No Document', 'This orphan has not uploaded a verification document yet.');
+      return;
+    }
+    
+    try {
+      // Clean URL: handle Cloudinary relative paths or local paths
+      let fullUrl = url;
+      if (!url.startsWith('http')) {
+        // If it's a Cloudinary path missing the scheme
+        if (url.includes('cloudinary.com')) {
+          fullUrl = `https:${url.startsWith('//') ? '' : '//'}${url}`;
+        } else {
+          // If it's a local/backend path
+          fullUrl = `http://192.168.1.3:5000/${url.replace(/^\//, '')}`;
+        }
+      }
+      
+      console.log('[handleOpenDoc] Opening URL:', fullUrl);
+      await WebBrowser.openBrowserAsync(fullUrl);
+    } catch (error) {
+      console.log('[handleOpenDoc] Error:', error);
+      Alert.alert('Error', 'Could not open the document. Please ensure you have a browser installed.');
     }
   };
 
@@ -227,12 +290,12 @@ export default function DonorDashboard() {
           {/* Make A Donation Form */}
           <Text style={styles.sectionTitle}>Help Through Supplies</Text>
           <View style={styles.formPanel}>
-            <Text style={styles.inputLabel}>1. Select an Approved Request:</Text>
-            {requests.length === 0 ? (
+            <Text style={styles.inputLabel}>1. Select a Request to Review or Fulfill:</Text>
+            {requests.filter(req => !req.rejectedBy?.includes(donorProfile?._id || user!.id)).length === 0 ? (
               <Text style={styles.emptyText}>No requests available right now.</Text>
             ) : (
               <ScrollView horizontal showsHorizontalScrollIndicator={false} style={styles.requestScroller}>
-                {requests.map(req => {
+                {requests.filter(req => !req.rejectedBy?.includes(donorProfile?._id || user!.id)).map(req => {
                   const isSelected = selectedRequest?._id === req._id;
                   return (
                     <TouchableOpacity
@@ -245,7 +308,12 @@ export default function DonorDashboard() {
                     >
                       <Ionicons name="school" color={isSelected ? '#fff' : '#0077cc'} size={18} style={{ marginBottom: 4 }} />
                       <Text style={[styles.reqType, isSelected && styles.reqTextWhite]}>{req.type.toUpperCase()}</Text>
-                      <Text style={[styles.reqName, isSelected && styles.reqTextWhite]}>For {req.orphanId?.name || 'Orphan'}</Text>
+                      <View style={{ flexDirection: 'row', alignItems: 'center', flexWrap: 'wrap', marginTop: 4 }}>
+                         <Text style={[styles.reqName, isSelected && styles.reqTextWhite, { marginRight: 5 }]}>For {req.orphanId?.name || 'Orphan'}</Text>
+                         <View style={[styles.statusMiniBadge, req.status === 'pending' ? {backgroundColor: '#f59e0b'} : {backgroundColor: '#10b981'}]}>
+                            <Text style={styles.statusMiniBadgeText}>{req.status}</Text>
+                         </View>
+                      </View>
                     </TouchableOpacity>
                   );
                 })}
@@ -274,6 +342,25 @@ export default function DonorDashboard() {
             >
               {saving ? <ActivityIndicator color="#fff" /> : <Text style={styles.donateBtnText}>Donate Supplies Now</Text>}
             </TouchableOpacity>
+
+            {selectedRequest && selectedRequest.status === 'pending' && (
+              <View style={styles.actionRow}>
+                <TouchableOpacity
+                  style={[styles.actionBtn, { backgroundColor: '#10b981' }]}
+                  onPress={() => handleApproveRequest(selectedRequest._id)}
+                >
+                  <Ionicons name="checkmark-circle-outline" size={20} color="#fff" />
+                  <Text style={styles.actionBtnText}>Approve Request</Text>
+                </TouchableOpacity>
+                <TouchableOpacity
+                  style={[styles.actionBtn, { backgroundColor: '#ef4444' }]}
+                  onPress={() => handleRejectRequest(selectedRequest._id)}
+                >
+                  <Ionicons name="close-circle-outline" size={20} color="#fff" />
+                  <Text style={styles.actionBtnText}>Dismiss</Text>
+                </TouchableOpacity>
+              </View>
+            )}
           </View>
 
           {/* Education Fee Pledge Row */}
@@ -298,6 +385,15 @@ export default function DonorDashboard() {
                   >
                     {pledgingFee === fee._id ? <ActivityIndicator color="#fff" size="small" /> : <Text style={styles.pledgeBtnText}>Pledge to Pay</Text>}
                   </TouchableOpacity>
+                  <TouchableOpacity 
+                    style={styles.profileLink}
+                    onPress={() => {
+                      setSelectedOrphanForProfile(fee.orphanId);
+                      setShowProfileModal(true);
+                    }}
+                  >
+                    <Text style={styles.profileLinkText}>View Profile</Text>
+                  </TouchableOpacity>
                 </View>
               ))}
             </ScrollView>
@@ -320,13 +416,23 @@ export default function DonorDashboard() {
                   <Text style={styles.orphanLocation}>{orphan.location}</Text>
                   <TouchableOpacity 
                     style={styles.orphanMessageBtn}
+                    onPress={() => {
+                      setSelectedOrphanForProfile(orphan);
+                      setShowProfileModal(true);
+                    }}
+                  >
+                    <Ionicons name="person-outline" size={16} color="#4da6ff" />
+                    <Text style={styles.orphanMessageText}>View Profile</Text>
+                  </TouchableOpacity>
+                  <TouchableOpacity 
+                    style={[styles.orphanMessageBtn, { marginTop: 8, borderColor: '#e2e8f0' }]}
                     onPress={() => router.push({
                       pathname: '/messages',
                       params: { userId: orphan._id, username: orphan.name }
                     })}
                   >
-                    <Ionicons name="chatbubble-ellipses" size={16} color="#4da6ff" />
-                    <Text style={styles.orphanMessageText}>Message</Text>
+                    <Ionicons name="chatbubble-ellipses-outline" size={16} color="#666" />
+                    <Text style={[styles.orphanMessageText, { color: '#666' }]}>Message</Text>
                   </TouchableOpacity>
                 </View>
               ))}
@@ -347,6 +453,86 @@ export default function DonorDashboard() {
           </View>
 
         </ScrollView>
+
+        {/* Orphan Profile Modal */}
+        <Modal
+          visible={showProfileModal}
+          transparent={true}
+          animationType="fade"
+          onRequestClose={() => setShowProfileModal(false)}
+        >
+          <View style={styles.modalOverlay}>
+            <View style={styles.profileModalContent}>
+              <View style={styles.modalHeader}>
+                <Text style={styles.modalTitle}>Orphan Profile</Text>
+                <TouchableOpacity onPress={() => setShowProfileModal(false)}>
+                  <Ionicons name="close" size={28} color="#333" />
+                </TouchableOpacity>
+              </View>
+
+              {selectedOrphanForProfile && (
+                <View style={styles.profileDetailContainer}>
+                  <Image 
+                    source={{ uri: selectedOrphanForProfile.profilePic }} 
+                    style={styles.largeProfilePic} 
+                  />
+                  
+                  <View style={styles.profileInfoSection}>
+                    <Text style={styles.detailName}>{selectedOrphanForProfile.name}</Text>
+                    <Text style={styles.detailMeta}>{selectedOrphanForProfile.age} yrs • {selectedOrphanForProfile.gender}</Text>
+                    
+                    <View style={styles.detailRow}>
+                      <Ionicons name="location-outline" size={18} color="#ef4444" />
+                      <Text style={styles.detailText}>{selectedOrphanForProfile.location}</Text>
+                    </View>
+
+                    <View style={styles.detailRow}>
+                      <Ionicons name="call-outline" size={18} color="#10b981" />
+                      <Text style={styles.detailText}>{selectedOrphanForProfile.phone || 'Contact not provided'}</Text>
+                    </View>
+                  </View>
+
+                  <View style={styles.actionButtonsRow}>
+                    {selectedOrphanForProfile.phone && (
+                      <TouchableOpacity 
+                        style={styles.contactBtn}
+                        onPress={() => Linking.openURL(`tel:${selectedOrphanForProfile.phone}`)}
+                      >
+                        <Ionicons name="call" size={20} color="#fff" />
+                        <Text style={styles.contactBtnText}>Call Now</Text>
+                      </TouchableOpacity>
+                    )}
+                    
+                    <TouchableOpacity 
+                      style={styles.documentBtn}
+                      onPress={() => handleOpenDoc(selectedOrphanForProfile.supportingDocs || (selectedOrphanForProfile.documents && selectedOrphanForProfile.documents[0]))}
+                    >
+                      <Ionicons name="document-text" size={20} color="#fff" />
+                      <Text style={styles.contactBtnText}>View Docs</Text>
+                    </TouchableOpacity>
+                  </View>
+
+                  <TouchableOpacity 
+                    style={styles.chatPrimaryBtn}
+                    onPress={() => {
+                      setShowProfileModal(false);
+                      router.push({
+                        pathname: '/messages',
+                        params: { 
+                          userId: selectedOrphanForProfile._id || selectedOrphanForProfile.userId, 
+                          username: selectedOrphanForProfile.name 
+                        }
+                      });
+                    }}
+                  >
+                    <Ionicons name="chatbubble-ellipses" size={20} color="#fff" />
+                    <Text style={styles.chatPrimaryBtnText}>Start Conversation</Text>
+                  </TouchableOpacity>
+                </View>
+              )}
+            </View>
+          </View>
+        </Modal>
       </View>
     );
   }
@@ -581,10 +767,10 @@ const styles = StyleSheet.create({
     backgroundColor: '#f5f7fa',
     padding: 15,
     borderRadius: 15,
-    marginRight: 10,
+    marginRight: 12,
     borderWidth: 2,
     borderColor: '#e1e5eb',
-    width: 140,
+    width: 160,
   },
   requestBubbleSelected: {
     backgroundColor: '#0077cc',
@@ -878,5 +1064,158 @@ const styles = StyleSheet.create({
     color: '#0077cc',
     fontWeight: '600',
     marginLeft: 4,
+  },
+  profileLink: {
+    marginTop: 8,
+    alignItems: 'center',
+  },
+  profileLinkText: {
+    fontSize: 12,
+    color: '#0077cc',
+    textDecorationLine: 'underline',
+    fontWeight: '600',
+  },
+  modalOverlay: {
+    flex: 1,
+    backgroundColor: 'rgba(0,0,0,0.6)',
+    justifyContent: 'center',
+    alignItems: 'center',
+    padding: 20,
+  },
+  profileModalContent: {
+    width: '100%',
+    backgroundColor: '#fff',
+    borderRadius: 30,
+    padding: 25,
+    shadowColor: '#000',
+    shadowOffset: { width: 0, height: 10 },
+    shadowOpacity: 0.3,
+    shadowRadius: 20,
+    elevation: 10,
+  },
+  modalHeader: {
+    flexDirection: 'row',
+    justifyContent: 'space-between',
+    alignItems: 'center',
+    marginBottom: 20,
+  },
+  modalTitle: {
+    fontSize: 22,
+    fontWeight: 'bold',
+    color: '#1e293b',
+  },
+  profileDetailContainer: {
+    alignItems: 'center',
+  },
+  largeProfilePic: {
+    width: 140,
+    height: 140,
+    borderRadius: 70,
+    borderWidth: 4,
+    borderColor: '#f1f5f9',
+    marginBottom: 20,
+  },
+  profileInfoSection: {
+    width: '100%',
+    alignItems: 'center',
+    marginBottom: 25,
+  },
+  detailName: {
+    fontSize: 26,
+    fontWeight: 'bold',
+    color: '#1e293b',
+    marginBottom: 5,
+  },
+  detailMeta: {
+    fontSize: 16,
+    color: '#64748b',
+    marginBottom: 15,
+  },
+  detailRow: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    marginBottom: 8,
+  },
+  detailText: {
+    marginLeft: 10,
+    fontSize: 16,
+    color: '#334155',
+  },
+  actionButtonsRow: {
+    flexDirection: 'row',
+    justifyContent: 'space-between',
+    width: '100%',
+    marginBottom: 15,
+  },
+  contactBtn: {
+    flex: 1,
+    flexDirection: 'row',
+    backgroundColor: '#10b981',
+    padding: 15,
+    borderRadius: 18,
+    justifyContent: 'center',
+    alignItems: 'center',
+    marginRight: 10,
+  },
+  documentBtn: {
+    flex: 1,
+    flexDirection: 'row',
+    backgroundColor: '#6366f1',
+    padding: 15,
+    borderRadius: 18,
+    justifyContent: 'center',
+    alignItems: 'center',
+  },
+  contactBtnText: {
+    color: '#fff',
+    fontWeight: 'bold',
+    marginLeft: 8,
+    fontSize: 15,
+  },
+  chatPrimaryBtn: {
+    width: '100%',
+    flexDirection: 'row',
+    backgroundColor: '#0077cc',
+    padding: 18,
+    borderRadius: 20,
+    justifyContent: 'center',
+    alignItems: 'center',
+    marginTop: 10,
+  },
+  chatPrimaryBtnText: {
+    color: '#fff',
+    fontWeight: 'bold',
+    marginLeft: 10,
+    fontSize: 18,
+  },
+  statusMiniBadge: {
+    paddingHorizontal: 6,
+    paddingVertical: 2,
+    borderRadius: 8,
+    marginTop: 2,
+  },
+  statusMiniBadgeText: {
+    color: '#fff',
+    fontSize: 10,
+    fontWeight: 'bold',
+  },
+  actionRow: {
+    flexDirection: 'row',
+    justifyContent: 'space-between',
+    marginTop: 15,
+  },
+  actionBtn: {
+    flex: 1,
+    flexDirection: 'row',
+    alignItems: 'center',
+    justifyContent: 'center',
+    paddingVertical: 12,
+    borderRadius: 8,
+    marginHorizontal: 5,
+  },
+  actionBtnText: {
+    color: '#fff',
+    fontWeight: 'bold',
+    marginLeft: 8,
   },
 });

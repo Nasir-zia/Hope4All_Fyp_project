@@ -12,6 +12,7 @@ const requestSchema = new mongoose.Schema({
   status: { type: String, required: true, enum: ['pending', 'approved', 'rejected', 'fulfilled'], default: 'pending' },
   adminComments: { type: String, required: false },
   documents: [{ type: String }], 
+  rejectedBy: [{ type: mongoose.Schema.Types.ObjectId, ref: 'User' }],
   createdAt: { type: Date, default: Date.now },
   updatedAt: { type: Date, default: Date.now },
 });

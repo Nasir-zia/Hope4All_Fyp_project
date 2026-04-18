@@ -530,6 +530,25 @@ export const fetchAllRequests = async () => {
   }
 };
 
+export const rejectRequestApi = async (requestId: string, donorId: string, token: string) => {
+  try {
+    const response = await fetch(`${API_BASE_URL}/requests/${requestId}/reject`, {
+      method: 'PUT',
+      headers: {
+        'Content-Type': 'application/json',
+        'Authorization': `Bearer ${token}`
+      },
+      body: JSON.stringify({ donorId })
+    });
+    const result = await response.json();
+    if (!response.ok) throw new Error(result?.message || 'Error rejecting request');
+    return result;
+  } catch (error) {
+    console.error('Reject request error:', error);
+    throw error;
+  }
+};
+
 export const updateRequestStatus = async (requestId: string, status: string, token: string) => {
   try {
     const response = await fetch(`${API_BASE_URL}/requests/${requestId}/status`, {
