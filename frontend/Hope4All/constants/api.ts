@@ -492,7 +492,7 @@ export const fetchVolunteerStats = async (volunteerId: string) => {
 
 export const updateTaskStatusApi = async (taskId: string, status: string, notes?: string) => {
   try {
-    const response = await fetch(`${API_BASE_URL}/tasks/status/${taskId}`, {
+    const response = await fetch(`${API_BASE_URL}/tasks/${taskId}/status`, {
       method: 'PUT',
       headers: { 'Content-Type': 'application/json' },
       body: JSON.stringify({ status, notes }),
@@ -604,6 +604,18 @@ export const fetchAllUsers = async () => {
     return data.users || [];
   } catch (error) {
     console.error('Fetch users error:', error);
+    throw error;
+  }
+};
+
+export const fetchAllDonations = async () => {
+  try {
+    const response = await fetch(`${API_BASE_URL}/admin/donations`);
+    if (!response.ok) throw new Error('Error fetching donations');
+    const data = await response.json();
+    return data.donations || [];
+  } catch (error) {
+    console.error('Fetch donations error:', error);
     throw error;
   }
 };

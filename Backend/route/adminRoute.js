@@ -15,7 +15,8 @@ import {
   getDonorById,
   getOrphanageById,
   getVolunteerById,
-  testEndpoint
+  testEndpoint,
+  getAllDonations
 } from "../controllers/adminController.js";
 
 const router = express.Router();
@@ -64,6 +65,9 @@ router.get("/orphanages/:id", getOrphanageById);
 
 // Get volunteer by ID
 router.get("/volunteers/:id", getVolunteerById);
+
+// Get all donations
+router.get("/donations", getAllDonations);
 
 // Test endpoint
 router.get("/test", testEndpoint);

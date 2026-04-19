@@ -10,7 +10,9 @@ import {
   ActivityIndicator,
   FlatList,
   Modal,
-  RefreshControl
+  RefreshControl,
+  Image,
+  Linking
 } from 'react-native';
 import { Ionicons, FontAwesome5, MaterialIcons } from '@expo/vector-icons';
 import { useAuth } from '@/hooks/useAuth';
@@ -21,11 +23,12 @@ import {
   fetchAllVolunteers, 
   createTaskApi,
   fetchAllUsers,
-  updateUserStatusApi
+  updateUserStatusApi,
+  fetchAllDonations
 } from '@/constants/api';
 import BackButton from './components/BackButton';
 
-type TabType = 'stats' | 'requests' | 'tasks' | 'users';
+type TabType = 'stats' | 'requests' | 'tasks' | 'donations' | 'users';
 
 export default function AdminDashboard() {
   const { user, logout } = useAuth();
@@ -36,6 +39,7 @@ export default function AdminDashboard() {
   const [requests, setRequests] = useState<any[]>([]);
   const [volunteers, setVolunteers] = useState<any[]>([]);
   const [usersList, setUsersList] = useState<any[]>([]);
+  const [donations, setDonations] = useState<any[]>([]);
   const [loading, setLoading] = useState(true);
   const [refreshing, setRefreshing] = useState(false);
 
@@ -54,16 +58,18 @@ export default function AdminDashboard() {
   const loadAllData = async () => {
     setLoading(true);
     try {
-      const [statsData, reqsData, volData, usersData] = await Promise.all([
+      const [statsData, reqsData, volData, usersData, dontData] = await Promise.all([
         fetchAdminStats(),
         fetchAllRequests(),
         fetchAllVolunteers(),
-        fetchAllUsers()
+        fetchAllUsers(),
+        fetchAllDonations()
       ]);
       setStats(statsData);
       setRequests(reqsData);
       setVolunteers(volData);
       setUsersList(usersData);
+      setDonations(dontData);
     } catch (err) {
       console.error('Error loading admin data:', err);
     } finally {
@@ -89,7 +95,7 @@ export default function AdminDashboard() {
 
   const handleCreateTask = async () => {
     if (!taskTitle || !taskDesc || !selectedVolunteer) {
-      Alert.alert("Error", "Please fill all fields");
+      Alert.alert("Error", "Please fill title, description and select a volunteer");
       return;
     }
     setSubmittingTask(true);
@@ -99,12 +105,15 @@ export default function AdminDashboard() {
         description: taskDesc,
         volunteerId: selectedVolunteer,
         priority: taskPriority,
-        date: new Date().toISOString()
+        date: new Date().toISOString(),
+        assignedBy: user?.id,
       });
-      Alert.alert("Success", "Task assigned to volunteer.");
+      Alert.alert("✅ Success", "Task assigned to volunteer successfully!");
       setShowTaskModal(false);
       setTaskTitle('');
       setTaskDesc('');
+      setSelectedVolunteer('');
+      setTaskPriority('medium');
       loadAllData();
     } catch (err: any) {
       Alert.alert("Error", err.message || "Could not assign task");
@@ -114,7 +123,10 @@ export default function AdminDashboard() {
   };
 
   const handleUpdateUserStatus = async (userId: string, currentStatus: string) => {
-    const newStatus = currentStatus === 'active' ? 'blocked' : 'active';
+    let newStatus = 'verified';
+    if (currentStatus === 'verified') newStatus = 'suspended';
+    else if (currentStatus === 'suspended') newStatus = 'verified';
+    
     try {
       await updateUserStatusApi(userId, newStatus, user?.token || '');
       Alert.alert("Success", `User is now ${newStatus}`);
@@ -129,13 +141,13 @@ export default function AdminDashboard() {
       <View style={styles.statsGrid}>
         <View style={[styles.statCard, { backgroundColor: '#4da6ff20' }]}>
           <Ionicons name="people" size={32} color="#0077cc" />
-          <Text style={styles.statVal}>{stats?.totalUsers || 0}</Text>
+          <Text style={styles.statVal}>{usersList.length || stats?.totalUsers || 0}</Text>
           <Text style={styles.statLab}>Total Users</Text>
         </View>
         <View style={[styles.statCard, { backgroundColor: '#33cc9920' }]}>
           <FontAwesome5 name="hand-holding-heart" size={28} color="#27ae60" />
-          <Text style={styles.statVal}>{stats?.totalDonations || 0}</Text>
-          <Text style={styles.statLab}>Donations</Text>
+          <Text style={styles.statVal}>{donations.length}</Text>
+          <Text style={styles.statLab}>Total Donations</Text>
         </View>
         <View style={[styles.statCard, { backgroundColor: '#ffbb3320' }]}>
           <Ionicons name="list" size={32} color="#f39c12" />
@@ -144,20 +156,32 @@ export default function AdminDashboard() {
         </View>
         <View style={[styles.statCard, { backgroundColor: '#ff444420' }]}>
           <MaterialIcons name="assignment" size={32} color="#c0392b" />
-          <Text style={styles.statVal}>{stats?.activeTasks || 0}</Text>
+          <Text style={styles.statVal}>{stats?.activeVolunteers || volunteers.length || 0}</Text>
           <Text style={styles.statLab}>Active Tasks</Text>
         </View>
       </View>
 
-      <Text style={styles.sectionTitle}>System Health</Text>
+      <Text style={styles.sectionTitle}>Platform Summary</Text>
       <View style={styles.infoCard}>
         <View style={styles.infoRow}>
-          <Text style={styles.infoLabel}>Database Status</Text>
-          <Text style={[styles.infoVal, { color: '#27ae60' }]}>Connected</Text>
+          <Text style={styles.infoLabel}>Total Donors</Text>
+          <Text style={styles.infoVal}>{stats?.activeDonors || 0}</Text>
+        </View>
+        <View style={styles.infoRow}>
+          <Text style={styles.infoLabel}>Total Orphans</Text>
+          <Text style={styles.infoVal}>{stats?.totalOrphans || 0}</Text>
         </View>
         <View style={styles.infoRow}>
           <Text style={styles.infoLabel}>Active Orphanages</Text>
           <Text style={styles.infoVal}>{stats?.totalOrphanages || 0}</Text>
+        </View>
+        <View style={styles.infoRow}>
+          <Text style={styles.infoLabel}>Pending Verification</Text>
+          <Text style={[styles.infoVal, {color: '#f59e0b'}]}>{usersList.filter(u => u.status === 'pending').length}</Text>
+        </View>
+        <View style={styles.infoRow}>
+          <Text style={styles.infoLabel}>Database Status</Text>
+          <Text style={[styles.infoVal, { color: '#27ae60' }]}>Connected ✓</Text>
         </View>
       </View>
     </View>
@@ -199,50 +223,178 @@ export default function AdminDashboard() {
     </View>
   );
 
-  const renderTaskTab = () => (
-    <View style={styles.tabContent}>
-      <View style={styles.rowBetween}>
-        <Text style={styles.sectionTitle}>Volunteer Assignments</Text>
-        <TouchableOpacity style={styles.addTaskBtn} onPress={() => setShowTaskModal(true)}>
-          <Ionicons name="add" size={24} color="#fff" />
-        </TouchableOpacity>
-      </View>
+  const renderTaskTab = () => {
+    // Get volunteers from usersList (role === volunteer) as fallback
+    const volunteerUsers = usersList.filter(u => u.role === 'volunteer');
+    const allVolunteers = volunteers.length > 0 ? volunteers : volunteerUsers;
 
-      <Text style={styles.subText}>Assign logistics and verification tasks to registered volunteers.</Text>
-      <View style={styles.infoCard}>
-        <Text style={styles.infoLabel}>Active Volunteers</Text>
-        <Text style={styles.infoVal}>{volunteers.length}</Text>
+    return (
+      <View style={styles.tabContent}>
+        <View style={styles.rowBetween}>
+          <Text style={styles.sectionTitle}>Volunteer Tasks</Text>
+          <TouchableOpacity style={styles.addTaskBtn} onPress={() => setShowTaskModal(true)}>
+            <Ionicons name="add" size={24} color="#fff" />
+          </TouchableOpacity>
+        </View>
+
+        <Text style={styles.subText}>Assign field tasks to registered volunteers. Active volunteers: {allVolunteers.length}</Text>
+
+        {allVolunteers.length === 0 && (
+          <View style={[styles.infoCard, { alignItems: 'center', paddingVertical: 20 }]}>
+            <Ionicons name="people-outline" size={40} color="#94a3b8" />
+            <Text style={[styles.emptyText, { marginTop: 8 }]}>No volunteers registered yet.</Text>
+          </View>
+        )}
+
+        {allVolunteers.length > 0 && (
+          <View style={styles.infoCard}>
+            <Text style={[styles.infoLabel, { marginBottom: 10 }]}>Registered Volunteers</Text>
+            {allVolunteers.map((v: any) => (
+              <View key={v._id || v.userId} style={{ flexDirection: 'row', alignItems: 'center', paddingVertical: 6, borderBottomWidth: 1, borderBottomColor: '#f1f5f9' }}>
+                <View style={{ width: 36, height: 36, borderRadius: 18, backgroundColor: '#dcfce7', justifyContent: 'center', alignItems: 'center', marginRight: 10 }}>
+                  <Ionicons name="person" size={18} color="#16a34a" />
+                </View>
+                <View style={{ flex: 1 }}>
+                  <Text style={{ fontWeight: '600', color: '#1e293b', fontSize: 14 }}>{v.username || v.name}</Text>
+                  <Text style={{ color: '#64748b', fontSize: 12 }}>{v.email}</Text>
+                </View>
+                <TouchableOpacity
+                  style={{ backgroundColor: '#0077cc', paddingHorizontal: 12, paddingVertical: 6, borderRadius: 8 }}
+                  onPress={() => { setSelectedVolunteer(v._id || v.userId?._id); setShowTaskModal(true); }}
+                >
+                  <Text style={{ color: '#fff', fontSize: 12, fontWeight: '600' }}>Assign Task</Text>
+                </TouchableOpacity>
+              </View>
+            ))}
+          </View>
+        )}
       </View>
-    </View>
-  );
+    );
+  };
 
   const renderUsers = () => (
     <View style={styles.tabContent}>
-      <Text style={styles.sectionTitle}>User Directory</Text>
+      <Text style={styles.sectionTitle}>User Directory ({usersList.length})</Text>
       {usersList.length === 0 ? (
         <Text style={styles.emptyText}>No users found.</Text>
       ) : (
         usersList.map((u) => (
-          <View key={u._id} style={styles.requestCard}>
-            <View style={styles.rowBetween}>
-              <View>
-                <Text style={styles.reqTitle}>{u.username}</Text>
-                <Text style={styles.reqDetail}>{u.email}</Text>
-                <View style={[styles.reqTypeBadge, { backgroundColor: u.role === 'orphan' ? '#4da6ff20' : u.role === 'donor' ? '#ff66b220' : '#33cc9920' }]}>
-                  <Text style={[styles.badgeText, { color: u.role === 'orphan' ? '#0077cc' : u.role === 'donor' ? '#ff66b2' : '#27ae60' }]}>
-                    {u.role.toUpperCase()}
-                  </Text>
+          <View key={u._id} style={[styles.requestCard, u.status === 'pending' && { borderColor: '#f59e0b', borderWidth: 2 }]}>
+            {/* Header Row: Avatar + Name + Role Badge + Status Toggle */}
+            <View style={{ flexDirection: 'row', alignItems: 'flex-start', justifyContent: 'space-between' }}>
+              <View style={{ flexDirection: 'row', alignItems: 'center', flex: 1 }}>
+                {/* Profile Picture */}
+                {u.profilePic ? (
+                  <Image 
+                    source={{ uri: u.profilePic }} 
+                    style={{ width: 56, height: 56, borderRadius: 28, marginRight: 12, backgroundColor: '#e2e8f0' }} 
+                  />
+                ) : (
+                  <View style={{ width: 56, height: 56, borderRadius: 28, backgroundColor: u.role === 'orphan' ? '#dbeafe' : u.role === 'donor' ? '#fce7f3' : '#dcfce7', justifyContent: 'center', alignItems: 'center', marginRight: 12 }}>
+                    <Ionicons name="person" size={28} color={u.role === 'orphan' ? '#0077cc' : u.role === 'donor' ? '#ec4899' : '#16a34a'} />
+                  </View>
+                )}
+                {/* Name & Username */}
+                <View style={{ flex: 1 }}>
+                  <View style={{ flexDirection: 'row', alignItems: 'center', flexWrap: 'wrap' }}>
+                    <Text style={[styles.reqTitle, { marginRight: 6 }]}>{u.name || u.username}</Text>
+                    {u.status === 'pending' && (
+                      <View style={{ backgroundColor: '#fef3c7', paddingHorizontal: 6, paddingVertical: 2, borderRadius: 5 }}>
+                        <Text style={{color: '#d97706', fontSize: 9, fontWeight: 'bold'}}>PENDING</Text>
+                      </View>
+                    )}
+                    {u.status === 'suspended' && (
+                      <View style={{ backgroundColor: '#fee2e2', paddingHorizontal: 6, paddingVertical: 2, borderRadius: 5 }}>
+                        <Text style={{color: '#dc2626', fontSize: 9, fontWeight: 'bold'}}>SUSPENDED</Text>
+                      </View>
+                    )}
+                  </View>
+                  <View style={[styles.reqTypeBadge, { backgroundColor: u.role === 'orphan' ? '#4da6ff20' : u.role === 'donor' ? '#ff66b220' : '#33cc9920', marginTop: 2 }]}>
+                    <Text style={[styles.badgeText, { color: u.role === 'orphan' ? '#0077cc' : u.role === 'donor' ? '#ec4899' : '#16a34a' }]}>
+                      {u.role.toUpperCase()}
+                    </Text>
+                  </View>
                 </View>
               </View>
+              {/* Verify / Suspend Button */}
               <TouchableOpacity 
-                style={[styles.statusToggle, u.status === 'blocked' && styles.statusToggleBlocked]}
+                style={[
+                  styles.statusToggle, 
+                  u.status === 'suspended' && styles.statusToggleBlocked,
+                  u.status === 'pending' && { backgroundColor: '#10b981' }
+                ]}
                 onPress={() => handleUpdateUserStatus(u._id, u.status)}
               >
                 <Text style={styles.statusToggleText}>
-                  {u.status === 'active' ? 'BLOCK' : 'VERIFY/ACTIVATE'}
+                  {u.status === 'verified' ? 'SUSPEND' : 'VERIFY'}
                 </Text>
               </TouchableOpacity>
             </View>
+
+            {/* Details Section */}
+            <View style={{ marginTop: 12, paddingTop: 12, borderTopWidth: 1, borderTopColor: '#f1f5f9' }}>
+              {u.email && (
+                <View style={{ flexDirection: 'row', alignItems: 'center', marginBottom: 4 }}>
+                  <Ionicons name="mail-outline" size={13} color="#64748b" style={{ marginRight: 6 }} />
+                  <Text style={[styles.reqDetail, { color: '#475569' }]}>{u.email}</Text>
+                </View>
+              )}
+              {u.phone && (
+                <View style={{ flexDirection: 'row', alignItems: 'center', marginBottom: 4 }}>
+                  <Ionicons name="call-outline" size={13} color="#64748b" style={{ marginRight: 6 }} />
+                  <Text style={[styles.reqDetail, { color: '#475569' }]}>{u.phone}</Text>
+                </View>
+              )}
+              {(u.location || u.city) && (
+                <View style={{ flexDirection: 'row', alignItems: 'center', marginBottom: 4 }}>
+                  <Ionicons name="location-outline" size={13} color="#64748b" style={{ marginRight: 6 }} />
+                  <Text style={[styles.reqDetail, { color: '#475569' }]}>{u.location || u.city}</Text>
+                </View>
+              )}
+              {u.age && (
+                <View style={{ flexDirection: 'row', alignItems: 'center', marginBottom: 4 }}>
+                  <Ionicons name="calendar-outline" size={13} color="#64748b" style={{ marginRight: 6 }} />
+                  <Text style={[styles.reqDetail, { color: '#475569' }]}>Age: {u.age} {u.gender ? `• ${u.gender}` : ''}</Text>
+                </View>
+              )}
+              {u.totalDonated !== undefined && (
+                <View style={{ flexDirection: 'row', alignItems: 'center', marginBottom: 4 }}>
+                  <FontAwesome5 name="hand-holding-heart" size={12} color="#64748b" style={{ marginRight: 6 }} />
+                  <Text style={[styles.reqDetail, { color: '#475569' }]}>Total Donated: {u.totalDonated} • Children Helped: {u.childrenHelped || 0}</Text>
+                </View>
+              )}
+              {/* Supporting Documents for Orphans */}
+              {u.role === 'orphan' && u.supportingDocs && (
+                <TouchableOpacity
+                  onPress={() => Linking.openURL(u.supportingDocs)}
+                  style={{ flexDirection: 'row', alignItems: 'center', marginTop: 8, backgroundColor: '#eff6ff', paddingHorizontal: 10, paddingVertical: 7, borderRadius: 8, borderWidth: 1, borderColor: '#bfdbfe', alignSelf: 'flex-start' }}
+                >
+                  <Ionicons name="document-text-outline" size={15} color="#2563eb" style={{ marginRight: 6 }} />
+                  <Text style={{ color: '#2563eb', fontSize: 12, fontWeight: '600' }}>View Supporting Document</Text>
+                </TouchableOpacity>
+              )}
+            </View>
+          </View>
+        ))
+      )}
+    </View>
+  );
+
+  const renderDonations = () => (
+    <View style={styles.tabContent}>
+      <Text style={styles.sectionTitle}>Donations List</Text>
+      {donations.length === 0 ? (
+        <Text style={styles.emptyText}>No donations recorded yet.</Text>
+      ) : (
+        donations.map((d) => (
+          <View key={d._id} style={styles.requestCard}>
+             <View style={styles.cardHeader}>
+               <Text style={styles.reqTitle}>{d.units || 0} {d.requestId?.unitType || 'Units'} Donated</Text>
+               <Text style={styles.reqDetail}>{new Date(d.createdAt).toLocaleDateString()}</Text>
+             </View>
+             <Text style={styles.reqDetail}><Text style={{fontWeight: 'bold'}}>From Donor:</Text> {d.donorId?.name || 'Anonymous'}</Text>
+             <Text style={styles.reqDetail}><Text style={{fontWeight: 'bold'}}>To Orphan:</Text> {d.recipientId?.name || d.recipientName || 'Unknown'}</Text>
+             <Text style={styles.reqDetail}><Text style={{fontWeight: 'bold'}}>Request Type:</Text> {d.requestId?.type?.toUpperCase() || 'GENERAL'}</Text>
           </View>
         ))
       )}
@@ -270,7 +422,7 @@ export default function AdminDashboard() {
       </View>
 
       <View style={styles.tabBar}>
-        {(['stats', 'requests', 'tasks', 'users'] as TabType[]).map((tab) => (
+        {(['stats', 'requests', 'tasks', 'donations', 'users'] as TabType[]).map((tab) => (
           <TouchableOpacity 
             key={tab} 
             style={[styles.tabItem, activeTab === tab && styles.tabActive]}
@@ -290,6 +442,7 @@ export default function AdminDashboard() {
         {activeTab === 'stats' && renderStats()}
         {activeTab === 'requests' && renderRequests()}
         {activeTab === 'tasks' && renderTaskTab()}
+        {activeTab === 'donations' && renderDonations()}
         {activeTab === 'users' && renderUsers()}
       </ScrollView>
 

@@ -13,7 +13,7 @@ const userSchema = new mongoose.Schema({
   status: {
     type: String,
     enum: ["pending", "verified", "suspended"],
-    default: "verified",
+    default: "pending",
   },
   createdAt: { type: Date, default: Date.now },
 });

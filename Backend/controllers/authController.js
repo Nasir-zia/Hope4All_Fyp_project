@@ -49,7 +49,7 @@ export const signup = async (req, res) => {
     res.status(201).json({
       success: true,
       message: 'User registered successfully.',
-      user: { id: newUser._id, username: newUser.username, email: newUser.email, role: newUser.role }
+      user: { id: newUser._id, username: newUser.username, email: newUser.email, role: newUser.role, status: newUser.status }
     });
   } catch (error) {
     console.error(' Error registering user:', error);
@@ -138,12 +138,11 @@ export const login = async (req, res) => {
     console.log(' Generating JWT token...');
     const token = jwt.sign({ id: user._id, role: user.role }, process.env.JWT_SECRET, { expiresIn: '1h' });
 
-    console.log(' User login successful:', email);
     res.status(200).json({ 
       success: true, 
       message: 'Login successful', 
       token, 
-      user: { id: user._id, username: user.username, email: user.email, role: user.role } 
+      user: { id: user._id, username: user.username, email: user.email, role: user.role, status: user.status } 
     });
   } catch (error) {
     console.error(' Error logging in:', error);

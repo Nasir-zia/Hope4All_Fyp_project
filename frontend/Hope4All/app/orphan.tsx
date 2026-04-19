@@ -470,6 +470,25 @@ export default function OrphanDashboard() {
     );
   }
 
+  // Render Pending View if User is not verified
+  if (user?.status === 'pending') {
+    return (
+      <View style={[styles.container, { justifyContent: 'center', alignItems: 'center' }]}>
+        <Ionicons name="time-outline" size={80} color="#f59e0b" />
+        <Text style={[styles.username, { color: '#333', marginTop: 20 }]}>Pending Verification</Text>
+        <Text style={[styles.welcome, { textAlign: 'center', marginHorizontal: 30, marginTop: 10 }]}>
+          Your account is currently under review by our administration. Once verified, your dashboard will be fully unlocked.
+        </Text>
+        <TouchableOpacity 
+          style={[styles.logoutBtn, { width: 200, marginTop: 40 }]} 
+          onPress={handleLogout}
+        >
+          <Text style={styles.logoutText}>Logout</Text>
+        </TouchableOpacity>
+      </View>
+    );
+  }
+
   return (
     <View style={styles.container}>
       <BackButton />

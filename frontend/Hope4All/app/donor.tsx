@@ -238,6 +238,25 @@ export default function DonorDashboard() {
     );
   }
 
+  // Render Pending View if User is not verified
+  if (user?.status === 'pending') {
+    return (
+      <View style={styles.centerContainer}>
+        <Ionicons name="time-outline" size={80} color="#f59e0b" />
+        <Text style={[styles.welcomeTitle, { color: '#333', marginTop: 20 }]}>Pending Verification</Text>
+        <Text style={[styles.loadingText, { textAlign: 'center', marginHorizontal: 30, marginTop: 10 }]}>
+          Your account is currently under review. Our team will verify your details shortly so you can start making a difference.
+        </Text>
+        <TouchableOpacity 
+          style={[styles.logoutButton, { position: 'relative', marginTop: 30, right: 0, top: 0, backgroundColor: '#ff4444' }]} 
+          onPress={logout}
+        >
+          <Text style={{ color: '#fff', fontWeight: 'bold' }}>Logout</Text>
+        </TouchableOpacity>
+      </View>
+    );
+  }
+
   // Render Dashboard if profile exists
   if (donorProfile) {
     return (

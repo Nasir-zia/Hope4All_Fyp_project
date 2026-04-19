@@ -4,18 +4,18 @@ import Notification from '../model/notification_model.js';
 
 export const createTask = async (req, res) => {
   try {
-    const { volunteerId, title, description, type, school, orphanageId, date, priority, notes } = req.body;
+    const { volunteerId, title, description, type, school, orphanageId, date, priority, notes, assignedBy } = req.body;
 
     const newTask = new Task({
       volunteerId,
       title,
       description,
-      type,
-      school,
+      type: type || 'other',
+      school: school || 'N/A',
       orphanageId,
-      date,
-      priority,
-      assignedBy: req.user.id, 
+      date: date || new Date(),
+      priority: priority || 'medium',
+      assignedBy: assignedBy || volunteerId, // fallback to volunteerId if no assignedBy
       notes,
     });
 

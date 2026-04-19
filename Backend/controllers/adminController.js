@@ -356,3 +356,16 @@ export const testEndpoint = async (req, res) => {
     res.status(500).json({ message: 'Test failed', error: error.message });
   }
 };
+
+export const getAllDonations = async (req, res) => {
+  try {
+    const donations = await Donation.find()
+      .populate('donorId', 'name email')
+      .populate('recipientId', 'name age')
+      .populate('requestId', 'type units unitType description')
+      .sort({ createdAt: -1 });
+    res.status(200).json({ donations });
+  } catch (error) {
+    res.status(500).json({ message: 'Error fetching donations', error: error.message });
+  }
+};

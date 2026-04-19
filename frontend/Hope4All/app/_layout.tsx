@@ -33,7 +33,7 @@ function AuthRedirector({ children }: { children: React.ReactNode }) {
     const segment = segments[0] as string | undefined;
     const isAuthPage = segment === 'login' || segment === 'signup';
     const isIndexPage = !segment || segment === 'index';
-    const isDashboardPage = ['orphan', 'donor', 'volunteer'].includes(segment || '');
+    const isDashboardPage = ['orphan', 'donor', 'volunteer', 'admin'].includes(segment || '');
 
     if (user && (isAuthPage || isIndexPage)) {
       // Logged in user shouldn't see login/signup/index
