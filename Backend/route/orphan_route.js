@@ -4,6 +4,7 @@ import pkg from "multer-storage-cloudinary";
 const CloudinaryStorage = pkg; // v2 style, no destructuring
 import cloudinary from "../Files/cloudinary.js";
 import { registerOrphan, getOrphanProfile, updateOrphanProfile } from "../controllers/orphanController.js";
+import { authenticateToken } from "../middleware/authMiddleware.js";
 
 const router = express.Router();
 
@@ -18,7 +19,7 @@ const storage = new CloudinaryStorage({
 
 const upload = multer({ storage });
 
-// Route to register orphan
+// Route to register orphan (new users setting up profile might not have full token passed)
 router.post(
   "/register",
   upload.fields([
@@ -28,12 +29,13 @@ router.post(
   registerOrphan
 );
 
-// Route to get orphan profile
+// Route to get orphan profile (public read)
 router.get("/profile/:id", getOrphanProfile);
 
-// Route to update orphan profile
+// Route to update orphan profile (must be authenticated)
 router.put(
   "/profile/:id",
+  authenticateToken,
   upload.fields([
     { name: "profilePic", maxCount: 1 },
     { name: "supportingDocs", maxCount: 1 },

@@ -1,4 +1,4 @@
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useRef } from 'react';
 import {
   View,
   Text,
@@ -12,7 +12,10 @@ import {
   Modal,
   RefreshControl,
   Image,
-  Linking
+  Linking,
+  Platform,
+  Animated,
+  Dimensions
 } from 'react-native';
 import { Ionicons, FontAwesome5, MaterialIcons } from '@expo/vector-icons';
 import { useAuth } from '@/hooks/useAuth';
@@ -22,13 +25,17 @@ import {
   updateRequestStatus, 
   fetchAllVolunteers, 
   createTaskApi,
+  fetchAllTasks,
   fetchAllUsers,
   updateUserStatusApi,
-  fetchAllDonations
+  fetchAllDonations,
+  fetchAllCourses,
+  createCourseApi,
+  updateCourseStatusApi
 } from '@/constants/api';
 import BackButton from './components/BackButton';
 
-type TabType = 'stats' | 'requests' | 'tasks' | 'donations' | 'users';
+type TabType = 'stats' | 'requests' | 'tasks' | 'donations' | 'users' | 'learning';
 
 export default function AdminDashboard() {
   const { user, logout } = useAuth();
@@ -38,18 +45,53 @@ export default function AdminDashboard() {
   const [stats, setStats] = useState<any>(null);
   const [requests, setRequests] = useState<any[]>([]);
   const [volunteers, setVolunteers] = useState<any[]>([]);
+  const [allTasks, setAllTasks] = useState<any[]>([]);
+  const [courses, setCourses] = useState<any[]>([]);
   const [usersList, setUsersList] = useState<any[]>([]);
   const [donations, setDonations] = useState<any[]>([]);
   const [loading, setLoading] = useState(true);
   const [refreshing, setRefreshing] = useState(false);
+
+  // Derived data
+  const allVolunteers = volunteers.length > 0 ? volunteers : usersList.filter(u => u.role === 'volunteer');
 
   // Task Creation States
   const [showTaskModal, setShowTaskModal] = useState(false);
   const [taskTitle, setTaskTitle] = useState('');
   const [taskDesc, setTaskDesc] = useState('');
   const [selectedVolunteer, setSelectedVolunteer] = useState('');
+  const [broadcastToAll, setBroadcastToAll] = useState(false);
   const [taskPriority, setTaskPriority] = useState('medium');
   const [submittingTask, setSubmittingTask] = useState(false);
+
+  // Course States
+  const [showCourseModal, setShowCourseModal] = useState(false);
+  const [courseTitle, setCourseTitle] = useState('');
+  const [courseDesc, setCourseDesc] = useState('');
+  const [courseLink, setCourseLink] = useState('');
+  const [courseCategory, setCourseCategory] = useState('Academic');
+  const [submittingCourse, setSubmittingCourse] = useState(false);
+
+  // Sidebar State
+  const [isSidebarOpen, setIsSidebarOpen] = useState(false);
+  const sidebarAnim = useRef(new Animated.Value(-Dimensions.get('window').width)).current;
+
+  const toggleSidebar = (open: boolean) => {
+    if (open) {
+      setIsSidebarOpen(true);
+      Animated.timing(sidebarAnim, {
+        toValue: 0,
+        duration: 300,
+        useNativeDriver: true,
+      }).start();
+    } else {
+      Animated.timing(sidebarAnim, {
+        toValue: -Dimensions.get('window').width,
+        duration: 250,
+        useNativeDriver: true,
+      }).start(() => setIsSidebarOpen(false));
+    }
+  };
 
   useEffect(() => {
     loadAllData();
@@ -58,18 +100,23 @@ export default function AdminDashboard() {
   const loadAllData = async () => {
     setLoading(true);
     try {
-      const [statsData, reqsData, volData, usersData, dontData] = await Promise.all([
-        fetchAdminStats(),
-        fetchAllRequests(),
-        fetchAllVolunteers(),
-        fetchAllUsers(),
-        fetchAllDonations()
+      const token = user?.token || '';
+      const [statsData, reqsData, volData, usersData, dontData, tasksData, coursesData] = await Promise.all([
+        fetchAdminStats(token),
+        fetchAllRequests(token),
+        fetchAllVolunteers(token),
+        fetchAllUsers(token),
+        fetchAllDonations(token),
+        fetchAllTasks(token),
+        fetchAllCourses(token)
       ]);
       setStats(statsData);
       setRequests(reqsData);
       setVolunteers(volData);
       setUsersList(usersData);
       setDonations(dontData);
+      setAllTasks(tasksData);
+      setCourses(coursesData);
     } catch (err) {
       console.error('Error loading admin data:', err);
     } finally {
@@ -100,19 +147,22 @@ export default function AdminDashboard() {
     }
     setSubmittingTask(true);
     try {
+      const vIds = broadcastToAll ? allVolunteers.map(v => v._id) : selectedVolunteer;
+      
       await createTaskApi({
         title: taskTitle,
         description: taskDesc,
-        volunteerId: selectedVolunteer,
+        volunteerId: vIds,
         priority: taskPriority,
         date: new Date().toISOString(),
         assignedBy: user?.id,
-      });
-      Alert.alert("✅ Success", "Task assigned to volunteer successfully!");
+      }, user?.token || '');
+      Alert.alert("✅ Success", broadcastToAll ? "Task broadcasted to all volunteers!" : "Task assigned successfully!");
       setShowTaskModal(false);
       setTaskTitle('');
       setTaskDesc('');
       setSelectedVolunteer('');
+      setBroadcastToAll(false);
       setTaskPriority('medium');
       loadAllData();
     } catch (err: any) {
@@ -136,52 +186,69 @@ export default function AdminDashboard() {
     }
   };
 
+  const handleCreateCourse = async () => {
+    if (!courseTitle || !courseDesc || !courseLink) {
+      Alert.alert("Error", "Please fill all fields");
+      return;
+    }
+    setSubmittingCourse(true);
+    try {
+      await createCourseApi({
+        title: courseTitle,
+        description: courseDesc,
+        link: courseLink,
+        category: courseCategory,
+        addedBy: user?.id,
+        addedByRole: 'admin'
+      }, user?.token || '');
+      Alert.alert("✅ Success", "Course added successfully!");
+      setShowCourseModal(false);
+      setCourseTitle('');
+      setCourseDesc('');
+      setCourseLink('');
+      loadAllData();
+    } catch (err: any) {
+      Alert.alert("Error", err.message || "Could not add course");
+    } finally {
+      setSubmittingCourse(false);
+    }
+  };
+
+  const handleUpdateCourseStatus = async (id: string, status: string) => {
+    console.log(`[Admin] Updating course ${id} to ${status}`);
+    try {
+      const result = await updateCourseStatusApi(id, status, user?.token || '');
+      console.log('[Admin] Course update result:', result);
+      Alert.alert("Success", `Course ${status}`);
+      loadAllData();
+    } catch (err: any) {
+      console.error('[Admin] Course update error:', err);
+      Alert.alert("Error", err.message || "Could not update course");
+    }
+  };
+
   const renderStats = () => (
     <View style={styles.tabContent}>
       <View style={styles.statsGrid}>
-        <View style={[styles.statCard, { backgroundColor: '#4da6ff20' }]}>
-          <Ionicons name="people" size={32} color="#0077cc" />
+        <View style={[styles.statCard, { backgroundColor: '#eff6ff', shadowColor: '#3b82f6' }]}>
+          <Ionicons name="people" size={32} color="#3b82f6" />
           <Text style={styles.statVal}>{usersList.length || stats?.totalUsers || 0}</Text>
           <Text style={styles.statLab}>Total Users</Text>
         </View>
-        <View style={[styles.statCard, { backgroundColor: '#33cc9920' }]}>
-          <FontAwesome5 name="hand-holding-heart" size={28} color="#27ae60" />
+        <View style={[styles.statCard, { backgroundColor: '#f0fdf4', shadowColor: '#22c55e' }]}>
+          <FontAwesome5 name="hand-holding-heart" size={28} color="#22c55e" />
           <Text style={styles.statVal}>{donations.length}</Text>
-          <Text style={styles.statLab}>Total Donations</Text>
+          <Text style={styles.statLab}>Donations</Text>
         </View>
-        <View style={[styles.statCard, { backgroundColor: '#ffbb3320' }]}>
-          <Ionicons name="list" size={32} color="#f39c12" />
-          <Text style={styles.statVal}>{requests.filter(r => r.status === 'pending').length}</Text>
+        <View style={[styles.statCard, { backgroundColor: '#fff7ed', shadowColor: '#f97316' }]}>
+          <Ionicons name="list" size={32} color="#f97316" />
+          <Text style={styles.statVal}>{requests.filter((r: any) => r.status === 'pending').length}</Text>
           <Text style={styles.statLab}>Pending Reqs</Text>
         </View>
-        <View style={[styles.statCard, { backgroundColor: '#ff444420' }]}>
-          <MaterialIcons name="assignment" size={32} color="#c0392b" />
-          <Text style={styles.statVal}>{stats?.activeVolunteers || volunteers.length || 0}</Text>
-          <Text style={styles.statLab}>Active Tasks</Text>
-        </View>
-      </View>
-
-      <Text style={styles.sectionTitle}>Platform Summary</Text>
-      <View style={styles.infoCard}>
-        <View style={styles.infoRow}>
-          <Text style={styles.infoLabel}>Total Donors</Text>
-          <Text style={styles.infoVal}>{stats?.activeDonors || 0}</Text>
-        </View>
-        <View style={styles.infoRow}>
-          <Text style={styles.infoLabel}>Total Orphans</Text>
-          <Text style={styles.infoVal}>{stats?.totalOrphans || 0}</Text>
-        </View>
-        <View style={styles.infoRow}>
-          <Text style={styles.infoLabel}>Active Orphanages</Text>
-          <Text style={styles.infoVal}>{stats?.totalOrphanages || 0}</Text>
-        </View>
-        <View style={styles.infoRow}>
-          <Text style={styles.infoLabel}>Pending Verification</Text>
-          <Text style={[styles.infoVal, {color: '#f59e0b'}]}>{usersList.filter(u => u.status === 'pending').length}</Text>
-        </View>
-        <View style={styles.infoRow}>
-          <Text style={styles.infoLabel}>Database Status</Text>
-          <Text style={[styles.infoVal, { color: '#27ae60' }]}>Connected ✓</Text>
+        <View style={[styles.statCard, { backgroundColor: '#fef2f2', shadowColor: '#ef4444' }]}>
+          <MaterialIcons name="assignment" size={32} color="#ef4444" />
+          <Text style={styles.statVal}>{stats?.totalTasks || allTasks.length || 0}</Text>
+          <Text style={styles.statLab}>Total Tasks</Text>
         </View>
       </View>
     </View>
@@ -224,10 +291,6 @@ export default function AdminDashboard() {
   );
 
   const renderTaskTab = () => {
-    // Get volunteers from usersList (role === volunteer) as fallback
-    const volunteerUsers = usersList.filter(u => u.role === 'volunteer');
-    const allVolunteers = volunteers.length > 0 ? volunteers : volunteerUsers;
-
     return (
       <View style={styles.tabContent}>
         <View style={styles.rowBetween}>
@@ -250,23 +313,43 @@ export default function AdminDashboard() {
           <View style={styles.infoCard}>
             <Text style={[styles.infoLabel, { marginBottom: 10 }]}>Registered Volunteers</Text>
             {allVolunteers.map((v: any) => (
-              <View key={v._id || v.userId} style={{ flexDirection: 'row', alignItems: 'center', paddingVertical: 6, borderBottomWidth: 1, borderBottomColor: '#f1f5f9' }}>
+              <View key={v._id} style={{ flexDirection: 'row', alignItems: 'center', paddingVertical: 6, borderBottomWidth: 1, borderBottomColor: '#f1f5f9' }}>
                 <View style={{ width: 36, height: 36, borderRadius: 18, backgroundColor: '#dcfce7', justifyContent: 'center', alignItems: 'center', marginRight: 10 }}>
                   <Ionicons name="person" size={18} color="#16a34a" />
                 </View>
                 <View style={{ flex: 1 }}>
-                  <Text style={{ fontWeight: '600', color: '#1e293b', fontSize: 14 }}>{v.username || v.name}</Text>
+                  <Text style={{ fontWeight: '600', color: '#1e293b', fontSize: 14 }}>{v.username}</Text>
                   <Text style={{ color: '#64748b', fontSize: 12 }}>{v.email}</Text>
                 </View>
                 <TouchableOpacity
                   style={{ backgroundColor: '#0077cc', paddingHorizontal: 12, paddingVertical: 6, borderRadius: 8 }}
-                  onPress={() => { setSelectedVolunteer(v._id || v.userId?._id); setShowTaskModal(true); }}
+                  onPress={() => { setSelectedVolunteer(v._id); setShowTaskModal(true); }}
                 >
                   <Text style={{ color: '#fff', fontSize: 12, fontWeight: '600' }}>Assign Task</Text>
                 </TouchableOpacity>
               </View>
             ))}
           </View>
+        )}
+
+        <Text style={[styles.sectionTitle, { marginTop: 30 }]}>Assigned Tasks History</Text>
+        {allTasks.length === 0 ? (
+          <Text style={styles.emptyText}>No tasks assigned yet.</Text>
+        ) : (
+          allTasks.map((task) => (
+            <View key={task._id} style={styles.requestCard}>
+              <View style={styles.cardHeader}>
+                <View style={[styles.reqTypeBadge, { backgroundColor: task.priority === 'high' ? '#fee2e2' : '#fef3c7' }]}>
+                  <Text style={[styles.badgeText, { color: task.priority === 'high' ? '#dc2626' : '#d97706' }]}>{task.priority.toUpperCase()}</Text>
+                </View>
+                <Text style={styles.statusLabel}>{task.status.toUpperCase()}</Text>
+              </View>
+              <Text style={styles.reqTitle}>{task.title}</Text>
+              <Text style={styles.reqDetail}><Text style={{ fontWeight: 'bold' }}>To:</Text> {task.volunteerId?.username || 'Unknown'}</Text>
+              <Text style={styles.reqDetail}>{task.description}</Text>
+              <Text style={[styles.reqDetail, { marginTop: 8, fontSize: 11 }]}>Assigned: {new Date(task.createdAt).toLocaleDateString()}</Text>
+            </View>
+          ))
         )}
       </View>
     );
@@ -410,30 +493,75 @@ export default function AdminDashboard() {
     );
   }
 
-  return (
+    return (
     <View style={styles.container}>
       <View style={styles.header}>
-        <BackButton />
-        <TouchableOpacity style={styles.logoutBtn} onPress={logout}>
-          <Ionicons name="log-out-outline" size={24} color="#fff" />
+        <TouchableOpacity style={styles.menuBtn} onPress={() => toggleSidebar(true)}>
+          <Ionicons name="menu-outline" size={28} color="#0f172a" />
         </TouchableOpacity>
-        <Text style={styles.adminTag}>ADMIN PORTAL</Text>
-        <Text style={styles.welcome}>Central Command</Text>
+        
+        <View style={{ flex: 1, alignItems: 'center' }}>
+          <Text style={styles.adminTag}>Hope4All</Text>
+        </View>
+
+        <TouchableOpacity style={styles.logoutBtn} onPress={logout}>
+          <Ionicons name="log-out-outline" size={20} color="#0f172a" />
+        </TouchableOpacity>
       </View>
 
-      <View style={styles.tabBar}>
-        {(['stats', 'requests', 'tasks', 'donations', 'users'] as TabType[]).map((tab) => (
-          <TouchableOpacity 
-            key={tab} 
-            style={[styles.tabItem, activeTab === tab && styles.tabActive]}
-            onPress={() => setActiveTab(tab)}
+      {/* Sidebar Overlay */}
+      {isSidebarOpen && (
+        <TouchableOpacity 
+          activeOpacity={1} 
+          style={styles.sidebarOverlay} 
+          onPress={() => toggleSidebar(false)}
+        >
+          <Animated.View 
+            style={[
+              styles.sidebar, 
+              { transform: [{ translateX: sidebarAnim }] }
+            ]}
           >
-            <Text style={[styles.tabText, activeTab === tab && styles.tabTextActive]}>
-              {tab.charAt(0).toUpperCase() + tab.slice(1)}
-            </Text>
-          </TouchableOpacity>
-        ))}
-      </View>
+            <View style={styles.sidebarHeader}>
+              <Text style={styles.sidebarTitle}>Hope4All</Text>
+              <Text style={styles.sidebarSub}>Admin Management Center</Text>
+            </View>
+            
+            <View style={styles.sidebarMenu}>
+              {(['stats', 'requests', 'tasks', 'donations', 'users', 'learning'] as TabType[]).map((tab) => (
+                <TouchableOpacity 
+                  key={tab} 
+                  style={[styles.sidebarItem, activeTab === tab && styles.sidebarItemActive]}
+                  onPress={() => {
+                    setActiveTab(tab);
+                    toggleSidebar(false);
+                  }}
+                >
+                  <Ionicons 
+                    name={
+                      tab === 'stats' ? 'bar-chart' : 
+                      tab === 'requests' ? 'list' : 
+                      tab === 'tasks' ? 'checkbox' : 
+                      tab === 'donations' ? 'heart' : 
+                      tab === 'users' ? 'people' : 'school'
+                    } 
+                    size={20} 
+                    color={activeTab === tab ? '#fff' : '#64748b'} 
+                  />
+                  <Text style={[styles.sidebarText, activeTab === tab && styles.sidebarTextActive]}>
+                    {tab === 'learning' ? 'Learning (LMS)' : tab.charAt(0).toUpperCase() + tab.slice(1)}
+                  </Text>
+                </TouchableOpacity>
+              ))}
+            </View>
+
+            <TouchableOpacity style={styles.sidebarFooter} onPress={logout}>
+              <Ionicons name="log-out-outline" size={20} color="#ef4444" />
+              <Text style={{ color: '#ef4444', marginLeft: 10, fontWeight: 'bold' }}>Sign Out</Text>
+            </TouchableOpacity>
+          </Animated.View>
+        </TouchableOpacity>
+      )}
 
       <ScrollView 
         refreshControl={<RefreshControl refreshing={refreshing} onRefresh={onRefresh} />}
@@ -444,6 +572,49 @@ export default function AdminDashboard() {
         {activeTab === 'tasks' && renderTaskTab()}
         {activeTab === 'donations' && renderDonations()}
         {activeTab === 'users' && renderUsers()}
+        {activeTab === 'learning' && (
+          <View style={styles.tabContent}>
+            <View style={styles.rowBetween}>
+              <Text style={styles.sectionTitle}>Learning Management</Text>
+              <TouchableOpacity style={styles.addTaskBtn} onPress={() => setShowCourseModal(true)}>
+                <Ionicons name="add" size={24} color="#fff" />
+              </TouchableOpacity>
+            </View>
+            <Text style={styles.subText}>Manage educational courses for orphans.</Text>
+
+            {courses.length === 0 ? (
+              <Text style={styles.emptyText}>No courses found.</Text>
+            ) : (
+              courses.map((course) => (
+                <View key={course._id} style={[styles.requestCard, course.status === 'pending' && { borderColor: '#f59e0b', borderWidth: 2 }]}>
+                  <View style={styles.cardHeader}>
+                    <View style={styles.reqTypeBadge}>
+                      <Text style={styles.badgeText}>{course.category.toUpperCase()}</Text>
+                    </View>
+                    <Text style={[styles.statusLabel, course.status === 'pending' && {color: '#f59e0b'}]}>{course.status.toUpperCase()}</Text>
+                  </View>
+                  <Text style={styles.reqTitle}>{course.title}</Text>
+                  <Text style={styles.reqDetail}>{course.description}</Text>
+                  <Text style={[styles.reqDetail, { color: '#0077cc' }]} onPress={() => Linking.openURL(course.link)}>🔗 {course.link}</Text>
+                  <Text style={[styles.reqDetail, { marginTop: 5 }]}>By: {course.addedBy?.username || 'Admin'} ({course.addedByRole})</Text>
+                  
+                  {course.status === 'pending' && (
+                    <View style={styles.actionRow}>
+                      <TouchableOpacity style={styles.approveBtn} onPress={() => handleUpdateCourseStatus(course._id, 'approved')}>
+                        <Ionicons name="checkmark" size={20} color="#fff" />
+                        <Text style={styles.btnText}>Approve</Text>
+                      </TouchableOpacity>
+                      <TouchableOpacity style={styles.rejectBtn} onPress={() => handleUpdateCourseStatus(course._id, 'rejected')}>
+                        <Ionicons name="close" size={20} color="#fff" />
+                        <Text style={styles.btnText}>Reject</Text>
+                      </TouchableOpacity>
+                    </View>
+                  )}
+                </View>
+              ))
+            )}
+          </View>
+        )}
       </ScrollView>
 
       {/* Task Modal */}
@@ -468,15 +639,25 @@ export default function AdminDashboard() {
             
             <Text style={styles.label}>Select Volunteer</Text>
             <ScrollView horizontal style={styles.volSelect} showsHorizontalScrollIndicator={false}>
-              {volunteers.map(v => (
+              <TouchableOpacity 
+                 style={[styles.volChip, broadcastToAll && styles.volChipActive, { backgroundColor: broadcastToAll ? '#0077cc' : '#fef3c7', borderColor: '#f59e0b' }]}
+                 onPress={() => { setBroadcastToAll(!broadcastToAll); setSelectedVolunteer(''); }}
+              >
+                 <Text style={[styles.volChipText, broadcastToAll && styles.volChipTextActive]}>
+                   📣 ALL VOLUNTEERS
+                 </Text>
+              </TouchableOpacity>
+
+              {allVolunteers.map(v => (
                 <TouchableOpacity 
-                  key={v._id} 
-                  style={[styles.volChip, selectedVolunteer === v.userId?._id && styles.volChipActive]}
-                  onPress={() => setSelectedVolunteer(v.userId?._id)}
+                   key={v._id} 
+                   style={[styles.volChip, selectedVolunteer === v._id && styles.volChipActive]}
+                   onPress={() => { setSelectedVolunteer(v._id); setBroadcastToAll(false); }}
+                   disabled={broadcastToAll}
                 >
-                  <Text style={[styles.volChipText, selectedVolunteer === v.userId?._id && styles.volChipTextActive]}>
-                    {v.name}
-                  </Text>
+                   <Text style={[styles.volChipText, selectedVolunteer === v._id && styles.volChipTextActive, broadcastToAll && { opacity: 0.5 }]}>
+                     {v.username}
+                   </Text>
                 </TouchableOpacity>
               ))}
             </ScrollView>
@@ -495,6 +676,61 @@ export default function AdminDashboard() {
           </View>
         </View>
       </Modal>
+
+      {/* Course Modal */}
+      <Modal visible={showCourseModal} animationType="slide" transparent={true}>
+        <View style={styles.modalOverlay}>
+          <View style={styles.modalContent}>
+            <Text style={styles.modalTitle}>Add Educational Course</Text>
+            
+            <TextInput 
+              style={styles.input} 
+              placeholder="Course Title" 
+              value={courseTitle} 
+              onChangeText={setCourseTitle} 
+            />
+            <TextInput 
+              style={[styles.input, { height: 80, textAlignVertical: 'top' }]} 
+              placeholder="Short Description" 
+              multiline 
+              value={courseDesc} 
+              onChangeText={setCourseDesc} 
+            />
+            <TextInput 
+              style={styles.input} 
+              placeholder="Course URL (YouTube/Website)" 
+              value={courseLink} 
+              onChangeText={setCourseLink} 
+              autoCapitalize="none"
+            />
+            
+            <Text style={styles.label}>Category</Text>
+            <View style={{ flexDirection: 'row', flexWrap: 'wrap', gap: 8, marginBottom: 20 }}>
+              {['Academic', 'Skills', 'Tech', 'Language', 'Other'].map(cat => (
+                <TouchableOpacity 
+                  key={cat} 
+                  style={[styles.volChip, courseCategory === cat && styles.volChipActive]}
+                  onPress={() => setCourseCategory(cat)}
+                >
+                  <Text style={[styles.volChipText, courseCategory === cat && styles.volChipTextActive]}>{cat}</Text>
+                </TouchableOpacity>
+              ))}
+            </View>
+
+            <TouchableOpacity 
+              style={[styles.submitBtn, submittingCourse && styles.btnDisabled]} 
+              onPress={handleCreateCourse}
+              disabled={submittingCourse}
+            >
+              {submittingCourse ? <ActivityIndicator color="#fff" /> : <Text style={styles.btnTextLarge}>Add Course</Text>}
+            </TouchableOpacity>
+            
+            <TouchableOpacity style={styles.cancelBtn} onPress={() => setShowCourseModal(false)}>
+              <Text style={styles.cancelText}>Cancel</Text>
+            </TouchableOpacity>
+          </View>
+        </View>
+      </Modal>
     </View>
   );
 }
@@ -502,47 +738,242 @@ export default function AdminDashboard() {
 const styles = StyleSheet.create({
   container: { flex: 1, backgroundColor: '#f8fafc' },
   header: {
-    paddingTop: 70,
-    backgroundColor: '#0f172a',
-    paddingHorizontal: 25,
-    paddingBottom: 30,
-    borderBottomLeftRadius: 30,
-    borderBottomRightRadius: 30,
+    paddingTop: Platform.OS === 'ios' ? 60 : 50,
+    backgroundColor: 'transparent', // Made transparent
+    paddingHorizontal: 20,
+    paddingBottom: 15,
+    flexDirection: 'row',
+    alignItems: 'center',
+    justifyContent: 'space-between',
+    zIndex: 100,
   },
-  logoutBtn: { position: 'absolute', right: 25, top: 60, padding: 8, backgroundColor: '#334155', borderRadius: 10 },
-  adminTag: { color: '#38bdf8', fontWeight: 'bold', fontSize: 12, letterSpacing: 2 },
-  welcome: { color: '#fff', fontSize: 26, fontWeight: 'bold', marginTop: 5 },
-  tabBar: { flexDirection: 'row', padding: 15, backgroundColor: '#fff', marginHorizontal: 20, marginTop: -25, borderRadius: 15, elevation: 4 },
-  tabItem: { flex: 1, alignItems: 'center', paddingVertical: 10 },
-  tabActive: { borderBottomWidth: 3, borderBottomColor: '#0077cc' },
-  tabText: { color: '#64748b', fontWeight: '600' },
-  tabTextActive: { color: '#0077cc', fontWeight: 'bold' },
-  tabContent: { padding: 25 },
-  statsGrid: { flexDirection: 'row', flexWrap: 'wrap', justifyContent: 'space-between' },
-  statCard: { width: '48%', padding: 20, borderRadius: 20, marginBottom: 15, alignItems: 'center' },
-  statVal: { fontSize: 24, fontWeight: 'bold', marginVertical: 8, color: '#1e293b' },
-  statLab: { fontSize: 12, color: '#64748b', fontWeight: '500' },
-  sectionTitle: { fontSize: 18, fontWeight: 'bold', color: '#1e293b', marginBottom: 15 },
-  infoCard: { backgroundColor: '#fff', padding: 20, borderRadius: 15, elevation: 1 },
-  infoRow: { flexDirection: 'row', justifyContent: 'space-between', marginBottom: 10 },
-  infoLabel: { color: '#64748b' },
-  infoVal: { fontWeight: 'bold', color: '#1e293b' },
-  requestCard: { backgroundColor: '#fff', padding: 20, borderRadius: 20, marginBottom: 15, elevation: 2 },
-  cardHeader: { flexDirection: 'row', justifyContent: 'space-between', marginBottom: 12 },
-  reqTypeBadge: { backgroundColor: '#e2e8f0', paddingHorizontal: 10, paddingVertical: 4, borderRadius: 8 },
-  badgeText: { fontSize: 10, fontWeight: 'bold', color: '#475569' },
-  statusLabel: { fontSize: 10, fontWeight: 'bold', color: '#f59e0b' },
-  reqTitle: { fontSize: 16, fontWeight: 'bold', color: '#1e293b', marginBottom: 8 },
-  reqDetail: { fontSize: 13, color: '#64748b', marginBottom: 4 },
-  actionRow: { flexDirection: 'row', marginTop: 15, gap: 10 },
-  approveBtn: { flex: 1, backgroundColor: '#059669', flexDirection: 'row', padding: 12, borderRadius: 12, justifyContent: 'center', alignItems: 'center', gap: 5 },
-  rejectBtn: { flex: 1, backgroundColor: '#dc2626', flexDirection: 'row', padding: 12, borderRadius: 12, justifyContent: 'center', alignItems: 'center', gap: 5 },
-  btnText: { color: '#fff', fontWeight: 'bold' },
+  menuBtn: {
+    padding: 10,
+    backgroundColor: 'rgba(0,0,0,0.05)',
+    borderRadius: 15,
+  },
+  logoutBtn: { 
+    padding: 10, 
+    backgroundColor: 'rgba(239, 68, 68, 0.1)', 
+    borderRadius: 15,
+  },
+  adminTag: { 
+    color: '#0f172a', // Changed to dark for transparent header
+    fontWeight: '900', 
+    fontSize: 24, 
+    letterSpacing: 1,
+  },
+  sidebarOverlay: {
+    position: 'absolute',
+    top: 0,
+    left: 0,
+    width: '100%',
+    height: '100%',
+    backgroundColor: 'rgba(15, 23, 42, 0.7)',
+    zIndex: 1000,
+  },
+  sidebar: {
+    width: '70%',
+    height: '85%',
+    backgroundColor: '#fff',
+    paddingTop: Platform.OS === 'ios' ? 50 : 30,
+    marginTop: Platform.OS === 'ios' ? 60 : 40,
+    borderTopRightRadius: 35,
+    borderBottomRightRadius: 35,
+    elevation: 25,
+    shadowColor: '#000',
+    shadowOffset: { width: 5, height: 0 },
+    shadowOpacity: 0.4,
+    shadowRadius: 20,
+  },
+  sidebarHeader: {
+    paddingHorizontal: 30,
+    marginBottom: 30,
+    paddingBottom: 20,
+    borderBottomWidth: 1,
+    borderBottomColor: '#f1f5f9',
+  },
+  sidebarTitle: {
+    fontSize: 28,
+    fontWeight: 'bold',
+    color: '#0077cc',
+  },
+  sidebarSub: {
+    fontSize: 14,
+    color: '#64748b',
+    marginTop: 5,
+    fontWeight: '600',
+  },
+  sidebarMenu: {
+    flex: 1,
+    paddingHorizontal: 15,
+  },
+  sidebarItem: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    padding: 16,
+    borderRadius: 18,
+    marginBottom: 10,
+    borderWidth: 1,
+    borderColor: 'transparent',
+  },
+  sidebarItemActive: {
+    backgroundColor: '#eff6ff',
+    borderColor: '#3b82f6',
+  },
+  sidebarText: {
+    marginLeft: 15,
+    fontSize: 17,
+    color: '#475569',
+    fontWeight: '600',
+  },
+  sidebarTextActive: {
+    color: '#1d4ed8',
+    fontWeight: 'bold',
+  },
+  sidebarFooter: {
+    padding: 30,
+    borderTopWidth: 1,
+    borderTopColor: '#f1f5f9',
+    flexDirection: 'row',
+    alignItems: 'center',
+    marginBottom: Platform.OS === 'ios' ? 30 : 15,
+  },
+  tabContent: { 
+    padding: 18,
+  },
+  statsGrid: { 
+    flexDirection: 'row', 
+    flexWrap: 'wrap', 
+    justifyContent: 'space-between',
+  },
+  statCard: { 
+    width: '48%', 
+    padding: 22, 
+    borderRadius: 28, 
+    marginBottom: 18, 
+    alignItems: 'center',
+    borderWidth: 0, // Removed black border
+    elevation: 5,
+    shadowColor: '#000',
+    shadowOffset: { width: 0, height: 4 },
+    shadowOpacity: 0.1,
+    shadowRadius: 10,
+  },
+  statVal: { 
+    fontSize: 28, 
+    fontWeight: 'bold', 
+    marginVertical: 10, 
+    color: '#0f172a' 
+  },
+  statLab: { 
+    fontSize: 14, 
+    color: '#64748b', 
+    fontWeight: '700',
+    textAlign: 'center'
+  },
+  sectionTitle: { 
+    fontSize: 24, 
+    fontWeight: 'bold', 
+    color: '#0f172a', 
+    marginBottom: 18,
+    marginTop: 10,
+  },
+  infoCard: { 
+    backgroundColor: '#fff', 
+    padding: 20, 
+    borderRadius: 24, 
+    elevation: 3,
+    shadowColor: '#000',
+    shadowOffset: { width: 0, height: 2 },
+    shadowOpacity: 0.05,
+    shadowRadius: 5,
+  },
+  infoLabel: { 
+    fontSize: 14, 
+    color: '#64748b', 
+    fontWeight: '500' 
+  },
+  infoVal: { 
+    fontSize: 14, 
+    fontWeight: 'bold', 
+    color: '#0f172a' 
+  },
+  requestCard: { 
+    backgroundColor: '#fff', 
+    padding: 22, 
+    borderRadius: 28, 
+    marginBottom: 18, 
+    borderWidth: 0, // Removed black border
+    elevation: 6,
+    shadowColor: '#000',
+    shadowOffset: { width: 0, height: 5 },
+    shadowOpacity: 0.1,
+    shadowRadius: 12,
+  },
+  cardHeader: { 
+    flexDirection: 'row', 
+    justifyContent: 'space-between', 
+    marginBottom: 15,
+    alignItems: 'center'
+  },
+  reqTypeBadge: { 
+    backgroundColor: '#f1f5f9', 
+    paddingHorizontal: 12, 
+    paddingVertical: 6, 
+    borderRadius: 10 
+  },
+  badgeText: { fontSize: 11, fontWeight: 'bold', color: '#475569', letterSpacing: 0.5 },
+  statusLabel: { fontSize: 11, fontWeight: 'bold', color: '#f59e0b', textTransform: 'uppercase' },
+  reqTitle: { fontSize: 18, fontWeight: 'bold', color: '#1e293b', marginBottom: 10 },
+  reqDetail: { fontSize: 14, color: '#64748b', marginBottom: 6, lineHeight: 20 },
+  actionRow: { flexDirection: 'row', marginTop: 20, gap: 12 },
+  approveBtn: { 
+    flex: 1, 
+    backgroundColor: '#10b981', 
+    flexDirection: 'row', 
+    padding: 14, 
+    borderRadius: 16, 
+    justifyContent: 'center', 
+    alignItems: 'center', 
+    gap: 8,
+    elevation: 3,
+  },
+  rejectBtn: { 
+    flex: 1, 
+    backgroundColor: '#ef4444', 
+    flexDirection: 'row', 
+    padding: 14, 
+    borderRadius: 16, 
+    justifyContent: 'center', 
+    alignItems: 'center', 
+    gap: 8,
+    elevation: 3,
+  },
+  btnText: { color: '#fff', fontWeight: 'bold', fontSize: 15 },
   rowBetween: { flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center' },
-  addTaskBtn: { backgroundColor: '#0077cc', width: 40, height: 40, borderRadius: 20, justifyContent: 'center', alignItems: 'center' },
-  subText: { color: '#64748b', marginBottom: 20 },
-  modalOverlay: { flex: 1, backgroundColor: 'rgba(0,0,0,0.6)', justifyContent: 'flex-end' },
-  modalContent: { backgroundColor: '#fff', borderTopLeftRadius: 30, borderTopRightRadius: 30, padding: 30 },
+  addTaskBtn: { 
+    backgroundColor: '#3b82f6', 
+    width: 48, 
+    height: 48, 
+    borderRadius: 24, 
+    justifyContent: 'center', 
+    alignItems: 'center',
+    elevation: 5,
+    shadowColor: '#3b82f6',
+    shadowOffset: { width: 0, height: 4 },
+    shadowOpacity: 0.3,
+    shadowRadius: 8,
+  },
+  subText: { color: '#64748b', marginBottom: 25, fontSize: 14, lineHeight: 22 },
+  modalOverlay: { flex: 1, backgroundColor: 'rgba(15, 23, 42, 0.8)', justifyContent: 'flex-end' },
+  modalContent: { 
+    backgroundColor: '#fff', 
+    borderTopLeftRadius: 35, 
+    borderTopRightRadius: 35, 
+    padding: 30,
+    maxHeight: '90%'
+  },
   modalTitle: { fontSize: 20, fontWeight: 'bold', marginBottom: 20 },
   input: { backgroundColor: '#f1f5f9', padding: 15, borderRadius: 12, marginBottom: 15 },
   label: { fontSize: 14, fontWeight: 'bold', marginBottom: 10 },

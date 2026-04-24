@@ -1,5 +1,20 @@
-const API_BASE_URL = 'http://192.168.1.3:5000/api';
-export const SOCKET_URL = 'http://192.168.1.3:5000';
+import Constants from 'expo-constants';
+
+// ─── Base URLs ────────────────────────────────────────────────────────────────
+// Dynamic IP detection: Automatically uses the host machine's IP address
+const debuggerHost = Constants.expoConfig?.hostUri;
+const hostIP = debuggerHost ? debuggerHost.split(':')[0] : '192.168.1.59';
+
+const API_BASE_URL: string = `http://${hostIP}:5000/api`;
+export const SOCKET_URL: string = `http://${hostIP}:5000`;
+
+// ─── Shared helpers ───────────────────────────────────────────────────────────
+
+/** Returns Authorization headers when a token is provided. */
+const authHeaders = (token?: string): Record<string, string> =>
+  token ? { Authorization: `Bearer ${token}` } : {};
+
+// ─── Interfaces ───────────────────────────────────────────────────────────────
 
 interface LoginCredentials {
   email: string;
@@ -25,31 +40,23 @@ interface ApiResponse {
   };
 }
 
+// ─── Auth ─────────────────────────────────────────────────────────────────────
+
 export const loginApi = async (credentials: LoginCredentials): Promise<ApiResponse> => {
   try {
     const response = await fetch(`${API_BASE_URL}/auth/login`, {
       method: 'POST',
-      headers: {
-        'Content-Type': 'application/json',
-      },
+      headers: { 'Content-Type': 'application/json' },
       body: JSON.stringify(credentials),
     });
 
     let data: any;
-    try {
-      data = await response.json();
-    } catch (e) {
-      if (!response.ok) {
-        throw new Error(`HTTP error! status: ${response.status}`);
-      }
+    try { data = await response.json(); } catch (e) {
+      if (!response.ok) throw new Error(`HTTP error! status: ${response.status}`);
     }
 
-    if (!response.ok) {
-      throw new Error(data?.message || `HTTP error! status: ${response.status}`);
-    }
-    if (!data.success) {
-      throw new Error(data.message || 'Login failed');
-    }
+    if (!response.ok) throw new Error(data?.message || `HTTP error! status: ${response.status}`);
+    if (!data.success) throw new Error(data.message || 'Login failed');
 
     return data;
   } catch (error) {
@@ -62,27 +69,17 @@ export const signupApi = async (data: SignupData): Promise<ApiResponse> => {
   try {
     const response = await fetch(`${API_BASE_URL}/auth/signup`, {
       method: 'POST',
-      headers: {
-        'Content-Type': 'application/json',
-      },
+      headers: { 'Content-Type': 'application/json' },
       body: JSON.stringify(data),
     });
 
     let result: any;
-    try {
-      result = await response.json();
-    } catch (e) {
-      if (!response.ok) {
-        throw new Error(`HTTP error! status: ${response.status}`);
-      }
+    try { result = await response.json(); } catch (e) {
+      if (!response.ok) throw new Error(`HTTP error! status: ${response.status}`);
     }
 
-    if (!response.ok) {
-      throw new Error(result?.message || `HTTP error! status: ${response.status}`);
-    }
-    if (!result.success) {
-      throw new Error(result.message || 'Signup failed');
-    }
+    if (!response.ok) throw new Error(result?.message || `HTTP error! status: ${response.status}`);
+    if (!result.success) throw new Error(result.message || 'Signup failed');
 
     return result;
   } catch (error) {
@@ -91,7 +88,7 @@ export const signupApi = async (data: SignupData): Promise<ApiResponse> => {
   }
 };
 
-// --- Donor API Endpoints ---
+// ─── Donor ────────────────────────────────────────────────────────────────────
 
 export interface DonorData {
   userId: string;
@@ -103,18 +100,11 @@ export interface DonorData {
 
 export const fetchDonorProfile = async (userId: string) => {
   try {
-    const response = await fetch(`${API_BASE_URL}/donors/profile/${userId}`, {
-      method: 'GET',
-      headers: {
-        'Content-Type': 'application/json',
-      },
-    });
-
+    const response = await fetch(`${API_BASE_URL}/donors/profile/${userId}`);
     if (!response.ok) {
-      if (response.status === 404) return null; // Expected when donor is not registered yet
+      if (response.status === 404) return null;
       throw new Error(`HTTP error! status: ${response.status}`);
     }
-
     const data = await response.json();
     return data.donor;
   } catch (error) {
@@ -127,25 +117,16 @@ export const registerDonorProfile = async (data: DonorData) => {
   try {
     const response = await fetch(`${API_BASE_URL}/donors/register`, {
       method: 'POST',
-      headers: {
-        'Content-Type': 'application/json',
-      },
+      headers: { 'Content-Type': 'application/json' },
       body: JSON.stringify(data),
     });
 
     let result: any;
-    try {
-      result = await response.json();
-    } catch (e) {
-      if (!response.ok) {
-        throw new Error(`HTTP error! status: ${response.status}`);
-      }
+    try { result = await response.json(); } catch (e) {
+      if (!response.ok) throw new Error(`HTTP error! status: ${response.status}`);
     }
 
-    if (!response.ok) {
-      throw new Error(result?.message || `HTTP error! status: ${response.status}`);
-    }
-
+    if (!response.ok) throw new Error(result?.message || `HTTP error! status: ${response.status}`);
     return result.donor;
   } catch (error) {
     console.error('Register Donor Profile error:', error);
@@ -184,20 +165,17 @@ export interface DonationData {
   recipientName: string;
 }
 
-export const makeDonation = async (data: DonationData) => {
+export const makeDonation = async (data: DonationData, token?: string) => {
   try {
     const response = await fetch(`${API_BASE_URL}/donors/donate`, {
       method: 'POST',
-      headers: { 'Content-Type': 'application/json' },
+      headers: { 'Content-Type': 'application/json', ...authHeaders(token) },
       body: JSON.stringify(data),
     });
 
     let result: any;
-    try { result = await response.json(); } catch(e) {}
-    
-    if (!response.ok) {
-      throw new Error(result?.message || `HTTP error! status: ${response.status}`);
-    }
+    try { result = await response.json(); } catch (e) {}
+    if (!response.ok) throw new Error(result?.message || `HTTP error! status: ${response.status}`);
     return result;
   } catch (error) {
     console.error('Make Donation error:', error);
@@ -205,7 +183,7 @@ export const makeDonation = async (data: DonationData) => {
   }
 };
 
-// --- Fee Management API Endpoints ---
+// ─── Fee Management ───────────────────────────────────────────────────────────
 
 export interface FeeData {
   orphanId: string;
@@ -214,15 +192,15 @@ export interface FeeData {
   dueDate: string;
 }
 
-export const createOrphanFee = async (data: FeeData) => {
+export const createOrphanFee = async (data: FeeData, token?: string) => {
   try {
     const response = await fetch(`${API_BASE_URL}/fees/create`, {
       method: 'POST',
-      headers: { 'Content-Type': 'application/json' },
+      headers: { 'Content-Type': 'application/json', ...authHeaders(token) },
       body: JSON.stringify(data),
     });
     let result: any;
-    try { result = await response.json(); } catch(e) {}
+    try { result = await response.json(); } catch (e) {}
     if (!response.ok) throw new Error(result?.message || 'Error creating fee');
     return result;
   } catch (error) {
@@ -255,15 +233,15 @@ export const fetchAvailableFees = async () => {
   }
 };
 
-export const pledgeFee = async (feeId: string, donorId: string) => {
+export const pledgeFee = async (feeId: string, donorId: string, token?: string) => {
   try {
     const response = await fetch(`${API_BASE_URL}/fees/pledge/${feeId}`, {
       method: 'POST',
-      headers: { 'Content-Type': 'application/json' },
+      headers: { 'Content-Type': 'application/json', ...authHeaders(token) },
       body: JSON.stringify({ donorId }),
     });
     let result: any;
-    try { result = await response.json(); } catch(e) {}
+    try { result = await response.json(); } catch (e) {}
     if (!response.ok) throw new Error(result?.message || 'Error pledging fee');
     return result;
   } catch (error) {
@@ -272,7 +250,24 @@ export const pledgeFee = async (feeId: string, donorId: string) => {
   }
 };
 
-// --- Messaging API Endpoints ---
+/** Mark a pledged fee as fully paid. */
+export const payFeeApi = async (feeId: string, token?: string) => {
+  try {
+    const response = await fetch(`${API_BASE_URL}/fees/pay/${feeId}`, {
+      method: 'PUT',
+      headers: { 'Content-Type': 'application/json', ...authHeaders(token) },
+    });
+    let result: any;
+    try { result = await response.json(); } catch (e) {}
+    if (!response.ok) throw new Error(result?.message || 'Error marking fee as paid');
+    return result;
+  } catch (error) {
+    console.error('Pay fee error:', error);
+    throw error;
+  }
+};
+
+// ─── Messaging ────────────────────────────────────────────────────────────────
 
 export const fetchConversations = async () => {
   try {
@@ -310,7 +305,7 @@ export const sendMessageApi = async (receiverId: string, message: string) => {
   }
 };
 
-// --- Orphan API Endpoints ---
+// ─── Orphan ───────────────────────────────────────────────────────────────────
 
 export const fetchOrphanProfile = async (userId: string) => {
   try {
@@ -331,15 +326,12 @@ export const registerOrphanProfile = async (formData: FormData) => {
   try {
     const response = await fetch(`${API_BASE_URL}/orphans/register`, {
       method: 'POST',
-      body: formData, // No Content-Type header needed for FormData
+      body: formData,
     });
 
     let result: any;
-    try { result = await response.json(); } catch(e) {}
-
-    if (!response.ok) {
-      throw new Error(result?.message || `HTTP error! status: ${response.status}`);
-    }
+    try { result = await response.json(); } catch (e) {}
+    if (!response.ok) throw new Error(result?.message || `HTTP error! status: ${response.status}`);
     return result.orphan;
   } catch (error) {
     console.error('Register Orphan Profile error:', error);
@@ -347,19 +339,17 @@ export const registerOrphanProfile = async (formData: FormData) => {
   }
 };
 
-export const updateOrphanProfile = async (userId: string, formData: FormData) => {
+export const updateOrphanProfile = async (userId: string, formData: FormData, token?: string) => {
   try {
     const response = await fetch(`${API_BASE_URL}/orphans/profile/${userId}`, {
       method: 'PUT',
-      body: formData, // FormData handles the boundaries
+      headers: { ...authHeaders(token) },
+      body: formData,
     });
 
     let result: any;
-    try { result = await response.json(); } catch(e) {}
-
-    if (!response.ok) {
-      throw new Error(result?.message || `HTTP error! status: ${response.status}`);
-    }
+    try { result = await response.json(); } catch (e) {}
+    if (!response.ok) throw new Error(result?.message || `HTTP error! status: ${response.status}`);
     return result.orphan;
   } catch (error) {
     console.error('Update Orphan Profile error:', error);
@@ -390,10 +380,11 @@ export const fetchOrphanProgress = async (orphanId: string) => {
   }
 };
 
-export const createProgressApi = async (formData: FormData) => {
+export const createProgressApi = async (formData: FormData, token?: string) => {
   try {
     const response = await fetch(`${API_BASE_URL}/progress/add`, {
       method: 'POST',
+      headers: { ...authHeaders(token) },
       body: formData,
     });
     const result = await response.json();
@@ -405,10 +396,11 @@ export const createProgressApi = async (formData: FormData) => {
   }
 };
 
-export const deleteProgressApi = async (id: string) => {
+export const deleteProgressApi = async (id: string, token?: string) => {
   try {
     const response = await fetch(`${API_BASE_URL}/progress/${id}`, {
       method: 'DELETE',
+      headers: { ...authHeaders(token) },
     });
     const result = await response.json();
     if (!response.ok) throw new Error(result?.message || 'Error deleting progress');
@@ -429,11 +421,11 @@ export interface MaterialRequestData {
   school: string;
 }
 
-export const submitMaterialRequest = async (data: MaterialRequestData) => {
+export const submitMaterialRequest = async (data: MaterialRequestData, token?: string) => {
   try {
     const response = await fetch(`${API_BASE_URL}/requests/submit`, {
       method: 'POST',
-      headers: { 'Content-Type': 'application/json' },
+      headers: { 'Content-Type': 'application/json', ...authHeaders(token) },
       body: JSON.stringify(data),
     });
     return await response.json();
@@ -466,11 +458,13 @@ export const fetchOrphanAidFeed = async (orphanId: string) => {
   }
 };
 
-// --- Volunteer & Task API Endpoints ---
+// ─── Volunteer & Task ─────────────────────────────────────────────────────────
 
-export const fetchVolunteerTasks = async (volunteerId: string) => {
+export const fetchVolunteerTasks = async (volunteerId: string, token?: string) => {
   try {
-    const response = await fetch(`${API_BASE_URL}/tasks/volunteer/${volunteerId}`);
+    const response = await fetch(`${API_BASE_URL}/tasks/volunteer/${volunteerId}`, {
+      headers: { ...authHeaders(token) },
+    });
     const data = await response.json();
     return data.tasks || [];
   } catch (error) {
@@ -479,9 +473,11 @@ export const fetchVolunteerTasks = async (volunteerId: string) => {
   }
 };
 
-export const fetchVolunteerStats = async (volunteerId: string) => {
+export const fetchVolunteerStats = async (volunteerId: string, token?: string) => {
   try {
-    const response = await fetch(`${API_BASE_URL}/tasks/stats/${volunteerId}`);
+    const response = await fetch(`${API_BASE_URL}/tasks/stats/${volunteerId}`, {
+      headers: { ...authHeaders(token) },
+    });
     const data = await response.json();
     return data.stats;
   } catch (error) {
@@ -490,11 +486,11 @@ export const fetchVolunteerStats = async (volunteerId: string) => {
   }
 };
 
-export const updateTaskStatusApi = async (taskId: string, status: string, notes?: string) => {
+export const updateTaskStatusApi = async (taskId: string, status: string, token?: string, notes?: string) => {
   try {
     const response = await fetch(`${API_BASE_URL}/tasks/${taskId}/status`, {
       method: 'PUT',
-      headers: { 'Content-Type': 'application/json' },
+      headers: { 'Content-Type': 'application/json', ...authHeaders(token) },
       body: JSON.stringify({ status, notes }),
     });
     return await response.json();
@@ -504,11 +500,13 @@ export const updateTaskStatusApi = async (taskId: string, status: string, notes?
   }
 };
 
-// --- Admin API Endpoints ---
+// ─── Admin ────────────────────────────────────────────────────────────────────
 
-export const fetchAdminStats = async () => {
+export const fetchAdminStats = async (token?: string) => {
   try {
-    const response = await fetch(`${API_BASE_URL}/admin/stats`);
+    const response = await fetch(`${API_BASE_URL}/admin/stats`, {
+      headers: { ...authHeaders(token) },
+    });
     if (!response.ok) throw new Error('Error fetching admin stats');
     const data = await response.json();
     return data;
@@ -518,9 +516,11 @@ export const fetchAdminStats = async () => {
   }
 };
 
-export const fetchAllRequests = async () => {
+export const fetchAllRequests = async (token?: string) => {
   try {
-    const response = await fetch(`${API_BASE_URL}/requests`);
+    const response = await fetch(`${API_BASE_URL}/requests`, {
+      headers: { ...authHeaders(token) },
+    });
     if (!response.ok) throw new Error('Error fetching requests');
     const data = await response.json();
     return data.requests || [];
@@ -530,15 +530,12 @@ export const fetchAllRequests = async () => {
   }
 };
 
-export const rejectRequestApi = async (requestId: string, donorId: string, token: string) => {
+export const rejectRequestApi = async (requestId: string, donorId: string, token?: string) => {
   try {
     const response = await fetch(`${API_BASE_URL}/requests/${requestId}/reject`, {
       method: 'PUT',
-      headers: {
-        'Content-Type': 'application/json',
-        'Authorization': `Bearer ${token}`
-      },
-      body: JSON.stringify({ donorId })
+      headers: { 'Content-Type': 'application/json', Authorization: `Bearer ${token}` },
+      body: JSON.stringify({ donorId }),
     });
     const result = await response.json();
     if (!response.ok) throw new Error(result?.message || 'Error rejecting request');
@@ -549,14 +546,11 @@ export const rejectRequestApi = async (requestId: string, donorId: string, token
   }
 };
 
-export const updateRequestStatus = async (requestId: string, status: string, token: string) => {
+export const updateRequestStatus = async (requestId: string, status: string, token?: string) => {
   try {
     const response = await fetch(`${API_BASE_URL}/requests/${requestId}/status`, {
       method: 'PUT',
-      headers: { 
-        'Content-Type': 'application/json',
-        'Authorization': `Bearer ${token}`
-      },
+      headers: { 'Content-Type': 'application/json', Authorization: `Bearer ${token}` },
       body: JSON.stringify({ status }),
     });
     const result = await response.json();
@@ -568,9 +562,11 @@ export const updateRequestStatus = async (requestId: string, status: string, tok
   }
 };
 
-export const fetchAllVolunteers = async () => {
+export const fetchAllVolunteers = async (token?: string) => {
   try {
-    const response = await fetch(`${API_BASE_URL}/admin/volunteers`);
+    const response = await fetch(`${API_BASE_URL}/admin/volunteers`, {
+      headers: { ...authHeaders(token) },
+    });
     if (!response.ok) throw new Error('Error fetching volunteers');
     const data = await response.json();
     return data.volunteers || [];
@@ -580,11 +576,11 @@ export const fetchAllVolunteers = async () => {
   }
 };
 
-export const createTaskApi = async (taskData: any) => {
+export const createTaskApi = async (taskData: any, token?: string) => {
   try {
     const response = await fetch(`${API_BASE_URL}/tasks`, {
       method: 'POST',
-      headers: { 'Content-Type': 'application/json' },
+      headers: { 'Content-Type': 'application/json', ...authHeaders(token) },
       body: JSON.stringify(taskData),
     });
     const result = await response.json();
@@ -596,9 +592,25 @@ export const createTaskApi = async (taskData: any) => {
   }
 };
 
-export const fetchAllUsers = async () => {
+export const fetchAllTasks = async (token?: string) => {
   try {
-    const response = await fetch(`${API_BASE_URL}/admin/users`);
+    const response = await fetch(`${API_BASE_URL}/tasks`, {
+      headers: { ...authHeaders(token) },
+    });
+    if (!response.ok) throw new Error('Error fetching all tasks');
+    const data = await response.json();
+    return data.tasks || [];
+  } catch (error) {
+    console.error('Fetch all tasks error:', error);
+    throw error;
+  }
+};
+
+export const fetchAllUsers = async (token?: string) => {
+  try {
+    const response = await fetch(`${API_BASE_URL}/admin/users`, {
+      headers: { ...authHeaders(token) },
+    });
     if (!response.ok) throw new Error('Error fetching users');
     const data = await response.json();
     return data.users || [];
@@ -608,9 +620,11 @@ export const fetchAllUsers = async () => {
   }
 };
 
-export const fetchAllDonations = async () => {
+export const fetchAllDonations = async (token?: string) => {
   try {
-    const response = await fetch(`${API_BASE_URL}/admin/donations`);
+    const response = await fetch(`${API_BASE_URL}/admin/donations`, {
+      headers: { ...authHeaders(token) },
+    });
     if (!response.ok) throw new Error('Error fetching donations');
     const data = await response.json();
     return data.donations || [];
@@ -620,14 +634,11 @@ export const fetchAllDonations = async () => {
   }
 };
 
-export const updateUserStatusApi = async (userId: string, status: string, token: string) => {
+export const updateUserStatusApi = async (userId: string, status: string, token?: string) => {
   try {
     const response = await fetch(`${API_BASE_URL}/admin/users/${userId}/status`, {
       method: 'PUT',
-      headers: { 
-        'Content-Type': 'application/json',
-        'Authorization': `Bearer ${token}`
-      },
+      headers: { 'Content-Type': 'application/json', Authorization: `Bearer ${token}` },
       body: JSON.stringify({ status }),
     });
     const result = await response.json();
@@ -638,3 +649,67 @@ export const updateUserStatusApi = async (userId: string, status: string, token:
     throw error;
   }
 };
+
+// ─── LMS / Courses ───────────────────────────────────────────────────────────
+
+export const fetchApprovedCourses = async (token?: string) => {
+  try {
+    const response = await fetch(`${API_BASE_URL}/courses/approved`, {
+      headers: { ...authHeaders(token) },
+    });
+    if (!response.ok) throw new Error('Error fetching approved courses');
+    const data = await response.json();
+    return data.courses || [];
+  } catch (error) {
+    console.error('Fetch approved courses error:', error);
+    throw error;
+  }
+};
+
+export const fetchAllCourses = async (token?: string) => {
+  try {
+    const response = await fetch(`${API_BASE_URL}/courses/all`, {
+      headers: { ...authHeaders(token) },
+    });
+    if (!response.ok) throw new Error('Error fetching all courses');
+    const data = await response.json();
+    return data.courses || [];
+  } catch (error) {
+    console.error('Fetch all courses error:', error);
+    throw error;
+  }
+};
+
+export const createCourseApi = async (courseData: any, token?: string) => {
+  try {
+    const response = await fetch(`${API_BASE_URL}/courses/create`, {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json', ...authHeaders(token) },
+      body: JSON.stringify(courseData),
+    });
+    const result = await response.json();
+    if (!response.ok) throw new Error(result?.message || 'Error creating course');
+    return result;
+  } catch (error) {
+    console.error('Create course error:', error);
+    throw error;
+  }
+};
+
+export const updateCourseStatusApi = async (id: string, status: string, token?: string) => {
+  try {
+    const response = await fetch(`${API_BASE_URL}/courses/${id}/status`, {
+      method: 'PUT',
+      headers: { 'Content-Type': 'application/json', ...authHeaders(token) },
+      body: JSON.stringify({ status }),
+    });
+    const result = await response.json();
+    if (!response.ok) throw new Error(result?.message || 'Error updating course status');
+    return result;
+  } catch (error) {
+    console.error('Update course status error:', error);
+    throw error;
+  }
+};
+
+

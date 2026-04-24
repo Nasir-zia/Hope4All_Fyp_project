@@ -27,7 +27,8 @@ import {
   fetchAvailableFees,
   pledgeFee,
   updateRequestStatus,
-  rejectRequestApi
+  rejectRequestApi,
+  createCourseApi
 } from '@/constants/api';
 import BackButton from './components/BackButton';
 
@@ -57,6 +58,14 @@ export default function DonorDashboard() {
   const [selectedRequest, setSelectedRequest] = useState<any>(null);
   const [units, setUnits] = useState('');
   const [recipientName, setRecipientName] = useState('');
+
+  // Course Creation States
+  const [showCourseModal, setShowCourseModal] = useState(false);
+  const [courseTitle, setCourseTitle] = useState('');
+  const [courseDesc, setCourseDesc] = useState('');
+  const [courseLink, setCourseLink] = useState('');
+  const [courseCategory, setCourseCategory] = useState('Academic');
+  const [submittingCourse, setSubmittingCourse] = useState(false);
 
   useEffect(() => {
     if (user?.id) {
@@ -100,7 +109,7 @@ export default function DonorDashboard() {
   const handlePledgeFee = async (feeId: string) => {
     setPledgingFee(feeId);
     try {
-      await pledgeFee(feeId, donorProfile._id);
+      await pledgeFee(feeId, donorProfile._id, user?.token || '');
       Alert.alert('Pledge Successful', 'Thank you! You have pledged to pay this fee when it is due. You will be notified automatically.');
       const feesData = await fetchAvailableFees();
       setAvailableFees(feesData || []);
@@ -158,7 +167,7 @@ export default function DonorDashboard() {
         requestId: selectedRequest._id,
         units: Number(units),
         recipientName: recipientName || selectedRequest.orphanId?.name || "Orphan"
-      });
+      }, user?.token || '');
 
       // Instantly Update Profile Stats without complete page reload
       setDonorProfile((prev: any) => ({
@@ -199,6 +208,33 @@ export default function DonorDashboard() {
       await loadDashboardData(donorProfile._id || user!.id);
     } catch (error: any) {
       Alert.alert('Error', error.message || 'Could not dismiss request.');
+    }
+  };
+
+  const handleCreateCourse = async () => {
+    if (!courseTitle || !courseDesc || !courseLink) {
+      Alert.alert("Error", "Please fill all fields");
+      return;
+    }
+    setSubmittingCourse(true);
+    try {
+      await createCourseApi({
+        title: courseTitle,
+        description: courseDesc,
+        link: courseLink,
+        category: courseCategory,
+        addedBy: user?.id,
+        addedByRole: 'donor'
+      }, user?.token || '');
+      Alert.alert("✅ Success", "Course request submitted to Admin for approval!");
+      setShowCourseModal(false);
+      setCourseTitle('');
+      setCourseDesc('');
+      setCourseLink('');
+    } catch (err: any) {
+      Alert.alert("Error", err.message || "Could not submit course");
+    } finally {
+      setSubmittingCourse(false);
     }
   };
 
@@ -471,6 +507,26 @@ export default function DonorDashboard() {
             </View>
           </View>
 
+          {/* Learning Hub / LMS Section */}
+          <Text style={styles.sectionTitle}>LMS - Learning Hub</Text>
+          <View style={[styles.formPanel, { backgroundColor: '#eff6ff', borderColor: '#bfdbfe', borderWidth: 1 }]}>
+            <View style={{ flexDirection: 'row', alignItems: 'center', marginBottom: 15 }}>
+              <View style={{ backgroundColor: '#0077cc', padding: 10, borderRadius: 12, marginRight: 15 }}>
+                <Ionicons name="school" size={24} color="#fff" />
+              </View>
+              <View style={{ flex: 1 }}>
+                <Text style={{ fontSize: 18, fontWeight: 'bold', color: '#1e3a8a' }}>Contribute Knowledge</Text>
+                <Text style={{ fontSize: 13, color: '#1e40af' }}>Submit educational courses for orphans.</Text>
+              </View>
+            </View>
+            <TouchableOpacity 
+              style={[styles.donateBtn, { backgroundColor: '#0077cc' }]}
+              onPress={() => setShowCourseModal(true)}
+            >
+              <Text style={styles.donateBtnText}>Submit New Course</Text>
+            </TouchableOpacity>
+          </View>
+
         </ScrollView>
 
         {/* Orphan Profile Modal */}
@@ -549,6 +605,77 @@ export default function DonorDashboard() {
                   </TouchableOpacity>
                 </View>
               )}
+            </View>
+          </View>
+        </Modal>
+
+        {/* Course Request Modal */}
+        <Modal visible={showCourseModal} animationType="slide" transparent={true}>
+          <View style={styles.modalOverlay}>
+            <View style={styles.profileModalContent}>
+              <View style={styles.modalHeader}>
+                <Text style={styles.modalTitle}>Suggest a Course</Text>
+                <TouchableOpacity onPress={() => setShowCourseModal(false)}>
+                  <Ionicons name="close" size={28} color="#333" />
+                </TouchableOpacity>
+              </View>
+              
+              <ScrollView showsVerticalScrollIndicator={false}>
+                <Text style={styles.inputLabel}>Course Title</Text>
+                <View style={styles.smallInputBox}>
+                  <TextInput 
+                    style={styles.textInput} 
+                    placeholder="e.g. Basic Math for Beginners" 
+                    value={courseTitle} 
+                    onChangeText={setCourseTitle} 
+                  />
+                </View>
+
+                <Text style={styles.inputLabel}>Brief Description</Text>
+                <View style={[styles.smallInputBox, { height: 80, alignItems: 'flex-start' }]}>
+                  <TextInput 
+                    style={[styles.textInput, { height: 80, textAlignVertical: 'top', paddingTop: 10 }]} 
+                    placeholder="What will they learn?" 
+                    multiline 
+                    value={courseDesc} 
+                    onChangeText={setCourseDesc} 
+                  />
+                </View>
+
+                <Text style={styles.inputLabel}>Course Link (YouTube/Website)</Text>
+                <View style={styles.smallInputBox}>
+                  <TextInput 
+                    style={styles.textInput} 
+                    placeholder="https://youtube.com/..." 
+                    value={courseLink} 
+                    onChangeText={setCourseLink} 
+                    autoCapitalize="none"
+                  />
+                </View>
+
+                <Text style={styles.inputLabel}>Category</Text>
+                <View style={{ flexDirection: 'row', flexWrap: 'wrap', gap: 8, marginBottom: 20 }}>
+                  {['Academic', 'Skills', 'Tech', 'Language', 'Other'].map(cat => (
+                    <TouchableOpacity 
+                      key={cat} 
+                      style={[styles.requestBubble, courseCategory === cat && styles.requestBubbleSelected, { width: 'auto', paddingHorizontal: 15, paddingVertical: 8 }]}
+                      onPress={() => setCourseCategory(cat)}
+                    >
+                      <Text style={[styles.reqType, courseCategory === cat && styles.reqTextWhite]}>{cat}</Text>
+                    </TouchableOpacity>
+                  ))}
+                </View>
+
+                <TouchableOpacity 
+                  style={[styles.donateBtn, { backgroundColor: '#0077cc' }, submittingCourse && { opacity: 0.7 }]} 
+                  onPress={handleCreateCourse}
+                  disabled={submittingCourse}
+                >
+                  {submittingCourse ? <ActivityIndicator color="#fff" /> : <Text style={styles.donateBtnText}>Submit for Approval</Text>}
+                </TouchableOpacity>
+                
+                <View style={{ height: 20 }} />
+              </ScrollView>
             </View>
           </View>
         </Modal>

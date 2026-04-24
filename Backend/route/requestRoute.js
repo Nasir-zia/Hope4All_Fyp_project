@@ -25,13 +25,13 @@ const storage = CloudinaryStorage({
 const upload = multer({ storage });
 
 // Submit new request
-router.post("/submit", upload.array("documents"), submitRequest);
+router.post("/submit", authenticateToken, upload.array("documents"), submitRequest);
 
-// Get requests by orphan
+// Get requests by orphan (public for donors to view)
 router.get("/orphan/:orphanId", getRequestsByOrphan);
 
-// Get all requests (admin)
-router.get("/", getAllRequests);
+// Get all requests (admin only)
+router.get("/", authenticateToken, requireAdmin, getAllRequests);
 
 // Update request status (Allow donor/admin)
 router.put("/:requestId/status", authenticateToken, updateRequestStatus);

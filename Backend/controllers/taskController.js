@@ -6,31 +6,42 @@ export const createTask = async (req, res) => {
   try {
     const { volunteerId, title, description, type, school, orphanageId, date, priority, notes, assignedBy } = req.body;
 
-    const newTask = new Task({
-      volunteerId,
-      title,
-      description,
-      type: type || 'other',
-      school: school || 'N/A',
-      orphanageId,
-      date: date || new Date(),
-      priority: priority || 'medium',
-      assignedBy: assignedBy || volunteerId, // fallback to volunteerId if no assignedBy
-      notes,
+    // Support bulk assignment if volunteerId is an array
+    const ids = Array.isArray(volunteerId) ? volunteerId : [volunteerId];
+    const tasks = [];
+
+    for (const vId of ids) {
+      const newTask = new Task({
+        volunteerId: vId,
+        title,
+        description,
+        type: type || 'other',
+        school: school || 'N/A',
+        orphanageId,
+        date: date || new Date(),
+        priority: priority || 'medium',
+        assignedBy: assignedBy || vId,
+        notes,
+      });
+
+      await newTask.save();
+      tasks.push(newTask);
+
+      // Notify the assigned volunteer
+      const notification = new Notification({
+        recipientId: vId,
+        type: 'task',
+        title: 'New Task Assigned',
+        message: `New task "${title}" has been assigned to you`,
+      });
+      await notification.save();
+    }
+
+    res.status(201).json({ 
+      message: ids.length > 1 ? 'Tasks broadcasted to all volunteers' : 'Task created successfully', 
+      task: tasks[0], 
+      allTasks: tasks 
     });
-
-    await newTask.save();
-
-    // Create notification for volunteer
-    const notification = new Notification({
-      type: 'task',
-      title: 'New Task Assigned',
-      message: `New task "${title}" has been assigned to you`,
-    });
-
-    await notification.save();
-
-    res.status(201).json({ message: 'Task created successfully', task: newTask });
   } catch (error) {
     res.status(500).json({ message: 'Error creating task', error: error.message });
   }
@@ -81,8 +92,9 @@ export const updateTaskStatus = async (req, res) => {
       return res.status(404).json({ message: 'Task not found' });
     }
 
-    // Create notification
+    // Notify the volunteer about the status change via recipientId (User ref)
     const notification = new Notification({
+      recipientId: updatedTask.volunteerId._id,
       type: 'task_update',
       title: `Task ${status}`,
       message: `Task "${updatedTask.title}" status updated to ${status}`,

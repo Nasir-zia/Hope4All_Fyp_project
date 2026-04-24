@@ -6,22 +6,23 @@ import {
   updateTaskStatus,
   getVolunteerStats
 } from "../controllers/taskController.js";
+import { authenticateToken, requireAdmin } from "../middleware/authMiddleware.js";
 
 const router = express.Router();
 
-// Create new task (admin)
-router.post("/", createTask);
+// Create new task — admin only
+router.post("/", authenticateToken, requireAdmin, createTask);
 
-// Get tasks by volunteer
-router.get("/volunteer/:volunteerId", getTasksByVolunteer);
+// Get tasks for a specific volunteer — authenticated (volunteer reads own tasks)
+router.get("/volunteer/:volunteerId", authenticateToken, getTasksByVolunteer);
 
-// Get all tasks (admin)
-router.get("/", getAllTasks);
+// Get all tasks — admin only
+router.get("/", authenticateToken, requireAdmin, getAllTasks);
 
-// Update task status
-router.put("/:taskId/status", updateTaskStatus);
+// Update task status — authenticated (volunteer updates own task status)
+router.put("/:taskId/status", authenticateToken, updateTaskStatus);
 
-// Get volunteer stats
-router.get("/stats/:volunteerId", getVolunteerStats);
+// Get volunteer stats — authenticated
+router.get("/stats/:volunteerId", authenticateToken, getVolunteerStats);
 
 export default router;

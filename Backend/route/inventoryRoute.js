@@ -6,8 +6,12 @@ import {
   deleteInventoryItem,
   getLowStockItems
 } from "../controllers/inventoryController.js";
+import { authenticateToken, requireAdmin } from "../middleware/authMiddleware.js";
 
 const router = express.Router();
+
+// All inventory routes — admin only
+router.use(authenticateToken, requireAdmin);
 
 // Get all inventory items
 router.get("/", getInventory);

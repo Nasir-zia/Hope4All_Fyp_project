@@ -19,66 +19,71 @@ import {
   deleteDonor
 } from "../controllers/donorController.js";
 import upload from "../middleware/uploadMiddleware.js";
+import { authenticateToken } from "../middleware/authMiddleware.js";
 
 const router = express.Router();
 
+// --- Public read endpoints ---
 
-// Route to register a donor
+// Get all donors
+router.get("/", getDonors);
+
+// Get donor profile (by userId or donorId)
+router.get("/profile/:id", getDonorProfile);
+
+// Get preference options
+router.get("/preferences/options", getPreferenceOptions);
+
+// Get aid received by an orphan
+router.get("/aid/:id", getOrphanAid);
+
+// Get donor by user ID (alias)
+router.get("/user/:userId", getDonorProfile);
+
+// Get matched orphans
+router.get("/matched-orphans/:id", getMatchedOrphans);
+
+// Get donation history
+router.get("/history/:id", getDonationHistory);
+
+// Get orphans donor has donated to
+router.get("/orphans/:id", getDonorOrphans);
+
+// Get notifications
+router.get("/notifications/:id", getNotifications);
+
+// --- Registration (unauthenticated — new users setting up profile) ---
+
+// Register a donor (basic)
 router.post("/register", registerDonor);
 
-// Route to register a donor with file uploads
+// Register a donor with file uploads
 router.post("/register-with-files", upload.fields([
   { name: 'profilePic', maxCount: 1 },
   { name: 'documents', maxCount: 10 }
 ]), registerDonorWithFiles);
 
-// Route to get all donors
-router.get("/", getDonors);
+// --- Authenticated write endpoints ---
 
-// Route to get donor profile
-router.get("/profile/:id", getDonorProfile);
-
-// Route to update donor profile
-router.put("/profile/:id", upload.fields([
+// Update donor profile — must be logged in
+router.put("/profile/:id", authenticateToken, upload.fields([
   { name: 'profilePic', maxCount: 1 },
   { name: 'documents', maxCount: 10 }
 ]), updateDonorProfile);
 
-// Route to make a donation
-router.post("/donate", makeDonation);
+// Make a donation — must be logged in
+router.post("/donate", authenticateToken, makeDonation);
 
-// Route to get donation history
-router.get("/history/:id", getDonationHistory);
+// Update donation — must be logged in
+router.put("/donation/:donationId", authenticateToken, updateDonation);
 
-// Route to get orphans donor has donated to
-router.get("/orphans/:id", getDonorOrphans);
+// Delete donation — must be logged in
+router.delete("/donation/:donationId", authenticateToken, deleteDonation);
 
-// Route to update donation
-router.put("/donation/:donationId", updateDonation);
+// Mark notification as read — must be logged in
+router.put("/notifications/:notificationId/read", authenticateToken, markNotificationRead);
 
-// Route to delete donation
-router.delete("/donation/:donationId", deleteDonation);
-
-// Route to get notifications
-router.get("/notifications/:id", getNotifications);
-
-// Route to mark notification as read
-router.put("/notifications/:notificationId/read", markNotificationRead);
-
-// Route to get matched orphans
-router.get("/matched-orphans/:id", getMatchedOrphans);
-
-
-// Route to get preference options
-router.get("/preferences/options", getPreferenceOptions);
-
-// Route to get aid received by an orphan
-router.get("/aid/:id", getOrphanAid);
-
-// Route to get donor by user ID (for checking profile existence)
-router.get("/user/:userId", getDonorProfile);
-
-// Route to delete donor
-router.delete("/:id", deleteDonor);
+// Delete donor — must be logged in
+router.delete("/:id", authenticateToken, deleteDonor);
 
 export default router;
