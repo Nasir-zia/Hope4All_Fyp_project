@@ -15,6 +15,7 @@ import adminRoutes from "./route/adminRoute.js";
 import messageRoutes from "./route/messageRoute.js";
 import feeRoutes from "./route/fee_route.js";
 import progressRoutes from "./route/progressRoute.js";
+import courseRoutes from "./route/course_route.js";
 import dbconnection from "./Config/dbconnection.js";
 import dns from "dns";
 import initSocket from "./socketHandler.js";
@@ -85,6 +86,7 @@ app.use("/api/fees", feeRoutes);
 
 // progress routes
 app.use("/api/progress", progressRoutes);
+app.use("/api/courses", courseRoutes);
 
 
 

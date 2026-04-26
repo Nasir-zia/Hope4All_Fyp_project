@@ -1,0 +1,22 @@
+﻿
+> hope4all@1.0.0 lint
+> expo lint
+
+env: load .env
+env: export EXPO_PUBLIC_API_URL EXPO_PUBLIC_SOCKET_URL
+
+D:\Hope4All\frontend\Hope4All\app\messages.tsx
+   13:3   warning  'Dimensions' is defined but never used  @typescript-eslint/no-unused-vars
+  127:14  warning  'err' is defined but never used         @typescript-eslint/no-unused-vars
+
+D:\Hope4All\frontend\Hope4All\app\volunteer.tsx
+  54:14  warning  'err' is defined but never used  @typescript-eslint/no-unused-vars
+
+D:\Hope4All\frontend\Hope4All\components\orphan\FullProgressView.tsx
+  28:20  warning  'err' is defined but never used  @typescript-eslint/no-unused-vars
+
+D:\Hope4All\frontend\Hope4All\components\orphan\ProgressSection.tsx
+  23:20  warning  'err' is defined but never used  @typescript-eslint/no-unused-vars
+
+Γ£û 5 problems (0 errors, 5 warnings)
+

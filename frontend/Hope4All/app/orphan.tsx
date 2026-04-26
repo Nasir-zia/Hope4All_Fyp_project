@@ -10,7 +10,8 @@ import {
   ActivityIndicator,
   Platform,
   Modal,
-  Image
+  Image,
+  Linking
 } from 'react-native';
 import { Ionicons } from '@expo/vector-icons';
 import { router } from 'expo-router';
@@ -29,10 +30,11 @@ import {
   fetchOrphanageOptions,
   fetchOrphanAidFeed,
   createProgressApi,
-  deleteProgressApi
+  deleteProgressApi,
+  fetchApprovedCourses
 } from '@/constants/api';
 
-import BackButton from './components/BackButton';
+import BackButton from '@/components/BackButton';
 
 export default function OrphanDashboard() {
   const { user, logout } = useAuth();
@@ -48,6 +50,7 @@ export default function OrphanDashboard() {
   const [materialRequests, setMaterialRequests] = useState<any[]>([]);
   const [progressReports, setProgressReports] = useState<any[]>([]);
   const [aidFeed, setAidFeed] = useState<any[]>([]);
+  const [availableCourses, setAvailableCourses] = useState<any[]>([]);
   const [loadingExtras, setLoadingExtras] = useState(false);
   const [showRequestModal, setShowRequestModal] = useState(false);
 
@@ -124,14 +127,16 @@ export default function OrphanDashboard() {
     if (!targetId) return;
     setLoadingExtras(true);
     try {
-      const [reqs, progress, aid] = await Promise.all([
+      const [reqs, progress, aid, courses] = await Promise.all([
         fetchOrphanRequests(targetId),
         fetchOrphanProgress(targetId),
-        fetchOrphanAidFeed(targetId)
+        fetchOrphanAidFeed(targetId),
+        fetchApprovedCourses()
       ]);
       setMaterialRequests(reqs);
       setProgressReports(progress);
       setAidFeed(aid);
+      setAvailableCourses(courses);
     } catch (err) {
       console.log('Error loading extras:', err);
     } finally {
@@ -621,7 +626,7 @@ export default function OrphanDashboard() {
               <View style={styles.statsRow}>
                 <View style={styles.statItem}>
                   <Ionicons name="book-outline" size={32} color="#4da6ff" />
-                  <Text style={styles.statNumber}>5</Text>
+                  <Text style={styles.statNumber}>{availableCourses.length}</Text>
                   <Text style={styles.statLabel}>Courses</Text>
                 </View>
                 <View style={styles.statItem}>
@@ -668,6 +673,37 @@ export default function OrphanDashboard() {
                   ))
                 )}
               </ScrollView>
+            </View>
+
+            <View style={styles.section}>
+              <Text style={styles.sectionTitle}>Available Courses</Text>
+              <Text style={styles.sectionSub}>Learn new skills from our verified mentors.</Text>
+              {availableCourses.length === 0 ? (
+                <View style={styles.emptyCard}>
+                  <Text style={styles.emptyText}>No courses available yet. Check back soon!</Text>
+                </View>
+              ) : (
+                <ScrollView horizontal showsHorizontalScrollIndicator={false} style={styles.courseScroller}>
+                  {availableCourses.map((course) => (
+                    <TouchableOpacity 
+                      key={course._id} 
+                      style={styles.courseCard}
+                      onPress={() => Linking.openURL(course.link)}
+                    >
+                      <View style={styles.courseIcon}>
+                        <Ionicons name="play-circle" size={32} color="#fff" />
+                      </View>
+                      <Text style={styles.courseTitle} numberOfLines={1}>{course.title}</Text>
+                      <Text style={styles.courseCategory}>{course.category}</Text>
+                      <Text style={styles.courseDesc} numberOfLines={2}>{course.description}</Text>
+                      <View style={styles.instructorRow}>
+                        <Ionicons name="person-circle-outline" size={14} color="#64748b" />
+                        <Text style={styles.instructorName}>{course.instructorName}</Text>
+                      </View>
+                    </TouchableOpacity>
+                  ))}
+                </ScrollView>
+              )}
             </View>
 
             <View style={styles.section}>
@@ -1148,104 +1184,16 @@ const styles = StyleSheet.create({
     color: '#fff',
     fontWeight: '600',
   },
-  emptyText: {
+  emptyTextItalic: {
     color: '#888',
     fontStyle: 'italic',
     textAlign: 'center',
     marginTop: 10,
   },
   aidScroller: {
-    marginTop: 10,
-    marginBottom: 20,
-    paddingLeft: 5,
-  },
-  aidCard: {
-    backgroundColor: '#fff',
-    borderRadius: 20,
-    padding: 15,
-    marginRight: 15,
-    width: 220,
-    elevation: 3,
-    shadowColor: '#000',
-    shadowOffset: { width: 0, height: 2 },
-    shadowOpacity: 0.1,
-    shadowRadius: 5,
-    borderLeftWidth: 5,
-    borderLeftColor: '#33cc99',
-  },
-  donorHeader: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    marginBottom: 12,
-  },
-  donorAvatar: {
-    width: 40,
-    height: 40,
-    borderRadius: 20,
-    backgroundColor: '#f1f5f9',
-    justifyContent: 'center',
-    alignItems: 'center',
-    marginRight: 10,
-  },
-  donorInitial: {
-    fontSize: 18,
-    fontWeight: 'bold',
-    color: '#0077cc',
-  },
-  donorName: {
-    fontSize: 14,
-    fontWeight: 'bold',
-    color: '#333',
-  },
-  aidTime: {
-    fontSize: 11,
-    color: '#999',
-  },
-  aidDetail: {
-    backgroundColor: '#f0fdf4',
-    padding: 10,
-    borderRadius: 12,
-    marginBottom: 12,
-  },
-  aidType: {
-    fontSize: 10,
-    fontWeight: '800',
-    color: '#16a34a',
-    letterSpacing: 0.5,
-  },
-  aidQty: {
-    fontSize: 15,
-    fontWeight: 'bold',
-    color: '#333',
-    marginTop: 2,
-  },
-  thanksBtn: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    justifyContent: 'center',
-    paddingVertical: 8,
-    borderRadius: 10,
-    backgroundColor: '#e6f4ff',
-  },
-  thanksBtnText: {
-    fontSize: 13,
-    fontWeight: '600',
-    color: '#0077cc',
-    marginLeft: 6,
-  },
-  emptyAidCard: {
-    backgroundColor: '#fff',
-    padding: 20,
-    borderRadius: 15,
-    width: 300,
-    alignItems: 'center',
-  },
-  sectionSub: {
-    fontSize: 14,
-    color: '#666',
-    marginLeft: 5,
-    marginTop: -10,
+    marginTop: 5,
     marginBottom: 10,
+    marginLeft: 5,
   },
   feeCard: {
     backgroundColor: '#fff',
@@ -1730,6 +1678,165 @@ const styles = StyleSheet.create({
   },
   statusFulfilledBg: {
     backgroundColor: '#3b82f6', // Blue
+  },
+  courseScroller: {
+    marginVertical: 10,
+  },
+  courseCard: {
+    backgroundColor: '#fff',
+    width: 200,
+    borderRadius: 20,
+    padding: 15,
+    marginRight: 15,
+    elevation: 3,
+    shadowColor: '#000',
+    shadowOffset: { width: 0, height: 2 },
+    shadowOpacity: 0.1,
+    shadowRadius: 5,
+  },
+  courseIcon: {
+    width: 50,
+    height: 50,
+    borderRadius: 25,
+    backgroundColor: '#4da6ff',
+    justifyContent: 'center',
+    alignItems: 'center',
+    marginBottom: 10,
+  },
+  courseTitle: {
+    fontSize: 16,
+    fontWeight: 'bold',
+    color: '#1a1a1a',
+    marginBottom: 4,
+  },
+  courseCategory: {
+    fontSize: 12,
+    color: '#0077cc',
+    fontWeight: '700',
+    marginBottom: 8,
+  },
+  courseDesc: {
+    fontSize: 12,
+    color: '#64748b',
+    lineHeight: 16,
+    marginBottom: 10,
+  },
+  instructorRow: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    borderTopWidth: 1,
+    borderTopColor: '#f1f5f9',
+    paddingTop: 8,
+  },
+  instructorName: {
+    fontSize: 11,
+    color: '#64748b',
+    marginLeft: 4,
+  },
+  sectionSub: {
+    fontSize: 14,
+    color: '#64748b',
+    marginBottom: 15,
+  },
+  emptyAidCard: {
+    backgroundColor: '#fff',
+    padding: 20,
+    borderRadius: 15,
+    borderWidth: 1,
+    borderColor: '#e2e8f0',
+    borderStyle: 'dashed',
+    width: 300,
+    height: 100,
+    justifyContent: 'center',
+    alignItems: 'center',
+  },
+  aidCard: {
+    backgroundColor: '#fff',
+    width: 260,
+    padding: 20,
+    borderRadius: 24,
+    marginRight: 15,
+    shadowColor: '#000',
+    shadowOffset: { width: 0, height: 4 },
+    shadowOpacity: 0.05,
+    shadowRadius: 12,
+    elevation: 3,
+    borderWidth: 1,
+    borderColor: '#f1f5f9',
+  },
+  donorHeader: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    marginBottom: 15,
+  },
+  donorAvatar: {
+    width: 40,
+    height: 40,
+    borderRadius: 20,
+    backgroundColor: '#e0f2fe',
+    justifyContent: 'center',
+    alignItems: 'center',
+    marginRight: 12,
+  },
+  donorInitial: {
+    fontSize: 16,
+    fontWeight: 'bold',
+    color: '#0077cc',
+  },
+  donorName: {
+    fontSize: 15,
+    fontWeight: 'bold',
+    color: '#1e293b',
+  },
+  aidTime: {
+    fontSize: 12,
+    color: '#94a3b8',
+  },
+  aidDetail: {
+    paddingVertical: 10,
+    borderTopWidth: 1,
+    borderTopColor: '#f1f5f9',
+  },
+  aidType: {
+    fontSize: 12,
+    color: '#64748b',
+    textTransform: 'uppercase',
+    letterSpacing: 0.5,
+    fontWeight: '600',
+  },
+  aidQty: {
+    fontSize: 18,
+    fontWeight: 'bold',
+    color: '#0077cc',
+    marginTop: 2,
+  },
+  thanksBtn: {
+    marginTop: 10,
+    backgroundColor: '#f1f5f9',
+    paddingVertical: 8,
+    borderRadius: 12,
+    alignItems: 'center',
+  },
+  thanksBtnText: {
+    fontSize: 12,
+    fontWeight: '600',
+    color: '#0077cc',
+  },
+  emptyCard: {
+    backgroundColor: '#fff',
+    padding: 30,
+    borderRadius: 20,
+    alignItems: 'center',
+    justifyContent: 'center',
+    borderWidth: 1,
+    borderColor: '#e2e8f0',
+    borderStyle: 'dashed',
+    marginVertical: 10,
+  },
+  emptyText: {
+    textAlign: 'center',
+    color: '#64748b',
+    fontSize: 14,
   },
 });
 

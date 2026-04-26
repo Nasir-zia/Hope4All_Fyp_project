@@ -1,5 +1,7 @@
-const API_BASE_URL = 'http://192.168.1.3:5000/api';
-export const SOCKET_URL = 'http://192.168.1.3:5000';
+import { CONFIG } from './Config';
+
+const API_BASE_URL = CONFIG.API_BASE_URL;
+export const SOCKET_URL = CONFIG.SOCKET_URL;
 
 interface LoginCredentials {
   email: string;
@@ -638,3 +640,82 @@ export const updateUserStatusApi = async (userId: string, status: string, token:
     throw error;
   }
 };
+
+// --- Learning Management API Endpoints ---
+
+export interface CourseData {
+  title: string;
+  description: string;
+  link: string;
+  category: string;
+  instructorId: string;
+}
+
+export const addCourseApi = async (data: CourseData) => {
+  try {
+    const response = await fetch(`${API_BASE_URL}/courses/add`, {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify(data),
+    });
+    const result = await response.json();
+    if (!response.ok) throw new Error(result?.message || 'Error adding course');
+    return result;
+  } catch (error) {
+    console.error('Add course error:', error);
+    throw error;
+  }
+};
+
+export const fetchApprovedCourses = async () => {
+  try {
+    const response = await fetch(`${API_BASE_URL}/courses/approved`);
+    if (!response.ok) throw new Error('Error fetching approved courses');
+    const data = await response.json();
+    return data.courses || [];
+  } catch (error) {
+    console.error('Fetch approved courses error:', error);
+    throw error;
+  }
+};
+
+export const fetchPendingCourses = async () => {
+  try {
+    const response = await fetch(`${API_BASE_URL}/courses/pending`);
+    if (!response.ok) throw new Error('Error fetching pending courses');
+    const data = await response.json();
+    return data.courses || [];
+  } catch (error) {
+    console.error('Fetch pending courses error:', error);
+    throw error;
+  }
+};
+
+export const updateCourseStatusApi = async (id: string, status: string) => {
+  try {
+    const response = await fetch(`${API_BASE_URL}/courses/${id}/status`, {
+      method: 'PUT',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ status }),
+    });
+    const result = await response.json();
+    if (!response.ok) throw new Error(result?.message || 'Error updating course status');
+    return result;
+  } catch (error) {
+    console.error('Update course status error:', error);
+    throw error;
+  }
+};
+
+export const fetchDonorCourses = async (donorId: string) => {
+  try {
+    const response = await fetch(`${API_BASE_URL}/courses/donor/${donorId}`);
+    if (!response.ok) throw new Error('Error fetching donor courses');
+    const data = await response.json();
+    return data.courses || [];
+  } catch (error) {
+    console.error('Fetch donor courses error:', error);
+    throw error;
+  }
+};
+

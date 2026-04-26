@@ -24,11 +24,16 @@ import {
   createTaskApi,
   fetchAllUsers,
   updateUserStatusApi,
-  fetchAllDonations
+  fetchAllDonations,
+  fetchPendingCourses,
+  updateCourseStatusApi,
+  addCourseApi
 } from '@/constants/api';
-import BackButton from './components/BackButton';
+import { AdminHeader } from '@/components/admin/AdminHeader';
+import BackButton from '@/components/BackButton';
+import { CourseModal } from '@/components/donor/CourseModal';
 
-type TabType = 'stats' | 'requests' | 'tasks' | 'donations' | 'users';
+type TabType = 'stats' | 'requests' | 'tasks' | 'donations' | 'users' | 'courses';
 
 export default function AdminDashboard() {
   const { user, logout } = useAuth();
@@ -40,6 +45,7 @@ export default function AdminDashboard() {
   const [volunteers, setVolunteers] = useState<any[]>([]);
   const [usersList, setUsersList] = useState<any[]>([]);
   const [donations, setDonations] = useState<any[]>([]);
+  const [pendingCourses, setPendingCourses] = useState<any[]>([]);
   const [loading, setLoading] = useState(true);
   const [refreshing, setRefreshing] = useState(false);
 
@@ -51,6 +57,14 @@ export default function AdminDashboard() {
   const [taskPriority, setTaskPriority] = useState('medium');
   const [submittingTask, setSubmittingTask] = useState(false);
 
+  // Course Creation States
+  const [showCourseModal, setShowCourseModal] = useState(false);
+  const [courseTitle, setCourseTitle] = useState('');
+  const [courseDesc, setCourseDesc] = useState('');
+  const [courseLink, setCourseLink] = useState('');
+  const [courseCategory, setCourseCategory] = useState('Academic');
+  const [submittingCourse, setSubmittingCourse] = useState(false);
+
   useEffect(() => {
     loadAllData();
   }, []);
@@ -58,18 +72,20 @@ export default function AdminDashboard() {
   const loadAllData = async () => {
     setLoading(true);
     try {
-      const [statsData, reqsData, volData, usersData, dontData] = await Promise.all([
+      const [statsData, reqsData, volData, usersData, dontData, coursesData] = await Promise.all([
         fetchAdminStats(),
         fetchAllRequests(),
         fetchAllVolunteers(),
         fetchAllUsers(),
-        fetchAllDonations()
+        fetchAllDonations(),
+        fetchPendingCourses()
       ]);
       setStats(statsData);
       setRequests(reqsData);
       setVolunteers(volData);
       setUsersList(usersData);
       setDonations(dontData);
+      setPendingCourses(coursesData);
     } catch (err) {
       console.error('Error loading admin data:', err);
     } finally {
@@ -133,6 +149,45 @@ export default function AdminDashboard() {
       loadAllData();
     } catch (err: any) {
       Alert.alert("Error", err.message || "Could not update user");
+    }
+  };
+
+  const handleUpdateCourseStatus = async (courseId: string, status: string) => {
+    try {
+      await updateCourseStatusApi(courseId, status);
+      Alert.alert("Success", `Course has been ${status}`);
+      loadAllData();
+    } catch (err: any) {
+      Alert.alert("Error", err.message || "Could not update course");
+    }
+  };
+
+  const handleAdminCourseSubmit = async () => {
+    if (!courseTitle || !courseDesc || !courseLink) {
+      Alert.alert('Error', 'Please fill in all course details.');
+      return;
+    }
+
+    setSubmittingCourse(true);
+    try {
+      await addCourseApi({
+        title: courseTitle,
+        description: courseDesc,
+        link: courseLink,
+        category: courseCategory,
+        instructorId: user!.id
+      });
+      Alert.alert('Success', 'Course added successfully!');
+      setShowCourseModal(false);
+      setCourseTitle('');
+      setCourseDesc('');
+      setCourseLink('');
+      setCourseCategory('Academic');
+      loadAllData();
+    } catch (err: any) {
+      Alert.alert('Error', err.message || 'Could not add course.');
+    } finally {
+      setSubmittingCourse(false);
     }
   };
 
@@ -380,6 +435,63 @@ export default function AdminDashboard() {
     </View>
   );
 
+  const renderCoursesTab = () => (
+    <View style={styles.tabContent}>
+      <View style={styles.rowBetween}>
+        <Text style={styles.sectionTitle}>Learning Management</Text>
+        <TouchableOpacity 
+          style={[styles.addTaskBtn, { backgroundColor: '#10b981' }]} 
+          onPress={() => setShowCourseModal(true)}
+        >
+          <Ionicons name="add" size={24} color="#fff" />
+        </TouchableOpacity>
+      </View>
+      <Text style={styles.subText}>Manage platform courses. Admin courses are auto-approved.</Text>
+
+      <Text style={[styles.sectionTitle, { marginTop: 20 }]}>Pending Approvals</Text>
+      {pendingCourses.length === 0 ? (
+        <View style={styles.emptyCard}>
+          <Ionicons name="school-outline" size={48} color="#cbd5e1" />
+          <Text style={styles.emptyText}>No pending courses to review.</Text>
+        </View>
+      ) : (
+        pendingCourses.map((course) => (
+          <View key={course._id} style={styles.requestCard}>
+            <View style={styles.cardHeader}>
+              <View style={[styles.reqTypeBadge, { backgroundColor: '#dcfce7' }]}>
+                <Text style={[styles.badgeText, { color: '#166534' }]}>{course.category.toUpperCase()}</Text>
+              </View>
+              <Text style={styles.statusLabel}>PENDING APPROVAL</Text>
+            </View>
+            <Text style={styles.reqTitle}>{course.title}</Text>
+            <Text style={styles.reqDetail}>{course.description}</Text>
+            <Text style={[styles.reqDetail, { color: '#0077cc', marginTop: 5 }]} onPress={() => Linking.openURL(course.link)}>
+              <Ionicons name="link" size={14} /> {course.link}
+            </Text>
+            <Text style={[styles.reqDetail, { marginTop: 10 }]}>Instructor: {course.instructorName}</Text>
+            
+            <View style={styles.actionRow}>
+              <TouchableOpacity 
+                style={[styles.approveBtn, { backgroundColor: '#10b981' }]} 
+                onPress={() => handleUpdateCourseStatus(course._id, 'approved')}
+              >
+                <Ionicons name="checkmark" size={20} color="#fff" />
+                <Text style={styles.btnText}>Approve</Text>
+              </TouchableOpacity>
+              <TouchableOpacity 
+                style={[styles.rejectBtn, { backgroundColor: '#ef4444' }]} 
+                onPress={() => handleUpdateCourseStatus(course._id, 'rejected')}
+              >
+                <Ionicons name="close" size={20} color="#fff" />
+                <Text style={styles.btnText}>Reject</Text>
+              </TouchableOpacity>
+            </View>
+          </View>
+        ))
+      )}
+    </View>
+  );
+
   const renderDonations = () => (
     <View style={styles.tabContent}>
       <Text style={styles.sectionTitle}>Donations List</Text>
@@ -412,62 +524,64 @@ export default function AdminDashboard() {
 
   return (
     <View style={styles.container}>
-      <View style={styles.header}>
-        <BackButton />
-        <TouchableOpacity style={styles.logoutBtn} onPress={logout}>
-          <Ionicons name="log-out-outline" size={24} color="#fff" />
-        </TouchableOpacity>
-        <Text style={styles.adminTag}>ADMIN PORTAL</Text>
-        <Text style={styles.welcome}>Central Command</Text>
-      </View>
+      <AdminHeader onLogout={logout} />
 
       <View style={styles.tabBar}>
-        {(['stats', 'requests', 'tasks', 'donations', 'users'] as TabType[]).map((tab) => (
-          <TouchableOpacity 
-            key={tab} 
-            style={[styles.tabItem, activeTab === tab && styles.tabActive]}
-            onPress={() => setActiveTab(tab)}
-          >
-            <Text style={[styles.tabText, activeTab === tab && styles.tabTextActive]}>
-              {tab.charAt(0).toUpperCase() + tab.slice(1)}
-            </Text>
-          </TouchableOpacity>
-        ))}
+        <TouchableOpacity style={[styles.tabItem, activeTab === 'stats' && styles.tabActive]} onPress={() => setActiveTab('stats')}>
+          <Ionicons name="pie-chart" size={20} color={activeTab === 'stats' ? '#0077cc' : '#64748b'} />
+          <Text style={[styles.tabText, activeTab === 'stats' && styles.tabTextActive]}>Stats</Text>
+        </TouchableOpacity>
+        <TouchableOpacity style={[styles.tabItem, activeTab === 'requests' && styles.tabActive]} onPress={() => setActiveTab('requests')}>
+          <Ionicons name="list" size={20} color={activeTab === 'requests' ? '#0077cc' : '#64748b'} />
+          <Text style={[styles.tabText, activeTab === 'requests' && styles.tabTextActive]}>Reqs</Text>
+        </TouchableOpacity>
+        <TouchableOpacity style={[styles.tabItem, activeTab === 'donations' && styles.tabActive]} onPress={() => setActiveTab('donations')}>
+          <Ionicons name="cash" size={20} color={activeTab === 'donations' ? '#0077cc' : '#64748b'} />
+          <Text style={[styles.tabText, activeTab === 'donations' && styles.tabTextActive]}>Aid</Text>
+        </TouchableOpacity>
+        <TouchableOpacity style={[styles.tabItem, activeTab === 'users' && styles.tabActive]} onPress={() => setActiveTab('users')}>
+          <Ionicons name="people" size={20} color={activeTab === 'users' ? '#0077cc' : '#64748b'} />
+          <Text style={[styles.tabText, activeTab === 'users' && styles.tabTextActive]}>Users</Text>
+        </TouchableOpacity>
+        <TouchableOpacity style={[styles.tabItem, activeTab === 'courses' && styles.tabActive]} onPress={() => setActiveTab('courses')}>
+          <Ionicons name="school" size={20} color={activeTab === 'courses' ? '#0077cc' : '#64748b'} />
+          <Text style={[styles.tabText, activeTab === 'courses' && styles.tabTextActive]}>LMS</Text>
+        </TouchableOpacity>
       </View>
 
-      <ScrollView 
-        refreshControl={<RefreshControl refreshing={refreshing} onRefresh={onRefresh} />}
-        contentContainerStyle={{ paddingBottom: 40 }}
-      >
+      <ScrollView showsVerticalScrollIndicator={false}>
         {activeTab === 'stats' && renderStats()}
         {activeTab === 'requests' && renderRequests()}
-        {activeTab === 'tasks' && renderTaskTab()}
         {activeTab === 'donations' && renderDonations()}
         {activeTab === 'users' && renderUsers()}
+        {activeTab === 'courses' && renderCoursesTab()}
       </ScrollView>
+
+      <CourseModal 
+        visible={showCourseModal}
+        onClose={() => setShowCourseModal(false)}
+        onSubmit={handleAdminCourseSubmit}
+        loading={submittingCourse}
+        title={courseTitle}
+        setTitle={setCourseTitle}
+        desc={courseDesc}
+        setDesc={setCourseDesc}
+        link={courseLink}
+        setLink={setCourseLink}
+        category={courseCategory}
+        setCategory={setCourseCategory}
+      />
 
       {/* Task Modal */}
       <Modal visible={showTaskModal} animationType="slide" transparent={true}>
         <View style={styles.modalOverlay}>
           <View style={styles.modalContent}>
-            <Text style={styles.modalTitle}>New Volunteer Task</Text>
-            
-            <TextInput 
-              style={styles.input} 
-              placeholder="Task Title" 
-              value={taskTitle} 
-              onChangeText={setTaskTitle} 
-            />
-            <TextInput 
-              style={[styles.input, { height: 100, textAlignVertical: 'top' }]} 
-              placeholder="Mission Description" 
-              multiline 
-              value={taskDesc} 
-              onChangeText={setTaskDesc} 
-            />
+            <Text style={styles.modalTitle}>Assign Task</Text>
+            <TextInput style={styles.input} placeholder="Task Title" value={taskTitle} onChangeText={setTaskTitle} />
+            <TextInput style={[styles.input, { height: 80 }]} placeholder="Description" multiline value={taskDesc} onChangeText={setTaskDesc} />
             
             <Text style={styles.label}>Select Volunteer</Text>
-            <ScrollView horizontal style={styles.volSelect} showsHorizontalScrollIndicator={false}>
+            <ScrollView horizontal showsHorizontalScrollIndicator={false} style={styles.volSelect}>
               {volunteers.map(v => (
                 <TouchableOpacity 
                   key={v._id} 
@@ -501,27 +615,13 @@ export default function AdminDashboard() {
 
 const styles = StyleSheet.create({
   container: { flex: 1, backgroundColor: '#f8fafc' },
-  header: {
-    paddingTop: 70,
-    backgroundColor: '#0f172a',
-    paddingHorizontal: 25,
-    paddingBottom: 30,
-    borderBottomLeftRadius: 30,
-    borderBottomRightRadius: 30,
-  },
-  logoutBtn: { position: 'absolute', right: 25, top: 60, padding: 8, backgroundColor: '#334155', borderRadius: 10 },
-  adminTag: { color: '#38bdf8', fontWeight: 'bold', fontSize: 12, letterSpacing: 2 },
-  welcome: { color: '#fff', fontSize: 26, fontWeight: 'bold', marginTop: 5 },
   tabBar: { flexDirection: 'row', padding: 15, backgroundColor: '#fff', marginHorizontal: 20, marginTop: -25, borderRadius: 15, elevation: 4 },
   tabItem: { flex: 1, alignItems: 'center', paddingVertical: 10 },
   tabActive: { borderBottomWidth: 3, borderBottomColor: '#0077cc' },
-  tabText: { color: '#64748b', fontWeight: '600' },
+  tabText: { color: '#64748b', fontWeight: '600', fontSize: 12 },
   tabTextActive: { color: '#0077cc', fontWeight: 'bold' },
   tabContent: { padding: 25 },
   statsGrid: { flexDirection: 'row', flexWrap: 'wrap', justifyContent: 'space-between' },
-  statCard: { width: '48%', padding: 20, borderRadius: 20, marginBottom: 15, alignItems: 'center' },
-  statVal: { fontSize: 24, fontWeight: 'bold', marginVertical: 8, color: '#1e293b' },
-  statLab: { fontSize: 12, color: '#64748b', fontWeight: '500' },
   sectionTitle: { fontSize: 18, fontWeight: 'bold', color: '#1e293b', marginBottom: 15 },
   infoCard: { backgroundColor: '#fff', padding: 20, borderRadius: 15, elevation: 1 },
   infoRow: { flexDirection: 'row', justifyContent: 'space-between', marginBottom: 10 },
@@ -529,15 +629,9 @@ const styles = StyleSheet.create({
   infoVal: { fontWeight: 'bold', color: '#1e293b' },
   requestCard: { backgroundColor: '#fff', padding: 20, borderRadius: 20, marginBottom: 15, elevation: 2 },
   cardHeader: { flexDirection: 'row', justifyContent: 'space-between', marginBottom: 12 },
-  reqTypeBadge: { backgroundColor: '#e2e8f0', paddingHorizontal: 10, paddingVertical: 4, borderRadius: 8 },
-  badgeText: { fontSize: 10, fontWeight: 'bold', color: '#475569' },
   statusLabel: { fontSize: 10, fontWeight: 'bold', color: '#f59e0b' },
   reqTitle: { fontSize: 16, fontWeight: 'bold', color: '#1e293b', marginBottom: 8 },
   reqDetail: { fontSize: 13, color: '#64748b', marginBottom: 4 },
-  actionRow: { flexDirection: 'row', marginTop: 15, gap: 10 },
-  approveBtn: { flex: 1, backgroundColor: '#059669', flexDirection: 'row', padding: 12, borderRadius: 12, justifyContent: 'center', alignItems: 'center', gap: 5 },
-  rejectBtn: { flex: 1, backgroundColor: '#dc2626', flexDirection: 'row', padding: 12, borderRadius: 12, justifyContent: 'center', alignItems: 'center', gap: 5 },
-  btnText: { color: '#fff', fontWeight: 'bold' },
   rowBetween: { flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center' },
   addTaskBtn: { backgroundColor: '#0077cc', width: 40, height: 40, borderRadius: 20, justifyContent: 'center', alignItems: 'center' },
   subText: { color: '#64748b', marginBottom: 20 },
@@ -558,8 +652,4 @@ const styles = StyleSheet.create({
   btnDisabled: { opacity: 0.6 },
   centered: { flex: 1, justifyContent: 'center', alignItems: 'center' },
   loadingText: { marginTop: 15, color: '#64748b' },
-  emptyText: { textAlign: 'center', color: '#64748b', marginVertical: 30 },
-  statusToggle: { paddingVertical: 8, paddingHorizontal: 12, borderRadius: 8, backgroundColor: '#fecaca' },
-  statusToggleBlocked: { backgroundColor: '#dcfce7' },
-  statusToggleText: { fontSize: 10, fontWeight: 'bold', color: '#1a1a1a' }
 });

@@ -12,7 +12,7 @@ import {
 import { Ionicons, FontAwesome5 } from "@expo/vector-icons";
 import { router } from "expo-router";
 import * as Haptics from 'expo-haptics';
-import BackButton from "./components/BackButton";
+import BackButton from "@/components/BackButton";
 
 export default function RoleScreen() {
   const { user, login, logout } = useAuth();

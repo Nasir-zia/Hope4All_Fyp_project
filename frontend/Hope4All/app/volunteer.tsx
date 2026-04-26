@@ -14,7 +14,8 @@ import { Ionicons } from '@expo/vector-icons';
 import { router } from 'expo-router';
 import { useAuth } from '@/hooks/useAuth';
 import { fetchVolunteerTasks, fetchVolunteerStats, updateTaskStatusApi } from '@/constants/api';
-import BackButton from './components/BackButton';
+import { VolunteerHeader } from '@/components/volunteer/VolunteerHeader';
+import { VolunteerTaskCard } from '@/components/volunteer/VolunteerTaskCard';
 
 export default function VolunteerDashboard() {
   const { user, logout } = useAuth();
@@ -37,7 +38,7 @@ export default function VolunteerDashboard() {
         fetchVolunteerTasks(user.id),
         fetchVolunteerStats(user.id)
       ]);
-      setTasks(tasksData);
+      setTasks(tasksData || []);
       setStats(statsData);
     } catch (err) {
       console.log('Error loading volunteer data:', err);
@@ -56,117 +57,59 @@ export default function VolunteerDashboard() {
     }
   };
 
-  const renderTaskItem = ({ item }: { item: any }) => (
-    <View style={styles.taskCard}>
-      <View style={styles.taskHeader}>
-        <View style={[styles.priorityBadge, { backgroundColor: item.priority === 'high' ? '#ff4444' : '#ffbb33' }]}>
-          <Text style={styles.priorityText}>{item.priority?.toUpperCase()}</Text>
-        </View>
-        <Text style={styles.taskStatus}>{item.status?.replace('_', ' ').toUpperCase()}</Text>
-      </View>
-      <Text style={styles.taskTitle}>{item.title}</Text>
-      <Text style={styles.taskDesc}>{item.description}</Text>
-      <View style={styles.taskFooter}>
-        <Ionicons name="location-outline" size={14} color="#666" />
-        <Text style={styles.taskLocation}>{item.orphanageId?.name || 'Central Office'}</Text>
-        <View style={{ flex: 1 }} />
-        <Text style={styles.taskDate}>{new Date(item.date).toLocaleDateString()}</Text>
-      </View>
-      
-      <View style={styles.btnRow}>
-        {item.status === 'assigned' && (
-          <TouchableOpacity 
-            style={[styles.actionBtn, styles.progressBtn]} 
-            onPress={() => handleUpdateStatus(item._id, 'in_progress')}
-          >
-            <Text style={styles.actionBtnText}>Start Task</Text>
-          </TouchableOpacity>
-        )}
-        {item.status === 'in_progress' && (
-          <TouchableOpacity 
-            style={[styles.actionBtn, styles.completeBtn]} 
-            onPress={() => handleUpdateStatus(item._id, 'completed')}
-          >
-            <Text style={styles.actionBtnText}>Complete</Text>
-          </TouchableOpacity>
-        )}
-      </View>
-    </View>
-  );
+  const onRefresh = async () => {
+    setRefreshing(true);
+    await loadDashboardData();
+    setRefreshing(false);
+  };
 
   if (loading && !refreshing) {
     return (
       <View style={styles.centered}>
         <ActivityIndicator size="large" color="#0077cc" />
-        <Text style={styles.loadingText}>Fetching assigned tasks...</Text>
+        <Text style={styles.loadingText}>Syncing Missions...</Text>
       </View>
     );
   }
 
   return (
     <View style={styles.container}>
-      <BackButton />
-      <View style={styles.header}>
-        <TouchableOpacity 
-          style={styles.headerIcon} 
-          onPress={() => {
-            Alert.alert('Logout', 'Are you sure you want to log out?', [
-              { text: 'Cancel', style: 'cancel' },
-              { text: 'Logout', style: 'destructive', onPress: logout }
-            ]);
-          }}
-        >
-          <Ionicons name="log-out-outline" size={24} color="#333" />
-        </TouchableOpacity>
-        <TouchableOpacity 
-          style={[styles.headerIcon, { right: 80 }]} 
-          onPress={() => router.push('/messages')}
-        >
-          <Ionicons name="chatbubbles-outline" size={24} color="#333" />
-        </TouchableOpacity>
-        <Text style={styles.welcome}>Hello,</Text>
-        <Text style={styles.name}>{user?.username || 'Volunteer'}</Text>
-      </View>
+      <VolunteerHeader 
+        name={user?.username || 'Volunteer'} 
+        onLogout={logout} 
+        onMessages={() => router.push('/messages')} 
+      />
 
       <ScrollView 
         style={styles.content}
-        contentContainerStyle={{ paddingBottom: 40 }}
-        refreshControl={
-          <RefreshControl 
-            refreshing={refreshing} 
-            onRefresh={() => {
-              setRefreshing(true);
-              loadDashboardData().then(() => setRefreshing(false));
-            }} 
-          />
-        }
+        showsVerticalScrollIndicator={false}
+        refreshControl={<RefreshControl refreshing={refreshing} onRefresh={onRefresh} />}
       >
-        {stats && (
-          <View style={styles.statsRow}>
-            <View style={styles.statBox}>
-              <Text style={styles.statValue}>{stats.activeTasks}</Text>
-              <Text style={styles.statLabel}>Active</Text>
-            </View>
-            <View style={styles.statBox}>
-              <Text style={styles.statValue}>{stats.completedTasks}</Text>
-              <Text style={styles.statLabel}>Done</Text>
-            </View>
-            <View style={styles.statBox}>
-              <Text style={styles.statValue}>{stats.completionRate}%</Text>
-              <Text style={styles.statLabel}>Success</Text>
-            </View>
+        <View style={styles.statsGrid}>
+          <View style={styles.statItem}>
+            <Text style={styles.statVal}>{stats?.completedTasks || 0}</Text>
+            <Text style={styles.statLab}>Completed</Text>
           </View>
-        )}
+          <View style={styles.statItem}>
+            <Text style={styles.statVal}>{stats?.pendingTasks || 0}</Text>
+            <Text style={styles.statLab}>Pending</Text>
+          </View>
+        </View>
 
-        <Text style={styles.sectionTitle}>My Assignments</Text>
+        <Text style={styles.sectionTitle}>Active Missions</Text>
         {tasks.length === 0 ? (
-          <View style={styles.emptyContainer}>
-            <Ionicons name="list-outline" size={64} color="#ccc" />
-            <Text style={styles.emptyText}>No tasks assigned yet.</Text>
-            <Text style={styles.emptySub}>Check back later or contact admin.</Text>
+          <View style={styles.emptyBox}>
+            <Ionicons name="clipboard-outline" size={48} color="#cbd5e1" />
+            <Text style={styles.emptyText}>No tasks assigned to you yet.</Text>
           </View>
         ) : (
-          tasks.map(task => renderTaskItem({ item: task }))
+          tasks.map(task => (
+            <VolunteerTaskCard 
+              key={task._id} 
+              task={task} 
+              onUpdateStatus={handleUpdateStatus} 
+            />
+          ))
         )}
       </ScrollView>
     </View>
@@ -176,182 +119,68 @@ export default function VolunteerDashboard() {
 const styles = StyleSheet.create({
   container: {
     flex: 1,
-    backgroundColor: '#f5f7fa',
+    backgroundColor: '#f8fafc',
   },
-  header: {
-    paddingTop: 80,
-    paddingHorizontal: 25,
-    paddingBottom: 20,
+  centered: {
+    flex: 1,
+    justifyContent: 'center',
+    alignItems: 'center',
     backgroundColor: '#fff',
-    borderBottomLeftRadius: 30,
-    borderBottomRightRadius: 30,
+  },
+  loadingText: {
+    marginTop: 10,
+    color: '#0077cc',
+    fontWeight: '600',
+  },
+  content: {
+    flex: 1,
+    paddingHorizontal: 20,
+    marginTop: -20,
+  },
+  statsGrid: {
+    flexDirection: 'row',
+    gap: 15,
+    marginBottom: 25,
+  },
+  statItem: {
+    flex: 1,
+    backgroundColor: '#fff',
+    padding: 20,
+    borderRadius: 20,
+    alignItems: 'center',
     shadowColor: '#000',
     shadowOffset: { width: 0, height: 4 },
     shadowOpacity: 0.05,
     shadowRadius: 10,
     elevation: 3,
   },
-  headerIcon: {
-    position: 'absolute',
-    right: 25,
-    top: 50,
-    padding: 10,
-    backgroundColor: '#f5f7fa',
-    borderRadius: 12,
-  },
-  welcome: {
-    fontSize: 16,
-    color: '#777',
-  },
-  name: {
-    fontSize: 28,
-    fontWeight: 'bold',
-    color: '#333',
-    marginTop: 4,
-  },
-  content: {
-    flex: 1,
-    padding: 20,
-  },
-  statsRow: {
-    flexDirection: 'row',
-    justifyContent: 'space-between',
-    marginBottom: 25,
-  },
-  statBox: {
-    flex: 1,
-    backgroundColor: '#fff',
-    padding: 15,
-    borderRadius: 16,
-    marginHorizontal: 5,
-    alignItems: 'center',
-    elevation: 2,
-    shadowColor: '#000',
-    shadowOffset: { width: 0, height: 2 },
-    shadowOpacity: 0.05,
-    shadowRadius: 5,
-  },
-  statValue: {
-    fontSize: 20,
+  statVal: {
+    fontSize: 24,
     fontWeight: 'bold',
     color: '#0077cc',
   },
-  statLabel: {
+  statLab: {
     fontSize: 12,
-    color: '#777',
+    color: '#64748b',
     marginTop: 4,
+    fontWeight: '500',
   },
   sectionTitle: {
-    fontSize: 18,
+    fontSize: 20,
     fontWeight: 'bold',
-    color: '#333',
+    color: '#1e293b',
     marginBottom: 15,
-    marginLeft: 5,
   },
-  taskCard: {
+  emptyBox: {
     backgroundColor: '#fff',
+    padding: 40,
     borderRadius: 20,
-    padding: 20,
-    marginBottom: 15,
-    elevation: 2,
-    shadowColor: '#000',
-    shadowOffset: { width: 0, height: 2 },
-    shadowOpacity: 0.05,
-    shadowRadius: 5,
-  },
-  taskHeader: {
-    flexDirection: 'row',
-    justifyContent: 'space-between',
     alignItems: 'center',
-    marginBottom: 10,
-  },
-  priorityBadge: {
-    paddingVertical: 4,
-    paddingHorizontal: 8,
-    borderRadius: 8,
-  },
-  priorityText: {
-    color: '#fff',
-    fontSize: 10,
-    fontWeight: 'bold',
-  },
-  taskStatus: {
-    fontSize: 11,
-    color: '#999',
-    fontWeight: 'bold',
-  },
-  taskTitle: {
-    fontSize: 16,
-    fontWeight: 'bold',
-    color: '#333',
-    marginBottom: 8,
-  },
-  taskDesc: {
-    fontSize: 14,
-    color: '#666',
-    lineHeight: 20,
-    marginBottom: 15,
-  },
-  taskFooter: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    paddingTop: 15,
-    borderTopWidth: 1,
-    borderTopColor: '#f5f7fa',
-  },
-  taskLocation: {
-    fontSize: 12,
-    color: '#666',
-    marginLeft: 4,
-  },
-  taskDate: {
-    fontSize: 12,
-    color: '#999',
-  },
-  btnRow: {
-    flexDirection: 'row',
-    marginTop: 15,
-  },
-  actionBtn: {
-    flex: 1,
-    paddingVertical: 12,
-    borderRadius: 12,
-    alignItems: 'center',
-  },
-  progressBtn: {
-    backgroundColor: '#0077cc',
-  },
-  completeBtn: {
-    backgroundColor: '#33cc99',
-  },
-  actionBtnText: {
-    color: '#fff',
-    fontWeight: 'bold',
-    fontSize: 14,
-  },
-  centered: {
-    flex: 1,
-    justifyContent: 'center',
-    alignItems: 'center',
-    backgroundColor: '#f5f7fa',
-  },
-  loadingText: {
-    marginTop: 15,
-    color: '#666',
-    fontSize: 16,
-  },
-  emptyContainer: {
-    alignItems: 'center',
-    justifyContent: 'center',
-    marginTop: 60,
+    borderStyle: 'dashed',
+    borderWidth: 1,
+    borderColor: '#cbd5e1',
   },
   emptyText: {
-    fontSize: 18,
-    fontWeight: 'bold',
-    color: '#333',
-    marginTop: 15,
-  },
-  emptySub: {
     fontSize: 14,
     color: '#777',
     marginTop: 8,
