@@ -75,30 +75,3 @@ export const pledgeFee = async (req, res) => {
     res.status(500).json({ success: false, message: "Server error", error: error.message });
   }
 };
-
-// Donor confirms payment — transitions fee from pledged → paid
-export const markFeePaid = async (req, res) => {
-  try {
-    const { feeId } = req.params;
-
-    const fee = await Fee.findById(feeId);
-    if (!fee) {
-      return res.status(404).json({ success: false, message: "Fee not found" });
-    }
-
-    if (fee.status === "paid") {
-      return res.status(400).json({ success: false, message: "Fee is already marked as paid" });
-    }
-
-    if (fee.status !== "pledged") {
-      return res.status(400).json({ success: false, message: "Only pledged fees can be marked as paid" });
-    }
-
-    fee.status = "paid";
-    await fee.save();
-
-    res.status(200).json({ success: true, message: "Fee marked as paid successfully", fee });
-  } catch (error) {
-    res.status(500).json({ success: false, message: "Server error", error: error.message });
-  }
-};

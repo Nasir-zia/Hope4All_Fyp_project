@@ -18,12 +18,8 @@ import {
   testEndpoint,
   getAllDonations
 } from "../controllers/adminController.js";
-import { authenticateToken, requireAdmin } from "../middleware/authMiddleware.js";
 
 const router = express.Router();
-
-// All admin routes require a valid token AND admin role
-router.use(authenticateToken, requireAdmin);
 
 // Get dashboard statistics
 router.get("/stats", getDashboardStats);

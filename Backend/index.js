@@ -15,7 +15,6 @@ import adminRoutes from "./route/adminRoute.js";
 import messageRoutes from "./route/messageRoute.js";
 import feeRoutes from "./route/fee_route.js";
 import progressRoutes from "./route/progressRoute.js";
-import courseRoutes from "./route/courseRoute.js";
 import dbconnection from "./Config/dbconnection.js";
 import dns from "dns";
 import initSocket from "./socketHandler.js";
@@ -31,7 +30,7 @@ const app = express();
 const server = createServer(app);
 const io = new Server(server, {
   cors: {
-    origin: "*",
+    
     methods: ['GET', 'POST', 'PUT', 'DELETE', 'OPTIONS'],
   }
 });
@@ -42,7 +41,6 @@ app.use(cors({
   credentials: true,
   methods: ['GET', 'POST', 'PUT', 'DELETE', 'OPTIONS'],
   allowedHeaders: ['Content-Type', 'Authorization', 'X-Requested-With'],
-  origin: "*"
 }));
 
 // Middleware
@@ -88,9 +86,6 @@ app.use("/api/fees", feeRoutes);
 // progress routes
 app.use("/api/progress", progressRoutes);
 
-// course routes
-app.use("/api/courses", courseRoutes);
-
 
 
 // Test route
@@ -120,7 +115,7 @@ cron.schedule('* * * * *', async () => {
         });
 
         await newNotification.save();
-
+        
         // Update fee so it doesn't notify again
         fee.notificationSent = true;
         await fee.save();

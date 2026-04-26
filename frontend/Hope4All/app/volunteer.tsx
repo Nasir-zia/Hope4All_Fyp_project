@@ -33,10 +33,9 @@ export default function VolunteerDashboard() {
     if (!user?.id) return;
     try {
       setLoading(true);
-      const token = user.token || '';
       const [tasksData, statsData] = await Promise.all([
-        fetchVolunteerTasks(user.id, token),
-        fetchVolunteerStats(user.id, token)
+        fetchVolunteerTasks(user.id),
+        fetchVolunteerStats(user.id)
       ]);
       setTasks(tasksData);
       setStats(statsData);
@@ -49,7 +48,7 @@ export default function VolunteerDashboard() {
 
   const handleUpdateStatus = async (taskId: string, newStatus: string) => {
     try {
-      await updateTaskStatusApi(taskId, newStatus, user?.token || '');
+      await updateTaskStatusApi(taskId, newStatus);
       Alert.alert('Success', `Task marked as ${newStatus.replace('_', ' ')}`);
       loadDashboardData();
     } catch (err) {

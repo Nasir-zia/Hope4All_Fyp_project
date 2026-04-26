@@ -1,25 +1,15 @@
 import mongoose from 'mongoose';
 
 const notificationSchema = new mongoose.Schema({
-  // donorId: used for donor-specific notifications (fee reminders, donation updates)
   donorId: {
     type: mongoose.Schema.Types.ObjectId,
     ref: 'Donor',
-    required: false,
-    default: null,
-  },
-
-  // recipientId: generic User ref for volunteer/admin/orphan notifications
-  recipientId: {
-    type: mongoose.Schema.Types.ObjectId,
-    ref: 'User',
-    required: false,
-    default: null,
+    required: true
   },
 
   type: {
     type: String,
-    enum: ['delivery', 'update', 'thanks', 'shipping', 'task', 'task_update'],
+    enum: ['delivery', 'update', 'thanks', 'shipping'],
     required: true
   },
 
