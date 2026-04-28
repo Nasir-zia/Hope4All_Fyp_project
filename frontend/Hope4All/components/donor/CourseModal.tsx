@@ -175,8 +175,8 @@ const styles = StyleSheet.create({
     borderColor: '#e2e8f0',
   },
   catBtnActive: {
-    backgroundColor: '#0077cc',
-    borderColor: '#0077cc',
+    backgroundColor: '#0f172a',
+    borderColor: '#0f172a',
   },
   catBtnText: {
     color: '#64748b',
@@ -187,9 +187,9 @@ const styles = StyleSheet.create({
     color: '#fff',
   },
   submitBtn: {
-    backgroundColor: '#0077cc',
+    backgroundColor: '#0f172a',
     padding: 18,
-    borderRadius: 15,
+    borderRadius: 18,
     alignItems: 'center',
     marginTop: 30,
     marginBottom: 20,

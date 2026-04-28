@@ -6,9 +6,37 @@ interface MatchedOrphanCardProps {
   orphan: any;
   onViewProfile: (orphan: any) => void;
   onMessage: (orphan: any) => void;
+  isVertical?: boolean;
 }
 
-export const MatchedOrphanCard: React.FC<MatchedOrphanCardProps> = ({ orphan, onViewProfile, onMessage }) => {
+export const MatchedOrphanCard: React.FC<MatchedOrphanCardProps> = ({ orphan, onViewProfile, onMessage, isVertical }) => {
+  if (isVertical) {
+    return (
+      <TouchableOpacity 
+        style={styles.verticalCard} 
+        onPress={() => onViewProfile(orphan)}
+        activeOpacity={0.7}
+      >
+        <View style={styles.verticalAvatar}>
+          <Text style={styles.verticalAvatarText}>{(orphan.name?.charAt(0) || 'O').toUpperCase()}</Text>
+        </View>
+        <View style={styles.verticalInfo}>
+          <Text style={styles.verticalName}>{orphan.name}</Text>
+          <Text style={styles.verticalLocation}>
+             <Ionicons name="location-sharp" size={12} color="#64748b" /> {orphan.location}
+          </Text>
+          <View style={styles.verticalBadgeRow}>
+            <View style={styles.tag}><Text style={styles.tagText}>{orphan.age} yrs</Text></View>
+            <View style={styles.tag}><Text style={styles.tagText}>{orphan.gender}</Text></View>
+          </View>
+        </View>
+        <TouchableOpacity style={styles.verticalMessageBtn} onPress={() => onMessage(orphan)}>
+          <Ionicons name="chatbubble-ellipses" size={24} color="#0077cc" />
+        </TouchableOpacity>
+      </TouchableOpacity>
+    );
+  }
+
   return (
     <View style={styles.orphanPortrait}>
       <View style={styles.orphanInitialBox}>
@@ -49,6 +77,65 @@ const styles = StyleSheet.create({
     shadowOffset: { width: 0, height: 1 },
     shadowOpacity: 0.05,
     shadowRadius: 4,
+  },
+  verticalCard: {
+    flexDirection: 'row',
+    backgroundColor: '#fff',
+    padding: 15,
+    borderRadius: 20,
+    alignItems: 'center',
+    marginBottom: 10,
+    elevation: 2,
+    shadowColor: '#000',
+    shadowOffset: { width: 0, height: 1 },
+    shadowOpacity: 0.1,
+    shadowRadius: 3,
+  },
+  verticalAvatar: {
+    width: 60,
+    height: 60,
+    borderRadius: 30,
+    backgroundColor: '#0077cc',
+    justifyContent: 'center',
+    alignItems: 'center',
+  },
+  verticalAvatarText: {
+    color: '#fff',
+    fontSize: 24,
+    fontWeight: 'bold',
+  },
+  verticalInfo: {
+    flex: 1,
+    marginLeft: 15,
+  },
+  verticalName: {
+    fontSize: 18,
+    fontWeight: 'bold',
+    color: '#1e293b',
+  },
+  verticalLocation: {
+    fontSize: 13,
+    color: '#64748b',
+    marginTop: 2,
+  },
+  verticalBadgeRow: {
+    flexDirection: 'row',
+    marginTop: 8,
+    gap: 8,
+  },
+  tag: {
+    paddingHorizontal: 8,
+    paddingVertical: 3,
+    borderRadius: 8,
+    backgroundColor: '#f1f5f9',
+  },
+  tagText: {
+    fontSize: 11,
+    color: '#475569',
+    fontWeight: '600',
+  },
+  verticalMessageBtn: {
+    padding: 10,
   },
   orphanInitialBox: {
     width: 60,

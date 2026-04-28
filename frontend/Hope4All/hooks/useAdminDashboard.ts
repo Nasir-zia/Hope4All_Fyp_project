@@ -1,17 +1,16 @@
 import { useState, useEffect, useCallback, useRef } from 'react';
 import { Alert, Animated, Dimensions } from 'react-native';
-import { 
-  fetchAdminStats, 
-  fetchAllRequests, 
-  updateRequestStatus, 
-  fetchAllVolunteers, 
+import {
+  fetchAdminStats,
+  fetchAllRequests,
+  updateRequestStatus,
+  fetchAllVolunteers,
   createTaskApi,
   fetchAllTasks,
   fetchAllUsers,
   updateUserStatusApi,
   fetchAllDonations,
   fetchAllCourses,
-  createCourseApi,
   updateCourseStatusApi
 } from '../constants/api';
 import { useAuth } from './useAuth';
@@ -22,7 +21,7 @@ export function useAdminDashboard() {
   const { user, logout } = useAuth();
   const token = user?.token;
   const [activeTab, setActiveTab] = useState<TabType>('stats');
-  
+
   // Data States
   const [stats, setStats] = useState<any>(null);
   const [requests, setRequests] = useState<any[]>([]);
@@ -74,7 +73,7 @@ export function useAdminDashboard() {
   const loadAllData = useCallback(async (showIndicator = true) => {
     if (!token) return;
     if (showIndicator) setLoading(true);
-    
+
     try {
       const [statsData, reqsData, volData, usersData, dontData, tasksData, coursesData] = await Promise.all([
         fetchAdminStats(token),
@@ -146,7 +145,7 @@ export function useAdminDashboard() {
         date: new Date().toISOString(),
         assignedBy: user?.id || '',
       }, token || undefined);
-      
+
       Alert.alert("Success", "Task created successfully!");
       setShowTaskModal(false);
       setTaskTitle('');
@@ -161,7 +160,7 @@ export function useAdminDashboard() {
 
   const handleUpdateCourseStatus = async (id: string, status: string) => {
     try {
-      await updateCourseStatusApi(id, status, token || undefined);
+      await updateCourseStatusApi(id, status);
       Alert.alert("Success", `Course ${status}`);
       loadAllData(false);
     } catch (err: any) {
@@ -179,7 +178,7 @@ export function useAdminDashboard() {
     handleApproveRequest,
     handleUpdateUserStatus,
     handleUpdateCourseStatus,
-    
+
     // Task Form
     showTaskModal, setShowTaskModal,
     taskTitle, setTaskTitle,
@@ -189,7 +188,7 @@ export function useAdminDashboard() {
     taskPriority, setTaskPriority,
     submittingTask,
     handleCreateTask,
-    
+
     // Course Form
     showCourseModal, setShowCourseModal,
     courseTitle, setCourseTitle,

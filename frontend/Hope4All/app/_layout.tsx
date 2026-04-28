@@ -42,7 +42,7 @@ function AuthRedirector({ children }: { children: React.ReactNode }) {
       else if (user.role === 'donor') redirectPath = '/donor';
       else if (user.role === 'volunteer') redirectPath = '/volunteer';
       else if (user.role === 'admin') redirectPath = '/admin';
-      
+
       router.replace(redirectPath as any);
     } else if (!user && isDashboardPage) {
       // Guest user shouldn't see dashboards

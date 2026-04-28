@@ -46,9 +46,13 @@ export const signup = async (req, res) => {
     await newUser.save();
     console.log(' User saved successfully:', newUser._id);
 
+    // Generate JWT token for automatic login after signup
+    const token = jwt.sign({ id: newUser._id, role: newUser.role }, process.env.JWT_SECRET, { expiresIn: '1h' });
+
     res.status(201).json({
       success: true,
       message: 'User registered successfully.',
+      token,
       user: { id: newUser._id, username: newUser.username, email: newUser.email, role: newUser.role, status: newUser.status }
     });
   } catch (error) {

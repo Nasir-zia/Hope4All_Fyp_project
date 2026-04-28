@@ -1,51 +1,52 @@
 import React from 'react';
-import { View, Text, TouchableOpacity, StyleSheet, Image } from 'react-native';
+import { View, Text, StyleSheet, TouchableOpacity, Image } from 'react-native';
 import { Ionicons } from '@expo/vector-icons';
+
+import BackButton from '@/components/BackButton';
 
 interface OrphanHeaderProps {
   name: string;
-  location: string;
-  profilePic: string;
+  profilePic?: string;
+  onOpenSettings: () => void;
   onLogout: () => void;
-  onSettings: () => void;
-  onMessages: () => void;
 }
 
 export const OrphanHeader: React.FC<OrphanHeaderProps> = ({ 
   name, 
-  location, 
   profilePic, 
-  onLogout, 
-  onSettings, 
-  onMessages 
+  onOpenSettings, 
+  onLogout 
 }) => {
   return (
     <View style={styles.header}>
-      <TouchableOpacity style={styles.logoutBtn} onPress={onLogout}>
-        <Ionicons name="log-out-outline" size={24} color="#fff" />
-      </TouchableOpacity>
-      
-      <TouchableOpacity style={styles.settingsButton} onPress={onSettings}>
-        <Ionicons name="settings-outline" size={22} color="#1a1a1a" />
-      </TouchableOpacity>
-
-      <TouchableOpacity style={styles.msgBtn} onPress={onMessages}>
-        <Ionicons name="chatbubble-ellipses-outline" size={24} color="#fff" />
-      </TouchableOpacity>
-
-      <View style={styles.avatarContainer}>
-        {profilePic ? (
-          <Image source={{ uri: profilePic }} style={styles.avatar} />
-        ) : (
-          <View style={[styles.avatar, styles.avatarPlaceholder]}>
-            <Ionicons name="person" size={40} color="#cbd5e1" />
-          </View>
-        )}
+      <View style={styles.topActions}>
+        <View style={styles.leftActions}>
+          <BackButton 
+            containerStyle={{ position: 'relative', top: 0, left: 0 }} 
+            buttonStyle={{ backgroundColor: '#f8fafc', borderWidth: 1, borderColor: '#e2e8f0', elevation: 0, shadowOpacity: 0 }}
+          />
+        </View>
+        <View style={styles.rightActions}>
+          <TouchableOpacity style={styles.iconBtn} onPress={onOpenSettings}>
+            <Ionicons name="settings-outline" size={22} color="#475569" />
+          </TouchableOpacity>
+          <TouchableOpacity style={[styles.iconBtn, styles.logoutBtn]} onPress={onLogout}>
+            <Ionicons name="log-out-outline" size={22} color="#ef4444" />
+          </TouchableOpacity>
+        </View>
       </View>
-      <Text style={styles.welcomeText}>Welcome, {name}</Text>
-      <View style={styles.locationRow}>
-        <Ionicons name="location" size={14} color="#e6f4ff" />
-        <Text style={styles.locationText}>{location}</Text>
+      <View style={styles.profileCenter}>
+        <View style={styles.avatarContainer}>
+          {profilePic ? (
+            <Image source={{ uri: profilePic }} style={styles.avatar} />
+          ) : (
+            <View style={[styles.avatar, styles.avatarPlaceholder]}>
+              <Text style={styles.avatarInitial}>{name?.charAt(0).toUpperCase()}</Text>
+            </View>
+          )}
+        </View>
+        <Text style={styles.welcomeText}>Welcome back,</Text>
+        <Text style={styles.usernameText}>{name || 'Orphan'}</Text>
       </View>
     </View>
   );
@@ -53,86 +54,82 @@ export const OrphanHeader: React.FC<OrphanHeaderProps> = ({
 
 const styles = StyleSheet.create({
   header: {
-    paddingTop: 60,
-    paddingBottom: 40,
-    paddingHorizontal: 30,
-    backgroundColor: '#0077cc',
-    borderBottomLeftRadius: 40,
-    borderBottomRightRadius: 40,
-    alignItems: 'center',
-  },
-  logoutBtn: {
-    position: 'absolute',
-    left: 25,
-    top: 50,
-    padding: 10,
-    backgroundColor: 'rgba(255,255,255,0.15)',
-    borderRadius: 12,
-  },
-  settingsButton: {
-    position: 'absolute',
-    right: 70,
-    top: 40,
-    padding: 10,
+    paddingHorizontal: 20,
+    paddingTop: 50,
+    paddingBottom: 30,
     backgroundColor: '#fff',
-    borderRadius: 12,
-    zIndex: 20,
+    borderBottomLeftRadius: 35,
+    borderBottomRightRadius: 35,
+    elevation: 4,
     shadowColor: '#000',
     shadowOffset: { width: 0, height: 2 },
-    shadowOpacity: 0.1,
-    shadowRadius: 4,
-    elevation: 3,
+    shadowOpacity: 0.05,
+    shadowRadius: 15,
   },
-  msgBtn: {
-    position: 'absolute',
-    right: 25,
-    top: 50,
-    padding: 10,
-    backgroundColor: 'rgba(255,255,255,0.15)',
-    borderRadius: 12,
+  topActions: {
+    flexDirection: 'row',
+    justifyContent: 'space-between',
+    alignItems: 'center',
+    marginBottom: 10,
+  },
+  leftActions: {
+    // This will hold the BackButton
+  },
+  rightActions: {
+    flexDirection: 'row',
+    gap: 8,
+  },
+  profileCenter: {
+    alignItems: 'center',
+    marginTop: 10,
   },
   avatarContainer: {
-    marginTop: 0,
-    marginBottom: 15,
-    borderRadius: 50,
-    padding: 3,
-    backgroundColor: '#fff',
-    shadowColor: '#0077cc',
-    shadowOffset: { width: 0, height: 4 },
-    shadowOpacity: 0.2,
-    shadowRadius: 8,
-    elevation: 6,
-  },
-  avatar: {
     width: 90,
     height: 90,
-    borderRadius: 45,
-    borderWidth: 2,
-    borderColor: '#0077cc',
+    borderRadius: 32,
+    overflow: 'hidden',
+    backgroundColor: '#f1f5f9',
+    borderWidth: 3,
+    borderColor: '#e2e8f0',
+    marginBottom: 15,
+  },
+  avatar: {
+    width: '100%',
+    height: '100%',
   },
   avatarPlaceholder: {
-    backgroundColor: '#f1f5f9',
     justifyContent: 'center',
     alignItems: 'center',
+    backgroundColor: '#0077cc',
+  },
+  avatarInitial: {
+    color: '#fff',
+    fontSize: 36,
+    fontWeight: 'bold',
   },
   welcomeText: {
-    fontSize: 24,
-    fontWeight: 'bold',
-    color: '#fff',
-  },
-  locationRow: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    marginTop: 5,
-    backgroundColor: 'rgba(255,255,255,0.15)',
-    paddingHorizontal: 12,
-    paddingVertical: 4,
-    borderRadius: 15,
-  },
-  locationText: {
-    color: '#e6f4ff',
-    fontSize: 13,
-    marginLeft: 4,
+    fontSize: 14,
+    color: '#64748b',
     fontWeight: '600',
+    marginBottom: 4,
+  },
+  usernameText: {
+    fontSize: 24,
+    fontWeight: '800',
+    color: '#1e293b',
+  },
+  iconBtn: {
+    width: 42,
+    height: 42,
+    borderRadius: 14,
+    backgroundColor: '#f8fafc',
+    justifyContent: 'center',
+    alignItems: 'center',
+    borderWidth: 1,
+    borderColor: '#e2e8f0',
+  },
+  logoutBtn: {
+    backgroundColor: '#fef2f2',
+    borderColor: '#fee2e2',
   },
 });

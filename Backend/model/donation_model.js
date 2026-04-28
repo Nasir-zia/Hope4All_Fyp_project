@@ -10,7 +10,17 @@ const donationSchema = new mongoose.Schema({
   requestId: {
     type: mongoose.Schema.Types.ObjectId,
     ref: 'Request',
-    required: true
+    required: false
+  },
+
+  type: {
+    type: String,
+    required: true,
+    default: 'Other'
+  },
+
+  description: {
+    type: String
   },
 
   units: {
@@ -18,9 +28,14 @@ const donationSchema = new mongoose.Schema({
     required: true
   },
 
+  unitType: {
+    type: String,
+    default: 'Units'
+  },
+
   recipientName: {
     type: String,
-    required: true
+    required: false
   },
 
   recipientId: {

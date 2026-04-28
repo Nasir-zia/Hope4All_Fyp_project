@@ -92,6 +92,15 @@ export default function RoleScreen() {
         await login(response.token!, response.user!);
         setTempData(null);
         Alert.alert('Success', `Welcome ${selected}!`);
+        
+        // Redirect to dashboard after signup
+        switch (selected) {
+          case 'orphan': router.replace('/orphan'); break;
+          case 'donor': router.replace('/donor'); break;
+          case 'volunteer': router.replace('/volunteer'); break;
+          case 'admin': router.replace('/admin'); break;
+          default: router.replace('/role');
+        }
       } catch (error: any) {
         Alert.alert('Error', error.message || 'Signup failed');
       } finally {

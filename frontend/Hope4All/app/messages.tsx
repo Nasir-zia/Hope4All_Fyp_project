@@ -45,17 +45,23 @@ export default function MessagesScreen() {
     loadConversations();
     setupSocket();
     
-    if (params.userId && params.username) {
-      setSelectedUser({ _id: params.userId, username: params.username });
-      loadMessages(params.userId as string);
-    }
-
     return () => {
       if (socketRef.current) {
         socketRef.current.disconnect();
       }
     };
   }, []);
+
+  useEffect(() => {
+    if (params.userId && params.username) {
+      setSelectedUser({ _id: params.userId, username: params.username });
+      loadMessages(params.userId as string);
+    } else if (params.userId) {
+      // Fallback if username is missing but userId is present
+      setSelectedUser({ _id: params.userId, username: 'User' });
+      loadMessages(params.userId as string);
+    }
+  }, [params.userId, params.username]);
 
   const setupSocket = () => {
     const socket = io(SOCKET_URL);

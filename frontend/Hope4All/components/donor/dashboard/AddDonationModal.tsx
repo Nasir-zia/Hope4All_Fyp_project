@@ -1,0 +1,78 @@
+import React from 'react';
+import { View, Text, StyleSheet, Modal, ScrollView, TouchableOpacity, TextInput } from 'react-native';
+import { Ionicons } from '@expo/vector-icons';
+
+interface AddDonationModalProps {
+  visible: boolean;
+  onClose: () => void;
+  manualType: string;
+  setManualType: (v: string) => void;
+  manualUnits: string;
+  setManualUnits: (v: string) => void;
+  manualDesc: string;
+  setManualDesc: (v: string) => void;
+  onSubmit: () => void;
+}
+
+export const AddDonationModal: React.FC<AddDonationModalProps> = ({
+  visible, onClose, manualType, setManualType, manualUnits, setManualUnits, manualDesc, setManualDesc, onSubmit
+}) => {
+  return (
+    <Modal visible={visible} transparent={true} animationType="slide" onRequestClose={onClose}>
+      <View style={styles.overlay}>
+        <View style={styles.container}>
+          <View style={styles.header}>
+            <Text style={styles.title}>Log Manual Donation</Text>
+            <TouchableOpacity onPress={onClose} style={styles.closeBtn}>
+              <Ionicons name="close" size={24} color="#64748b" />
+            </TouchableOpacity>
+          </View>
+
+          <ScrollView showsVerticalScrollIndicator={false} contentContainerStyle={styles.scroll}>
+            <Text style={styles.instruction}>Already made a contribution? Log it here to keep track of your impact.</Text>
+
+            <View style={styles.inputGroup}>
+              <Text style={styles.label}>Donation Type</Text>
+              <TextInput style={styles.input} value={manualType} onChangeText={setManualType} placeholder="e.g. Winter Clothes, Books" />
+            </View>
+
+            <View style={styles.inputGroup}>
+              <Text style={styles.label}>Units / Quantity</Text>
+              <TextInput style={styles.input} value={manualUnits} onChangeText={setManualUnits} keyboardType="numeric" placeholder="e.g. 5" />
+            </View>
+
+            <View style={styles.inputGroup}>
+              <Text style={styles.label}>Additional Notes</Text>
+              <TextInput 
+                style={[styles.input, { height: 100, textAlignVertical: 'top' }]} 
+                value={manualDesc} 
+                onChangeText={setManualDesc} 
+                placeholder="Where or how was this donated?" 
+                multiline
+              />
+            </View>
+
+            <TouchableOpacity style={styles.submitBtn} onPress={onSubmit}>
+              <Text style={styles.submitBtnText}>Save Record</Text>
+            </TouchableOpacity>
+          </ScrollView>
+        </View>
+      </View>
+    </Modal>
+  );
+};
+
+const styles = StyleSheet.create({
+  overlay: { flex: 1, backgroundColor: 'rgba(0,0,0,0.5)', justifyContent: 'flex-end' },
+  container: { height: '80%', backgroundColor: '#fff', borderTopLeftRadius: 40, borderTopRightRadius: 40, padding: 25 },
+  header: { flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center', marginBottom: 25 },
+  title: { fontSize: 22, fontWeight: '800', color: '#1e293b' },
+  closeBtn: { width: 40, height: 40, borderRadius: 20, backgroundColor: '#f1f5f9', justifyContent: 'center', alignItems: 'center' },
+  scroll: { paddingBottom: 40 },
+  instruction: { fontSize: 14, color: '#64748b', lineHeight: 22, marginBottom: 25 },
+  inputGroup: { marginBottom: 20 },
+  label: { fontSize: 13, fontWeight: '700', color: '#64748b', marginBottom: 8, marginLeft: 4 },
+  input: { backgroundColor: '#f8fafc', borderRadius: 16, padding: 16, borderWidth: 1, borderColor: '#e2e8f0', color: '#1e293b', fontSize: 15 },
+  submitBtn: { backgroundColor: '#0077cc', padding: 18, borderRadius: 20, alignItems: 'center', marginTop: 10 },
+  submitBtnText: { color: '#fff', fontSize: 16, fontWeight: '800' },
+});

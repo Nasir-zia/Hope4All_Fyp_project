@@ -1,6 +1,7 @@
 import React from 'react';
-import { View, Text, TouchableOpacity, StyleSheet, Platform } from 'react-native';
+import { View, Text, StyleSheet, TouchableOpacity, Image } from 'react-native';
 import { Ionicons } from '@expo/vector-icons';
+import BackButton from '@/components/BackButton';
 
 interface DonorHeaderProps {
   name: string;
@@ -9,86 +10,159 @@ interface DonorHeaderProps {
   onMessages: () => void;
 }
 
-export const DonorHeader: React.FC<DonorHeaderProps> = ({ name, points, onLogout, onMessages }) => {
+export const DonorHeader: React.FC<DonorHeaderProps> = ({ 
+  name, 
+  points, 
+  onLogout, 
+  onMessages 
+}) => {
   return (
-    <View style={styles.dashboardHeader}>
-      <TouchableOpacity style={styles.logoutButton} onPress={onLogout}>
-        <Ionicons name="log-out-outline" size={24} color="#fff" />
-      </TouchableOpacity>
-      
-      <TouchableOpacity style={styles.messagesButton} onPress={onMessages}>
-        <Ionicons name="chatbubble-ellipses-outline" size={24} color="#fff" />
-      </TouchableOpacity>
+    <View style={styles.header}>
+      <View style={styles.topActions}>
+        <View style={styles.leftActions}>
+          <BackButton 
+            containerStyle={{ position: 'relative', top: 0, left: 0 }} 
+            buttonStyle={{ backgroundColor: '#f8fafc', borderWidth: 1, borderColor: '#e2e8f0', elevation: 0 }}
+          />
+        </View>
+        <View style={styles.rightActions}>
+          <TouchableOpacity style={styles.iconBtn} onPress={onMessages}>
+            <Ionicons name="mail-outline" size={22} color="#475569" />
+            <View style={styles.dot} />
+          </TouchableOpacity>
+          <TouchableOpacity style={[styles.iconBtn, styles.logoutBtn]} onPress={onLogout}>
+            <Ionicons name="log-out-outline" size={22} color="#ef4444" />
+          </TouchableOpacity>
+        </View>
+      </View>
 
-      <Text style={styles.welcomeTitle}>Welcome Back,</Text>
-      <Text style={styles.donorName}>{name}</Text>
-      
-      <View style={styles.badge}>
-        <Ionicons name="ribbon" size={20} color="#ffd700" />
-        <Text style={styles.badgeText}>{points} Impact Points</Text>
+      <View style={styles.profileRow}>
+        <View style={styles.avatarContainer}>
+          <View style={[styles.avatar, styles.avatarPlaceholder]}>
+            <Text style={styles.avatarInitial}>{name?.charAt(0).toUpperCase()}</Text>
+          </View>
+        </View>
+        <View style={styles.userInfo}>
+           <Text style={styles.welcomeText}>Great to see you,</Text>
+           <Text style={styles.usernameText}>{name || 'Donor'}</Text>
+           <View style={styles.pointsBadge}>
+              <Ionicons name="star" size={14} color="#f59e0b" />
+              <Text style={styles.pointsText}>{points} Impact Units</Text>
+           </View>
+        </View>
       </View>
     </View>
   );
 };
 
 const styles = StyleSheet.create({
-  dashboardHeader: {
+  header: {
+    paddingHorizontal: 20,
+    paddingTop: 50,
+    paddingBottom: 30,
+    backgroundColor: '#fff',
+    borderBottomLeftRadius: 35,
+    borderBottomRightRadius: 35,
+    elevation: 4,
+    shadowColor: '#000',
+    shadowOffset: { width: 0, height: 2 },
+    shadowOpacity: 0.05,
+    shadowRadius: 15,
+  },
+  topActions: {
+    flexDirection: 'row',
+    justifyContent: 'space-between',
+    alignItems: 'center',
+    marginBottom: 20,
+  },
+  leftActions: {},
+  rightActions: {
+    flexDirection: 'row',
+    gap: 8,
+  },
+  iconBtn: {
+    width: 42,
+    height: 42,
+    borderRadius: 14,
+    backgroundColor: '#f8fafc',
+    justifyContent: 'center',
+    alignItems: 'center',
+    borderWidth: 1,
+    borderColor: '#e2e8f0',
+    position: 'relative',
+  },
+  logoutBtn: {
+    backgroundColor: '#fef2f2',
+    borderColor: '#fee2e2',
+  },
+  dot: {
+    position: 'absolute',
+    top: 10,
+    right: 10,
+    width: 8,
+    height: 8,
+    borderRadius: 4,
     backgroundColor: '#0077cc',
-    paddingTop: Platform.OS === 'ios' ? 80 : 60,
-    paddingBottom: 40,
-    paddingHorizontal: 25,
-    borderBottomLeftRadius: 30,
-    borderBottomRightRadius: 30,
-    elevation: 5,
-    shadowColor: '#0077cc',
-    shadowOffset: { width: 0, height: 4 },
-    shadowOpacity: 0.3,
-    shadowRadius: 10,
-    zIndex: 10,
+    borderWidth: 2,
+    borderColor: '#fff',
   },
-  logoutButton: {
-    position: 'absolute',
-    right: 25,
-    top: Platform.OS === 'ios' ? 70 : 50,
-    padding: 10,
-    backgroundColor: 'rgba(255,255,255,0.15)',
-    borderRadius: 12,
-    zIndex: 20,
-  },
-  messagesButton: {
-    position: 'absolute',
-    right: 80,
-    top: Platform.OS === 'ios' ? 70 : 50,
-    padding: 10,
-    backgroundColor: 'rgba(255,255,255,0.15)',
-    borderRadius: 12,
-    zIndex: 20,
-  },
-  welcomeTitle: {
-    fontSize: 18,
-    color: '#e6f4ff',
-    fontWeight: '500',
-    marginBottom: 5,
-  },
-  donorName: {
-    fontSize: 32,
-    color: '#fff',
-    fontWeight: 'bold',
-    marginBottom: 15,
-  },
-  badge: {
+  profileRow: {
     flexDirection: 'row',
     alignItems: 'center',
-    backgroundColor: 'rgba(255,255,255,0.2)',
-    paddingHorizontal: 15,
-    paddingVertical: 8,
-    borderRadius: 20,
-    alignSelf: 'flex-start',
+    gap: 15,
   },
-  badgeText: {
+  avatarContainer: {
+    width: 70,
+    height: 70,
+    borderRadius: 24,
+    overflow: 'hidden',
+    backgroundColor: '#f1f5f9',
+    borderWidth: 2,
+    borderColor: '#e2e8f0',
+  },
+  avatar: {
+    width: '100%',
+    height: '100%',
+  },
+  avatarPlaceholder: {
+    justifyContent: 'center',
+    alignItems: 'center',
+    backgroundColor: '#0077cc',
+  },
+  avatarInitial: {
     color: '#fff',
-    marginLeft: 5,
-    fontWeight: '600',
+    fontSize: 28,
+    fontWeight: 'bold',
+  },
+  userInfo: {
+    flex: 1,
+  },
+  welcomeText: {
     fontSize: 14,
+    color: '#64748b',
+    fontWeight: '600',
+  },
+  usernameText: {
+    fontSize: 22,
+    fontWeight: '800',
+    color: '#1e293b',
+    marginBottom: 4,
+  },
+  pointsBadge: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: 6,
+    backgroundColor: '#fffbeb',
+    alignSelf: 'flex-start',
+    paddingHorizontal: 10,
+    paddingVertical: 4,
+    borderRadius: 10,
+    borderWidth: 1,
+    borderColor: '#fef3c7',
+  },
+  pointsText: {
+    fontSize: 12,
+    fontWeight: '700',
+    color: '#b45309',
   },
 });

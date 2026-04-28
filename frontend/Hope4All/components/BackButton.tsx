@@ -4,7 +4,7 @@ import { Ionicons } from '@expo/vector-icons';
 import { router } from 'expo-router';
 import * as Haptics from 'expo-haptics';
 
-export default function BackButton({ color = "#333", style = {} }) {
+export default function BackButton({ color = "#333", containerStyle = {}, buttonStyle = {} }) {
   const handleBack = () => {
     Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light);
     if (router.canGoBack()) {
@@ -15,9 +15,9 @@ export default function BackButton({ color = "#333", style = {} }) {
   };
 
   return (
-    <View style={[styles.container, style]}>
+    <View style={[styles.container, containerStyle]}>
       <TouchableOpacity 
-        style={styles.button} 
+        style={[styles.button, buttonStyle]} 
         onPress={handleBack}
         activeOpacity={0.7}
       >
