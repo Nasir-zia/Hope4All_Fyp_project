@@ -40,6 +40,7 @@ export const signup = async (req, res) => {
       email,
       password: hashedPassword,
       role,
+      status: role === 'donor' ? 'verified' : 'pending'
     });
 
     console.log(' Attempting to save new user:', { username, email, role });
@@ -53,7 +54,7 @@ export const signup = async (req, res) => {
       success: true,
       message: 'User registered successfully.',
       token,
-      user: { id: newUser._id, username: newUser.username, email: newUser.email, role: newUser.role, status: newUser.status }
+      user: { id: newUser._id, username: newUser.username, email: newUser.email, role: newUser.role, status: newUser.status, suspensionReason: newUser.suspensionReason || '' }
     });
   } catch (error) {
     console.error(' Error registering user:', error);
@@ -146,7 +147,7 @@ export const login = async (req, res) => {
       success: true, 
       message: 'Login successful', 
       token, 
-      user: { id: user._id, username: user.username, email: user.email, role: user.role, status: user.status } 
+      user: { id: user._id, username: user.username, email: user.email, role: user.role, status: user.status, suspensionReason: user.suspensionReason || '' } 
     });
   } catch (error) {
     console.error(' Error logging in:', error);

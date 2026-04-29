@@ -16,7 +16,9 @@ import {
   getMatchedOrphans,
   getPreferenceOptions,
   getOrphanAid,
-  deleteDonor
+  deleteDonor,
+  approveDonor,
+  rejectDonor
 } from "../controllers/donorController.js";
 import upload from "../middleware/uploadMiddleware.js";
 
@@ -80,5 +82,11 @@ router.get("/user/:userId", getDonorProfile);
 
 // Route to delete donor
 router.delete("/:id", deleteDonor);
+
+// Admin: Approve a donor
+router.put("/approve/:id", approveDonor);
+
+// Admin: Reject a donor
+router.put("/reject/:id", rejectDonor);
 
 export default router;

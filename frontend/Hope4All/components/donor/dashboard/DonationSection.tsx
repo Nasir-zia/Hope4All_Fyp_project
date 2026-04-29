@@ -43,13 +43,19 @@ export const DonationSection: React.FC<DonationSectionProps> = ({
               onPress={() => setSelectedRequest(req)}
             >
               <View style={styles.cardHeader}>
-                <View style={styles.typeBadge}>
-                  <Text style={styles.typeText}>{req.type.toUpperCase()}</Text>
+                <View style={[styles.typeBadge, req.isInstitutional && { backgroundColor: '#f5f3ff' }]}>
+                  <Text style={[styles.typeText, req.isInstitutional && { color: '#9333ea' }]}>
+                    {req.isInstitutional ? 'INSTITUTION' : req.type.toUpperCase()}
+                  </Text>
                 </View>
                 <Text style={styles.unitText}>{req.units} {req.unitType}</Text>
               </View>
-              <Text style={styles.orphanName}>{req.orphanId?.name || 'Child'}</Text>
-              <Text style={styles.schoolText} numberOfLines={1}>{req.school}</Text>
+              <Text style={styles.orphanName}>
+                {req.isInstitutional ? (req.orphanageId?.name || 'Orphanage') : (req.orphanId?.name || 'Child')}
+              </Text>
+              <Text style={styles.schoolText} numberOfLines={1}>
+                {req.isInstitutional ? 'Institutional Need' : req.school}
+              </Text>
               <Text style={styles.descText} numberOfLines={2}>{req.description}</Text>
             </TouchableOpacity>
           ))
@@ -58,7 +64,9 @@ export const DonationSection: React.FC<DonationSectionProps> = ({
 
       {selectedRequest && (
         <View style={styles.actionCard}>
-           <Text style={styles.actionLabel}>Donate to {selectedRequest.orphanId?.name}</Text>
+           <Text style={styles.actionLabel}>
+             Donate to {selectedRequest.isInstitutional ? selectedRequest.orphanageId?.name : selectedRequest.orphanId?.name}
+           </Text>
            <View style={styles.inputRow}>
               <View style={styles.inputBox}>
                 <TextInput 

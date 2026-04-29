@@ -56,7 +56,21 @@ export const ProfileModal: React.FC<ProfileModalProps> = ({
               </View>
 
               <View style={styles.section}>
-                <Text style={styles.sectionTitle}>About</Text>
+                <Text style={styles.sectionTitle}>Education</Text>
+                <View style={styles.eduRow}>
+                  <View style={styles.eduItem}>
+                    <Text style={styles.eduLabel}>School</Text>
+                    <Text style={styles.eduValue} numberOfLines={1}>{orphan.school || 'Not specified'}</Text>
+                  </View>
+                  <View style={styles.eduItem}>
+                    <Text style={styles.eduLabel}>Class</Text>
+                    <Text style={styles.eduValue}>{orphan.classLevel || 'Not specified'}</Text>
+                  </View>
+                </View>
+              </View>
+
+              <View style={styles.section}>
+                <Text style={styles.sectionTitle}>Biography</Text>
                 <Text style={styles.bio}>
                   {orphan.bio || `Meet ${orphan.name}, a promising child from ${orphan.location} who is currently seeking support for their education and wellbeing.`}
                 </Text>
@@ -108,4 +122,8 @@ const styles = StyleSheet.create({
   docBtn: { flexDirection: 'row', backgroundColor: '#0077cc', padding: 18, borderRadius: 20, alignItems: 'center', justifyContent: 'center', gap: 10 },
   msgBtn: { flexDirection: 'row', backgroundColor: '#ec4899', padding: 18, borderRadius: 20, alignItems: 'center', justifyContent: 'center', gap: 10 },
   btnText: { color: '#fff', fontSize: 16, fontWeight: '800' },
+  eduRow: { flexDirection: 'row', gap: 15, backgroundColor: '#f0f9ff', padding: 15, borderRadius: 20 },
+  eduItem: { flex: 1 },
+  eduLabel: { fontSize: 10, color: '#0077cc', fontWeight: '800', textTransform: 'uppercase', marginBottom: 2 },
+  eduValue: { fontSize: 14, fontWeight: '700', color: '#1e293b' },
 });

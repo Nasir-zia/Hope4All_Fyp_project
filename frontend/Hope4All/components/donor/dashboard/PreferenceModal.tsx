@@ -17,7 +17,7 @@ export const PreferenceModal: React.FC<PreferenceModalProps> = ({
   return (
     <Modal visible={visible} transparent={true} animationType="slide" onRequestClose={onClose}>
       <View style={styles.overlay}>
-        <div style={styles.container}>
+        <View style={styles.container}>
           <View style={styles.header}>
             <Text style={styles.title}>Donation Preferences</Text>
             <TouchableOpacity onPress={onClose} style={styles.closeBtn}>
@@ -52,7 +52,7 @@ export const PreferenceModal: React.FC<PreferenceModalProps> = ({
               <Text style={styles.saveBtnText}>Save Preferences</Text>
             </TouchableOpacity>
           </ScrollView>
-        </div>
+        </View>
       </View>
     </Modal>
   );

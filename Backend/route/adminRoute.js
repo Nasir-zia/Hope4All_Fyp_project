@@ -16,7 +16,9 @@ import {
   getOrphanageById,
   getVolunteerById,
   testEndpoint,
-  getAllDonations
+  getAllDonations,
+  suspendUser,
+  unsuspendUser
 } from "../controllers/adminController.js";
 
 const router = express.Router();
@@ -68,6 +70,12 @@ router.get("/volunteers/:id", getVolunteerById);
 
 // Get all donations
 router.get("/donations", getAllDonations);
+
+// Suspend a user with a reason
+router.put("/users/:userId/suspend", suspendUser);
+
+// Unsuspend a user
+router.put("/users/:userId/unsuspend", unsuspendUser);
 
 // Test endpoint
 router.get("/test", testEndpoint);

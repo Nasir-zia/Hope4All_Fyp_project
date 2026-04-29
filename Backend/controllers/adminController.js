@@ -140,7 +140,13 @@ export const updateUserStatus = async (req, res) => {
           { orphanageId: orphanage._id, status: 'pending' },
           { status: 'approved' }
         );
+        await OrphanAge.findOneAndUpdate({ userId: updatedUser._id }, { status: 'approved' });
       }
+    }
+
+    // Sync Donor status
+    if (updatedUser.role === 'donor' && status === 'verified') {
+      await Donor.findOneAndUpdate({ userId: updatedUser._id }, { status: 'approved' });
     }
 
     res.status(200).json({ message: 'User status updated', user: updatedUser });
@@ -367,5 +373,39 @@ export const getAllDonations = async (req, res) => {
     res.status(200).json({ donations });
   } catch (error) {
     res.status(500).json({ message: 'Error fetching donations', error: error.message });
+  }
+};
+
+// Suspend a user (donor, orphan, orphanage, volunteer) with a reason
+export const suspendUser = async (req, res) => {
+  try {
+    const { reason } = req.body;
+    if (!reason || reason.trim() === '') {
+      return res.status(400).json({ message: 'Suspension reason is required.' });
+    }
+    const user = await User.findByIdAndUpdate(
+      req.params.userId,
+      { status: 'suspended', suspensionReason: reason.trim() },
+      { new: true }
+    );
+    if (!user) return res.status(404).json({ message: 'User not found' });
+    res.status(200).json({ message: 'User suspended successfully', user });
+  } catch (error) {
+    res.status(500).json({ message: 'Error suspending user', error: error.message });
+  }
+};
+
+// Unsuspend / lift suspension from a user
+export const unsuspendUser = async (req, res) => {
+  try {
+    const user = await User.findByIdAndUpdate(
+      req.params.userId,
+      { status: 'verified', suspensionReason: '' },
+      { new: true }
+    );
+    if (!user) return res.status(404).json({ message: 'User not found' });
+    res.status(200).json({ message: 'User unsuspended successfully', user });
+  } catch (error) {
+    res.status(500).json({ message: 'Error unsuspending user', error: error.message });
   }
 };

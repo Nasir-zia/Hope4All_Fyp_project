@@ -33,7 +33,7 @@ const styles = StyleSheet.create({
     flexDirection: 'row',
     gap: 12,
     paddingHorizontal: 20,
-    marginTop: -20,
+    marginTop: 10,
   },
   statCard: {
     flex: 1,

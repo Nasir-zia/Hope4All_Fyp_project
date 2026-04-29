@@ -15,6 +15,7 @@ const userSchema = new mongoose.Schema({
     enum: ["pending", "verified", "suspended"],
     default: "pending",
   },
+  suspensionReason: { type: String, default: '' },
   createdAt: { type: Date, default: Date.now },
 });
 

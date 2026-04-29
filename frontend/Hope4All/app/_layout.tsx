@@ -18,6 +18,7 @@ function RootLayoutNav() {
       <Stack.Screen name="orphan" options={{ headerShown: false }} />
       <Stack.Screen name="donor" options={{ headerShown: false }} />
       <Stack.Screen name="volunteer" options={{ headerShown: false }} />
+      <Stack.Screen name="orphanage" options={{ headerShown: false }} />
       <Stack.Screen name="admin" options={{ headerShown: false }} />
     </Stack>
   );
@@ -33,7 +34,7 @@ function AuthRedirector({ children }: { children: React.ReactNode }) {
     const segment = segments[0] as string | undefined;
     const isAuthPage = segment === 'login' || segment === 'signup';
     const isIndexPage = !segment || segment === 'index';
-    const isDashboardPage = ['orphan', 'donor', 'volunteer', 'admin'].includes(segment || '');
+    const isDashboardPage = ['orphan', 'donor', 'volunteer', 'admin', 'orphanage'].includes(segment || '');
 
     if (user && (isAuthPage || isIndexPage)) {
       // Logged in user shouldn't see login/signup/index
@@ -41,6 +42,7 @@ function AuthRedirector({ children }: { children: React.ReactNode }) {
       if (user.role === 'orphan') redirectPath = '/orphan';
       else if (user.role === 'donor') redirectPath = '/donor';
       else if (user.role === 'volunteer') redirectPath = '/volunteer';
+      else if (user.role === 'orphanage') redirectPath = '/orphanage';
       else if (user.role === 'admin') redirectPath = '/admin';
 
       router.replace(redirectPath as any);

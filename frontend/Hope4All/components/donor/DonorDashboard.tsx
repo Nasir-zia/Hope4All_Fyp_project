@@ -1,5 +1,5 @@
 import React from 'react';
-import { View, Text, StyleSheet, ScrollView, ActivityIndicator, Alert } from 'react-native';
+import { View, Text, StyleSheet, ScrollView, ActivityIndicator, Alert, TouchableOpacity } from 'react-native';
 import { Ionicons } from '@expo/vector-icons';
 import { router } from 'expo-router';
 
@@ -12,19 +12,24 @@ import { DonationSection } from './dashboard/DonationSection';
 import { FeeSection } from './dashboard/FeeSection';
 import { DonationHistorySection } from './dashboard/DonationHistorySection';
 import { OrphanSection } from './dashboard/OrphanSection';
+import { OrphanageSection } from './dashboard/OrphanageSection';
+import { OrphanageProfileModal } from './dashboard/OrphanageProfileModal';
 import { CourseSection } from './dashboard/CourseSection';
 import { ProfileModal } from './dashboard/ProfileModal';
 import { PreferenceModal } from './dashboard/PreferenceModal';
 import { AddDonationModal } from './dashboard/AddDonationModal';
 import { RegistrationForm } from './dashboard/RegistrationForm';
+import { SuspendedScreen } from '@/components/SuspendedScreen';
 
 export default function DonorDashboard() {
   const {
-    logout, donorProfile, loading, saving,
+    user, logout, donorProfile, loading, saving,
     requests, orphans, filteredRequests, filteredOrphans,
     availableFees, donorCourses, myDonations, pledgingFee,
     selectedOrphanForProfile, setSelectedOrphanForProfile,
     showProfileModal, setShowProfileModal,
+    selectedOrphanage, setSelectedOrphanage,
+    showOrphanageModal, setShowOrphanageModal,
     showPreferenceModal, setShowPreferenceModal,
     showAddDonationModal, setShowAddDonationModal,
     name, setName, phone, setPhone, city, setCity,
@@ -37,8 +42,13 @@ export default function DonorDashboard() {
     causeOptions, toggleTempCause,
     handleRegister, handleDonate, handlePledgeFee,
     handleCourseSubmit, handleOpenDoc, handleUpdatePreferences, handleManualDonation, handleDeleteDonation,
-    handleOpenPreferenceModal, handleMessage
+    handleOpenPreferenceModal, handleMessage,
+    orphanages
   } = useDonorDashboard();
+
+  if (user?.status === 'suspended') {
+    return <SuspendedScreen reason={user.suspensionReason} onLogout={logout} />;
+  }
 
   if (loading) {
     return (
@@ -105,6 +115,11 @@ export default function DonorDashboard() {
             onMessage={handleMessage}
           />
 
+          <OrphanageSection 
+            orphanages={orphanages}
+            onSelect={(o) => { setSelectedOrphanage(o); setShowOrphanageModal(true); }}
+          />
+
           <CourseSection 
             donorCourses={donorCourses}
             onOpenAddCourse={() => setShowCourseModal(true)}
@@ -118,6 +133,12 @@ export default function DonorDashboard() {
           onClose={() => setShowProfileModal(false)}
           onViewDoc={handleOpenDoc}
           onMessage={handleMessage}
+        />
+
+        <OrphanageProfileModal 
+          visible={showOrphanageModal}
+          orphanage={selectedOrphanage}
+          onClose={() => setShowOrphanageModal(false)}
         />
 
         <PreferenceModal 
@@ -186,5 +207,80 @@ const styles = StyleSheet.create({
   },
   scrollContent: {
     paddingBottom: 40,
+  },
+
+  // Pending Approval Screen
+  pendingContainer: {
+    flex: 1,
+    backgroundColor: '#f8fafc',
+    justifyContent: 'center',
+    padding: 24,
+  },
+  pendingCard: {
+    backgroundColor: '#fff',
+    borderRadius: 32,
+    padding: 32,
+    alignItems: 'center',
+    elevation: 6,
+    shadowColor: '#000',
+    shadowOffset: { width: 0, height: 4 },
+    shadowOpacity: 0.08,
+    shadowRadius: 20,
+  },
+  pendingIconCircle: {
+    width: 96,
+    height: 96,
+    borderRadius: 32,
+    backgroundColor: '#fffbeb',
+    justifyContent: 'center',
+    alignItems: 'center',
+    marginBottom: 24,
+    borderWidth: 2,
+    borderColor: '#fef3c7',
+  },
+  pendingTitle: {
+    fontSize: 22,
+    fontWeight: '800',
+    color: '#1e293b',
+    marginBottom: 6,
+  },
+  pendingSubtitle: {
+    fontSize: 16,
+    fontWeight: '600',
+    color: '#0077cc',
+    marginBottom: 16,
+  },
+  pendingDesc: {
+    fontSize: 14,
+    color: '#64748b',
+    textAlign: 'center',
+    lineHeight: 22,
+    marginBottom: 24,
+  },
+  pendingInfoCard: {
+    flexDirection: 'row',
+    alignItems: 'flex-start',
+    gap: 10,
+    backgroundColor: '#f0f9ff',
+    borderRadius: 20,
+    padding: 18,
+    borderWidth: 1,
+    borderColor: '#e0f2fe',
+    marginBottom: 28,
+  },
+  pendingInfoText: {
+    flex: 1,
+    fontSize: 13,
+    color: '#475569',
+    lineHeight: 20,
+  },
+  pendingLogoutBtn: {
+    paddingVertical: 14,
+    paddingHorizontal: 40,
+  },
+  pendingLogoutText: {
+    color: '#ef4444',
+    fontWeight: '700',
+    fontSize: 15,
   },
 });

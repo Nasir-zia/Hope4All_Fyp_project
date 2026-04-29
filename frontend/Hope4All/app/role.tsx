@@ -98,6 +98,7 @@ export default function RoleScreen() {
           case 'orphan': router.replace('/orphan'); break;
           case 'donor': router.replace('/donor'); break;
           case 'volunteer': router.replace('/volunteer'); break;
+          case 'orphanage': router.replace('/orphanage'); break;
           case 'admin': router.replace('/admin'); break;
           default: router.replace('/role');
         }
@@ -117,6 +118,9 @@ export default function RoleScreen() {
           break;
         case 'volunteer':
           router.push('/volunteer');
+          break;
+        case 'orphanage':
+          router.push('/orphanage');
           break;
         case 'admin':
           router.push('/admin');
@@ -170,11 +174,23 @@ export default function RoleScreen() {
         icon={<FontAwesome5 name="hand-holding-heart" size={20} color="#33cc99" />}
       />
 
+      <Card
+        type="orphanage"
+        title="Orphanage"
+        desc="Manage your institution and request support for children"
+        color="#9333ea"
+        icon={<Ionicons name="business-outline" size={24} color="#9333ea" />}
+      />
+
       {/* Continue Button */}
       <TouchableOpacity 
         style={[
           styles.continueBtn,
-          { backgroundColor: selected === 'orphan' ? '#4da6ff' : selected === 'donor' ? '#ff66b2' : '#33cc99' },
+          { backgroundColor: 
+              selected === 'orphan' ? '#4da6ff' : 
+              selected === 'donor' ? '#ff66b2' : 
+              selected === 'volunteer' ? '#33cc99' : '#9333ea' 
+          },
           loading && { opacity: 0.6 }
         ]}
         onPress={handleContinue}

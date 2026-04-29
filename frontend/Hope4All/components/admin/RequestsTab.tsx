@@ -6,9 +6,10 @@ import { adminStyles as styles } from './AdminStyles';
 interface RequestsTabProps {
   requests: any[];
   onApprove: (id: string) => void;
+  onReject: (id: string) => void;
 }
 
-export const RequestsTab: React.FC<RequestsTabProps> = ({ requests, onApprove }) => {
+export const RequestsTab: React.FC<RequestsTabProps> = ({ requests, onApprove, onReject }) => {
   return (
     <View style={styles.tabContent}>
       <View style={styles.rowBetween}>
@@ -26,8 +27,10 @@ export const RequestsTab: React.FC<RequestsTabProps> = ({ requests, onApprove })
         requests.map((req) => (
           <View key={req._id} style={styles.requestCard}>
             <View style={styles.cardHeader}>
-              <View style={[styles.reqTypeBadge, { backgroundColor: '#f1f5f9' }]}>
-                <Text style={styles.badgeText}>{req.type.toUpperCase()}</Text>
+              <View style={[styles.reqTypeBadge, { backgroundColor: req.isInstitutional ? '#f5f3ff' : '#f1f5f9' }]}>
+                <Text style={[styles.badgeText, req.isInstitutional && { color: '#9333ea' }]}>
+                  {req.isInstitutional ? 'INSTITUTION' : req.type.toUpperCase()}
+                </Text>
               </View>
               <View style={[styles.statusBadge, { backgroundColor: req.status === 'pending' ? '#fef3c7' : '#dcfce7' }]}>
                 <Text style={[styles.statusLabel, { color: req.status === 'pending' ? '#d97706' : '#16a34a' }]}>
@@ -50,7 +53,7 @@ export const RequestsTab: React.FC<RequestsTabProps> = ({ requests, onApprove })
                   <Ionicons name="checkmark-circle" size={18} color="#fff" />
                   <Text style={styles.btnText}>Approve</Text>
                 </TouchableOpacity>
-                <TouchableOpacity style={styles.rejectBtn}>
+                <TouchableOpacity style={styles.rejectBtn} onPress={() => onReject(req._id)}>
                   <Ionicons name="close-circle" size={18} color="#fff" />
                   <Text style={styles.btnText}>Reject</Text>
                 </TouchableOpacity>

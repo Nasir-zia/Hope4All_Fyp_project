@@ -9,19 +9,53 @@ export const registerDonor = async (req, res) => {
   try {
     const { userId, name, email, phone, city, preferences } = req.body;
 
-    const newDonor = new Donor({
+    // Basic validation
+    if (!userId || !name || !phone) {
+      return res.status(400).json({ message: 'Missing required fields: userId, name, or phone' });
+    }
+
+    // Check if userId is a valid ObjectId
+    if (userId !== 'admin-fixed-id' && !userId.match(/^[0-9a-fA-F]{24}$/)) {
+      return res.status(400).json({ message: 'Invalid User ID format' });
+    }
+
+    const updateData = {
       userId,
       name,
-      email,
       phone,
-      city,
+      city: city || '',
       preferences: preferences || { causeType: [], schoolLevel: [], area: [] }
-    });
+    };
 
-    await newDonor.save();
-    res.status(201).json({ message: 'Donor registered successfully', donor: newDonor });
+    // Only add email if it's a valid, non-empty string
+    // This prevents duplicate key errors on "" (empty string) due to unique indexes
+    if (email && email.trim() !== '') {
+      updateData.email = email;
+    } else {
+      // If no email, we use $unset to remove any existing empty string email
+      // and prevent it from being set as "" in a new document
+      updateData.$unset = { email: "" };
+    }
+
+    const donor = await Donor.findOneAndUpdate(
+      { userId },
+      updateData,
+      { new: true, upsert: true, runValidators: true }
+    );
+
+    res.status(201).json({ message: 'Donor registered successfully', donor });
   } catch (error) {
-    res.status(500).json({ message: 'Error registering donor', error: error.message });
+    console.error('--- REGISTRATION ERROR DETAILS ---');
+    console.error('Error Name:', error.name);
+    console.error('Error Message:', error.message);
+    if (error.errors) console.error('Validation Errors:', error.errors);
+    console.error('---------------------------------');
+    
+    res.status(500).json({ 
+      message: 'Error registering donor', 
+      error: error.message,
+      type: error.name 
+    });
   }
 };
 
@@ -165,8 +199,8 @@ export const makeDonation = async (req, res) => {
       }
       
       donationData.requestId = requestId;
-      donationData.recipientName = recipientName || request.orphanId.name;
-      donationData.recipientId = request.orphanId._id;
+      donationData.recipientName = recipientName || (request.orphanId ? request.orphanId.name : 'Institutional');
+      donationData.recipientId = request.orphanId ? request.orphanId._id : null;
       donationData.type = type || request.type;
       donationData.unitType = unitType || request.unitType;
 
@@ -405,13 +439,15 @@ export const getMatchedOrphans = async (req, res) => {
       orphans = orphans.filter(o => orphanWithRequests.includes(o._id.toString()));
     }
 
-    // 4. Exclude already matched orphans
-    const matchedOrphanIds = donor.matchedOrphans.map(id => id.toString());
-    orphans = orphans.filter(orphan => !matchedOrphanIds.includes(orphan._id.toString()));
+    // 4. Exclude already matched orphans (Optional - commenting out to show all matches)
+    // const matchedOrphanIds = donor.matchedOrphans.map(id => id.toString());
+    // orphans = orphans.filter(orphan => !matchedOrphanIds.includes(orphan._id.toString()));
 
     // Fallback: If strict matching resulted in 0 orphans but there are orphans available, 
-    // maybe we return some relevant orphans regardless of minor preference mismatch? 
-    // For now, we stick to the more lenient base find above.
+    // return a few random ones or latest ones to keep dashboard alive
+    if (orphans.length === 0) {
+      orphans = await Orphan.find().limit(10);
+    }
 
     res.status(200).json({ orphans });
   } catch (error) {
@@ -429,6 +465,34 @@ export const getPreferenceOptions = async (req, res) => {
     res.status(200).json({ options });
   } catch (error) {
     res.status(500).json({ message: 'Error fetching preference options', error: error.message });
+  }
+};
+
+export const approveDonor = async (req, res) => {
+  try {
+    const donor = await Donor.findByIdAndUpdate(
+      req.params.id,
+      { status: 'approved' },
+      { new: true }
+    );
+    if (!donor) return res.status(404).json({ message: 'Donor not found' });
+    res.status(200).json({ message: 'Donor approved successfully', donor });
+  } catch (error) {
+    res.status(500).json({ message: 'Error approving donor', error: error.message });
+  }
+};
+
+export const rejectDonor = async (req, res) => {
+  try {
+    const donor = await Donor.findByIdAndUpdate(
+      req.params.id,
+      { status: 'rejected' },
+      { new: true }
+    );
+    if (!donor) return res.status(404).json({ message: 'Donor not found' });
+    res.status(200).json({ message: 'Donor rejected', donor });
+  } catch (error) {
+    res.status(500).json({ message: 'Error rejecting donor', error: error.message });
   }
 };
 

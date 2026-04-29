@@ -15,7 +15,7 @@ export const PendingVerification: React.FC<PendingVerificationProps> = ({ onLogo
           </View>
           <Text style={styles.title}>Under Review</Text>
           <Text style={styles.desc}>
-            Your profile is currently being verified by our administration team. This usually takes 24-48 hours.
+            Your profile is currently being verified by our administration team. We will notify you once the process is complete.
           </Text>
           <View style={styles.card}>
              <Ionicons name="information-circle" size={20} color="#0077cc" />

@@ -16,6 +16,8 @@ import { useAuth } from '@/hooks/useAuth';
 import { fetchVolunteerTasks, fetchVolunteerStats, updateTaskStatusApi } from '@/constants/api';
 import { VolunteerHeader } from '@/components/volunteer/VolunteerHeader';
 import { VolunteerTaskCard } from '@/components/volunteer/VolunteerTaskCard';
+import { SuspendedScreen } from '@/components/SuspendedScreen';
+import { PendingVerification } from '@/components/orphan/PendingVerification';
 
 export default function VolunteerDashboard() {
   const { user, logout } = useAuth();
@@ -70,6 +72,14 @@ export default function VolunteerDashboard() {
         <Text style={styles.loadingText}>Syncing Missions...</Text>
       </View>
     );
+  }
+
+  if (user?.status === 'suspended') {
+    return <SuspendedScreen reason={user.suspensionReason} onLogout={logout} />;
+  }
+
+  if (user?.status === 'pending') {
+    return <PendingVerification onLogout={logout} />;
   }
 
   return (

@@ -6,6 +6,16 @@ const orphanageSchema = new mongoose.Schema({
     required: true,
     trim: true,
   },
+  userId: {
+    type: mongoose.Schema.Types.ObjectId,
+    ref: 'User',
+    required: true
+  },
+  status: {
+    type: String,
+    enum: ['pending', 'approved', 'rejected'],
+    default: 'pending'
+  },
   registrationNumber: {
     type: String,
     required: true,

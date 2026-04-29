@@ -4,21 +4,24 @@ import Notification from '../model/notification_model.js';
 
 export const submitRequest = async (req, res) => {
   try {
-    const { orphanId, orphanageId, type, units, unitType, description, school, class: classLevel } = req.body;
+    const { orphanId, orphanageId, type, units, unitType, description, school, class: classLevel, isInstitutional } = req.body;
     const documents = req.files ? req.files.map(file => file.path) : [];
 
-    // Verify orphan exists - try by direct ID first, then by userId
-    let orphan = await Orphan.findById(orphanId);
-    if (!orphan) {
-      orphan = await Orphan.findOne({ userId: orphanId });
-    }
+    let orphanName = 'Institutional';
+    if (!isInstitutional && orphanId) {
+      // Verify orphan exists - try by direct ID first, then by userId
+      let orphan = await Orphan.findById(orphanId);
+      if (!orphan) {
+        orphan = await Orphan.findOne({ userId: orphanId });
+      }
 
-    if (!orphan) {
-      return res.status(404).json({ message: 'Orphan profile not found' });
+      if (orphan) {
+        orphanName = orphan.name;
+      }
     }
 
     const newRequest = new Request({
-      orphanId,
+      orphanId: isInstitutional ? null : orphanId,
       orphanageId,
       type,
       units,
@@ -26,6 +29,7 @@ export const submitRequest = async (req, res) => {
       description,
       school,
       class: classLevel,
+      isInstitutional: isInstitutional || false,
       documents,
     });
 
@@ -34,8 +38,10 @@ export const submitRequest = async (req, res) => {
     // Create notification for admin
     const notification = new Notification({
       type: 'request',
-      title: 'New Request Submitted',
-      message: `New ${type} request submitted for ${orphan.name}`,
+      title: isInstitutional ? 'New Institutional Requirement' : 'New Request Submitted',
+      message: isInstitutional 
+        ? `New ${type} requirement submitted by orphanage` 
+        : `New ${type} request submitted for ${orphanName}`,
     });
 
     await notification.save();
@@ -43,6 +49,18 @@ export const submitRequest = async (req, res) => {
     res.status(201).json({ message: 'Request submitted successfully', request: newRequest });
   } catch (error) {
     res.status(500).json({ message: 'Error submitting request', error: error.message });
+  }
+};
+
+export const getRequestsByOrphanage = async (req, res) => {
+  try {
+    const requests = await Request.find({ orphanageId: req.params.orphanageId })
+      .populate('orphanId', 'name')
+      .sort({ createdAt: -1 });
+
+    res.status(200).json({ requests });
+  } catch (error) {
+    res.status(500).json({ message: 'Error fetching orphanage requests', error: error.message });
   }
 };
 

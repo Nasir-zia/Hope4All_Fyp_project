@@ -7,6 +7,7 @@ interface User {
   username?: string;
   email?: string;
   status?: string;
+  suspensionReason?: string;
 }
 
 interface AuthContextType {

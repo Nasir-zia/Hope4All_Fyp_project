@@ -36,9 +36,19 @@ export const createOrphanAge = async (req, res) => {
 
 export const getOrphanages = async (req, res) => {
   try {
-    const orphanages = await OrphanAge.find({}, 'name location.city');
+    const orphanages = await OrphanAge.find({ status: 'approved' });
     res.status(200).json({ success: true, data: orphanages });
   } catch (error) {
     res.status(500).json({ success: false, message: error.message });
+  }
+};
+
+export const getOrphanageProfile = async (req, res) => {
+  try {
+    const orphanage = await OrphanAge.findOne({ userId: req.params.userId });
+    if (!orphanage) return res.status(404).json({ message: 'Orphanage not found' });
+    res.status(200).json({ orphanage });
+  } catch (error) {
+    res.status(500).json({ message: error.message });
   }
 };

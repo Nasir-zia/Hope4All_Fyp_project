@@ -15,6 +15,7 @@ import { ProfileModal } from '@/components/orphan/ProfileModal';
 import { ProgressModal } from '@/components/orphan/ProgressModal';
 import { RegistrationForm } from '@/components/orphan/RegistrationForm';
 import { PendingVerification } from '@/components/orphan/PendingVerification';
+import { SuspendedScreen } from '@/components/SuspendedScreen';
 import BackButton from '@/components/BackButton';
 
 export default function OrphanDashboard() {
@@ -32,6 +33,10 @@ export default function OrphanDashboard() {
     handleAddFee, handleAddMaterialRequest, openSettings, handleUpdateProfile, handleAddProgress, handleDeleteProgress,
     pickImage, pickDocument, handleProfileSubmit
   } = useOrphanDashboard();
+
+  if (user?.status === 'suspended') {
+    return <SuspendedScreen reason={user.suspensionReason} onLogout={logout} />;
+  }
 
   if (isRegistering) {
     return (

@@ -7,14 +7,16 @@ const donorSchema = new mongoose.Schema({
     required: true },
 
   email: { type: String,
-     required: true,
-     unique: true },
+     required: false,
+     default: '' },
 
   phone: { type: String,
      required: true },
 
   city: { type: String,
      default: '' },
+
+  status: { type: String, enum: ['pending', 'approved', 'rejected'], default: 'approved' },
 
   totalDonated: { type: Number,
      default: 0 },

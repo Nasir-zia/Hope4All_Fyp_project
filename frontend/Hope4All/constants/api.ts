@@ -447,6 +447,43 @@ export const fetchOrphanageOptions = async () => {
   }
 };
 
+export const fetchOrphanages = fetchOrphanageOptions;
+
+export const fetchOrphanageProfile = async (userId: string) => {
+  try {
+    const response = await fetch(`${API_BASE_URL}/orphanages/profile/${userId}`);
+    if (!response.ok) {
+      if (response.status === 404) return null;
+      throw new Error(`HTTP error! status: ${response.status}`);
+    }
+    const data = await response.json();
+    return data.orphanage;
+  } catch (error) {
+    console.error('Fetch Orphanage Profile error:', error);
+    throw error;
+  }
+};
+
+export const registerOrphanageApi = async (formData: FormData) => {
+  try {
+    const response = await fetch(`${API_BASE_URL}/orphanages/register`, {
+      method: 'POST',
+      body: formData,
+    });
+
+    let result: any;
+    try { result = await response.json(); } catch (e) { }
+
+    if (!response.ok) {
+      throw new Error(result?.message || `HTTP error! status: ${response.status}`);
+    }
+    return result.data;
+  } catch (error) {
+    console.error('Register Orphanage error:', error);
+    throw error;
+  }
+};
+
 export const fetchOrphanProgress = async (orphanId: string) => {
   try {
     const response = await fetch(`${API_BASE_URL}/progress/orphan/${orphanId}`);
@@ -507,6 +544,31 @@ export const submitMaterialRequest = async (data: MaterialRequestData) => {
     return await response.json();
   } catch (error) {
     console.error('Submit material request error:', error);
+    throw error;
+  }
+};
+
+export const fetchOrphanageRequests = async (orphanageId: string) => {
+  try {
+    const response = await fetch(`${API_BASE_URL}/requests/orphanage/${orphanageId}`);
+    const data = await response.json();
+    return data.requests || [];
+  } catch (error) {
+    console.error('Fetch orphanage requests error:', error);
+    throw error;
+  }
+};
+
+export const submitRequirement = async (data: any) => {
+  try {
+    const response = await fetch(`${API_BASE_URL}/requests/submit`, {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ ...data, isInstitutional: true }),
+    });
+    return await response.json();
+  } catch (error) {
+    console.error('Submit requirement error:', error);
     throw error;
   }
 };

@@ -13,7 +13,7 @@ export const registerOrphan = async (req, res) => {
       return res.status(400).json({ message: 'Orphan profile already exists' });
     }
 
-    const { name, age, gender, location, orphanageId, phone } = req.body;
+    const { name, age, gender, location, orphanageId, phone, school, classLevel, bio } = req.body;
     
     // Check files presence - handle various Cloudinary/Multer response structures
     const profilePic = req.files?.profilePic?.[0] 
@@ -33,6 +33,9 @@ export const registerOrphan = async (req, res) => {
       gender,
       location,
       phone,
+      school,
+      classLevel,
+      bio,
       orphanageId: orphanageId || undefined,
       profilePic,
       supportingDocs,
@@ -53,7 +56,7 @@ export const registerOrphan = async (req, res) => {
 
 export const getOrphanProfile = async (req, res) => {
   try {
-    const orphan = await Orphan.findOne({ userId: req.params.id });
+    const orphan = await Orphan.findOne({ userId: req.params.id }).populate('orphanageId');
     if (!orphan) {
       return res.status(404).json({ message: 'Orphan not found' });
     }

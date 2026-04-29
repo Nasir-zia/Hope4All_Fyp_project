@@ -61,7 +61,11 @@ export const UsersTab: React.FC<UsersTabProps> = ({ users, onUpdateStatus }) => 
               {u.location && (
                 <View style={styles.detailRow}>
                   <Ionicons name="location-outline" size={14} color="#64748b" />
-                  <Text style={styles.detailText}>{u.location}</Text>
+                  <Text style={styles.detailText}>
+                    {typeof u.location === 'object' 
+                      ? `${u.location.address || ''}, ${u.location.city || ''}` 
+                      : u.location}
+                  </Text>
                 </View>
               )}
             </View>

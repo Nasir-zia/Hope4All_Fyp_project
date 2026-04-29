@@ -8,6 +8,7 @@ import Request from "../model/request_model.js";
 import {
   submitRequest,
   getRequestsByOrphan,
+  getRequestsByOrphanage,
   getAllRequests,
   updateRequestStatus,
   rejectRequest
@@ -29,6 +30,9 @@ router.post("/submit", upload.array("documents"), submitRequest);
 
 // Get requests by orphan
 router.get("/orphan/:orphanId", getRequestsByOrphan);
+
+// Get requests by orphanage
+router.get("/orphanage/:orphanageId", getRequestsByOrphanage);
 
 // Get all requests (admin)
 router.get("/", getAllRequests);

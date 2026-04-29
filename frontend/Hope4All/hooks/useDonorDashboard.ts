@@ -16,7 +16,8 @@ import {
   fetchDonorCourses,
   updateDonorProfile,
   fetchDonationHistory,
-  deleteDonationApi
+  deleteDonationApi,
+  fetchOrphanages
 } from '@/constants/api';
 
 export const useDonorDashboard = () => {
@@ -24,18 +25,21 @@ export const useDonorDashboard = () => {
   const [donorProfile, setDonorProfile] = useState<any>(null);
   const [loading, setLoading] = useState(true);
   const [saving, setSaving] = useState(false);
-  
+
   // Dynamic States
   const [requests, setRequests] = useState<any[]>([]);
   const [orphans, setOrphans] = useState<any[]>([]);
   const [availableFees, setAvailableFees] = useState<any[]>([]);
   const [donorCourses, setDonorCourses] = useState<any[]>([]);
   const [myDonations, setMyDonations] = useState<any[]>([]);
+  const [orphanages, setOrphanages] = useState<any[]>([]);
   const [pledgingFee, setPledgingFee] = useState<string | null>(null);
 
   // Profile View States
   const [selectedOrphanForProfile, setSelectedOrphanForProfile] = useState<any>(null);
+  const [selectedOrphanage, setSelectedOrphanage] = useState<any>(null);
   const [showProfileModal, setShowProfileModal] = useState(false);
+  const [showOrphanageModal, setShowOrphanageModal] = useState(false);
   const [showPreferenceModal, setShowPreferenceModal] = useState(false);
   const [showAddDonationModal, setShowAddDonationModal] = useState(false);
 
@@ -68,7 +72,7 @@ export const useDonorDashboard = () => {
   const causeOptions = ['Books', 'Stationery', 'Uniforms', 'School_Fees', 'Other'];
 
   const toggleCause = (cause: string) => {
-    setSelectedCauses(prev => 
+    setSelectedCauses(prev =>
       prev.includes(cause) ? prev.filter(c => c !== cause) : [...prev, cause]
     );
   };
@@ -98,18 +102,20 @@ export const useDonorDashboard = () => {
 
   const loadDashboardData = async (donorId: string) => {
     try {
-      const [reqsData, orphansData, feesData, coursesData, donationsData] = await Promise.all([
+      const [reqsData, orphansData, feesData, coursesData, donationsData, orphanagesData] = await Promise.all([
         fetchApprovedRequests(),
         fetchMatchedOrphans(donorId),
         fetchAvailableFees(),
         fetchDonorCourses(donorId),
-        fetchDonationHistory(user!.id)
+        fetchDonationHistory(user!.id),
+        fetchOrphanages()
       ]);
       setRequests(reqsData || []);
       setOrphans(orphansData || []);
       setAvailableFees(feesData || []);
       setDonorCourses(coursesData || []);
       setMyDonations(donationsData || []);
+      setOrphanages(orphanagesData || []);
     } catch (err) {
       console.log("Error fetching dashboard data: ", err);
     }
@@ -117,11 +123,7 @@ export const useDonorDashboard = () => {
 
   const handleRegister = async () => {
     if (!name || !phone || !city) {
-      Alert.alert("Error", "Please fill all fields");
-      return;
-    }
-    if (selectedCauses.length === 0) {
-      Alert.alert("Error", "Please select at least one item you'd like to donate.");
+      Alert.alert('Error', 'Please fill all fields');
       return;
     }
 
@@ -132,16 +134,11 @@ export const useDonorDashboard = () => {
         name,
         phone,
         city,
-        preferences: {
-          causeType: selectedCauses,
-          area: [city],
-          schoolLevel: []
-        }
+        preferences: { causeType: [], area: [], schoolLevel: [] }
       });
       setDonorProfile(profile);
-      loadDashboardData(profile._id);
     } catch (err: any) {
-      Alert.alert("Error", err.message || "Could not save profile");
+      Alert.alert('Error', err.message || 'Could not save profile');
     } finally {
       setSaving(false);
     }
@@ -160,7 +157,11 @@ export const useDonorDashboard = () => {
         units: Number(units),
         recipientName: selectedRequest.orphanId?.name || 'Child'
       });
-      Alert.alert("Success", "Thank you for your generous donation!");
+      Alert.alert(
+        "Donation Confirmed",
+        "Thank you! Please send your donated items to our main office:\n\n Address: Faisalabad D Ground, Office #12\n\nPlease mention your Donation ID on the package.",
+        [{ text: "OK" }]
+      );
       setUnits('');
       setSelectedRequest(null);
       loadDashboardData(donorProfile._id);
@@ -293,19 +294,21 @@ export const useDonorDashboard = () => {
   const handleDeleteDonation = async (id: string) => {
     Alert.alert("Delete", "Are you sure you want to delete this record?", [
       { text: "Cancel", style: "cancel" },
-      { text: "Delete", style: "destructive", onPress: async () => {
+      {
+        text: "Delete", style: "destructive", onPress: async () => {
           try {
             await deleteDonationApi(id);
             loadDashboardData(donorProfile._id);
           } catch (err: any) {
             Alert.alert("Error", err.message);
           }
-      }}
+        }
+      }
     ]);
   };
 
   const toggleTempCause = (cause: string) => {
-    setTempCauses(prev => 
+    setTempCauses(prev =>
       prev.includes(cause) ? prev.filter(c => c !== cause) : [...prev, cause]
     );
   };
@@ -319,30 +322,25 @@ export const useDonorDashboard = () => {
     if (!orphan?._id) return;
     router.push({
       pathname: '/messages',
-      params: { 
-        userId: orphan._id, 
-        username: orphan.name || orphan.username || 'User' 
+      params: {
+        userId: orphan._id,
+        username: orphan.name || orphan.username || 'User'
       }
     });
   };
 
   return {
     user, logout, donorProfile, loading, saving,
-    requests, orphans, availableFees, donorCourses, myDonations, pledgingFee,
-    filteredRequests: requests.filter(req => 
-      !donorProfile?.preferences?.causeType?.length || 
-      donorProfile.preferences.causeType.includes(req.type)
+    requests, orphans, availableFees, donorCourses, myDonations, pledgingFee, orphanages,
+    filteredRequests: requests.filter(req =>
+      !donorProfile?.preferences?.causeType?.length ||
+      donorProfile.preferences.causeType.some((pref: string) => req.type.toLowerCase() === pref.toLowerCase())
     ),
-    filteredOrphans: orphans.filter(orphan => {
-      if (!donorProfile?.preferences?.causeType?.length) return true;
-      // Show orphan if they have a request that matches donor preferences
-      return requests.some(req => 
-        req.orphanId?._id === orphan._id && 
-        donorProfile.preferences.causeType.includes(req.type)
-      );
-    }),
+    filteredOrphans: orphans,
     selectedOrphanForProfile, setSelectedOrphanForProfile,
+    selectedOrphanage, setSelectedOrphanage,
     showProfileModal, setShowProfileModal,
+    showOrphanageModal, setShowOrphanageModal,
     showPreferenceModal, setShowPreferenceModal,
     showAddDonationModal, setShowAddDonationModal,
     name, setName, phone, setPhone, city, setCity, selectedCauses, setSelectedCauses,
