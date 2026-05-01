@@ -36,8 +36,8 @@ export const signup = async (req, res) => {
 
     // Create new user
     const newUser = new User({
-      username,
-      email,
+      username: username.trim(),
+      email: email.toLowerCase().trim(),
       password: hashedPassword,
       role,
       status: role === 'donor' ? 'verified' : 'pending'
@@ -118,21 +118,23 @@ export const login = async (req, res) => {
     }
 
     // Normal user authentication
-    console.log(' Finding user by email:', email);
-    const user = await User.findOne({ email });
+    console.log(`[Auth] Attempting login for email: ${email}`);
+    const user = await User.findOne({ email: email.toLowerCase().trim() });
+    
     if (!user) {
-      console.log(' User not found:', email);
+      console.log(`[Auth] User NOT found in database: ${email}`);
       return res.status(400).json({ 
         success: false,
         message: 'Invalid credentials' 
       });
     }
 
+    console.log(`[Auth] User found: ${user.username} (${user.role}). Verifying password...`);
+
     // Check password
-    console.log(' Verifying password...');
     const isMatch = await bcrypt.compare(password, user.password);
     if (!isMatch) {
-      console.log(' Password mismatch for:', email);
+      console.log(`[Auth] Password mismatch for user: ${email}`);
       return res.status(400).json({ 
         success: false,
         message: 'Invalid credentials' 

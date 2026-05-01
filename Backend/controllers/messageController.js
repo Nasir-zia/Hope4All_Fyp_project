@@ -13,13 +13,18 @@ export const sendMessage = async (req, res) => {
     });
 
     await newMessage.save();
-
-    // Populate sender info
     await newMessage.populate('senderId', 'username role');
 
-    res.status(201).json({ message: 'Message sent successfully', messageData: newMessage });
+    // Real-time emit to receiver room via the attached io instance
+    if (req.io) {
+      req.io.to(receiverId.toString()).emit('new-message', newMessage);
+      console.log(`[Socket] Emitted new-message to user ${receiverId}`);
+    }
+
+    res.status(201).json({ success: true, message: newMessage });
   } catch (error) {
-    res.status(500).json({ message: 'Error sending message', error: error.message });
+    console.error('Send message error:', error);
+    res.status(500).json({ success: false, error: 'Error sending message', details: error.message });
   }
 };
 
@@ -52,21 +57,29 @@ export const getMessages = async (req, res) => {
 export const getConversations = async (req, res) => {
   try {
     const userId = req.user.id;
+    const userRole = req.user.role;
 
-    // Get unique conversation partners
-    const sentMessages = await Message.find({ senderId: userId })
-      .distinct('receiverId');
+    // 1. Get unique conversation partners from existing messages
+    const sentMessages = await Message.find({ senderId: userId }).distinct('receiverId');
+    const receivedMessages = await Message.find({ receiverId: userId }).distinct('senderId');
+    
+    let conversationUserIds = [...new Set([...sentMessages, ...receivedMessages])];
 
-    const receivedMessages = await Message.find({ receiverId: userId })
-      .distinct('senderId');
+    // 2. If the user is a donor, also include ALL orphans in their list
+    if (userRole === 'donor') {
+      const allOrphans = await User.find({ role: 'orphan' }).distinct('_id');
+      conversationUserIds = [...new Set([...conversationUserIds, ...allOrphans])];
+    }
 
-    const conversationUserIds = [...new Set([...sentMessages, ...receivedMessages])];
-
-    const conversations = await User.find({ _id: { $in: conversationUserIds } })
+    // 3. Fetch user details for all identified IDs
+    const conversations = await User.find({ 
+      _id: { $in: conversationUserIds },
+      // status: 'verified' // Optional: filter by status
+    })
       .select('username role')
       .lean();
 
-    // Add last message and unread count for each conversation
+    // 4. Add last message and unread count for each conversation
     const conversationsWithDetails = await Promise.all(
       conversations.map(async (user) => {
         const lastMessage = await Message.findOne({
@@ -90,9 +103,20 @@ export const getConversations = async (req, res) => {
       })
     );
 
+    // 5. Sort: Conversations with messages first (by date), then alphabetical
+    conversationsWithDetails.sort((a, b) => {
+      if (a.lastMessage && b.lastMessage) {
+        return new Date(b.lastMessage.createdAt) - new Date(a.lastMessage.createdAt);
+      }
+      if (a.lastMessage) return -1;
+      if (b.lastMessage) return 1;
+      return a.user.username.localeCompare(b.user.username);
+    });
+
     res.status(200).json({ conversations: conversationsWithDetails });
   } catch (error) {
-    res.status(500).json({ message: 'Error fetching conversations', error: error.message });
+    console.error('Error in getConversations:', error);
+    res.status(500).json({ success: false, message: 'Error fetching conversations', error: error.message });
   }
 };
 
