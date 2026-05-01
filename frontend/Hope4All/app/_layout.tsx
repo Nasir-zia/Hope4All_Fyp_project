@@ -24,11 +24,37 @@ function RootLayoutNav() {
   );
 }
 
+import { useSocket } from '../hooks/messages/useSocket';
+import { useMessageStore } from '../store/messageStore';
+
 function AuthRedirector({ children }: { children: React.ReactNode }) {
-  const { user, loading } = useAuth();
+  const { user, loading, token } = useAuth() as any;
   const segments = useSegments();
+  const { handleIncomingMessage, fetchConversations } = useMessageStore();
+
+  // Global Socket Connection
+  const { socket } = useSocket(user?.id, user?.token || token);
+
+  // Global Message Listener
+  React.useEffect(() => {
+    if (!socket) return;
+
+    const onNewMessage = (message: any) => {
+      console.log('[GlobalSocket] New message received:', message);
+      // Update store (will handle adding to current chat if open)
+      handleIncomingMessage(message, null); 
+      // Refresh conversations list for unread counts
+      fetchConversations(user?.token || token);
+    };
+
+    socket.on('new-message', onNewMessage);
+    return () => {
+      socket.off('new-message', onNewMessage);
+    };
+  }, [socket, user?.token, token]);
 
   React.useEffect(() => {
+    console.log('[AuthRedirector] State:', { hasUser: !!user, loading, segments });
     if (loading) return;
 
     const segment = segments[0] as string | undefined;
@@ -37,7 +63,7 @@ function AuthRedirector({ children }: { children: React.ReactNode }) {
     const isDashboardPage = ['orphan', 'donor', 'volunteer', 'admin', 'orphanage'].includes(segment || '');
 
     if (user && (isAuthPage || isIndexPage)) {
-      // Logged in user shouldn't see login/signup/index
+      console.log('[AuthRedirector] Logged in, redirecting to dashboard...');
       let redirectPath = '/role';
       if (user.role === 'orphan') redirectPath = '/orphan';
       else if (user.role === 'donor') redirectPath = '/donor';
@@ -47,7 +73,7 @@ function AuthRedirector({ children }: { children: React.ReactNode }) {
 
       router.replace(redirectPath as any);
     } else if (!user && isDashboardPage) {
-      // Guest user shouldn't see dashboards
+      console.log('[AuthRedirector] Logged out, redirecting to login...');
       router.replace('/login');
     }
   }, [user, loading, segments]);
@@ -60,7 +86,6 @@ function AuthRedirector({ children }: { children: React.ReactNode }) {
     );
   }
 
-  // Always return children so the Expo Router Stack is correctly mounted!
   return <>{children}</>;
 }
 

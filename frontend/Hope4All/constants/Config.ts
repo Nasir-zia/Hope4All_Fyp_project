@@ -1,11 +1,16 @@
 import Constants from 'expo-constants';
+import { Platform } from 'react-native';
 
 // Dynamic IP detection for local development
 const debuggerHost = Constants.expoConfig?.hostUri;
-const hostIP = debuggerHost ? debuggerHost.split(':')[0] : '192.168.1.2';
+let hostIP = debuggerHost ? debuggerHost.split(':')[0] : '192.168.1.6';
 
-console.log('[Config] Detected Host IP:', hostIP);
-console.log('[Config] API Base URL:', `http://${hostIP}:5000/api`);
+// For Web, use localhost or the window location
+if (Platform.OS === 'web') {
+  hostIP = 'localhost';
+}
+
+console.log(`[Config] Running on ${Platform.OS}. Detected Host IP:`, hostIP);
 
 export const CONFIG = {
   API_BASE_URL: process.env.EXPO_PUBLIC_API_URL || `http://${hostIP}:5000/api`,

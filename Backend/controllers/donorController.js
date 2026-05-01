@@ -524,7 +524,7 @@ export const getOrphanAid = async (req, res) => {
     }
     
     const donations = await Donation.find({ recipientId: orphan._id })
-      .populate('donorId', 'name email phone avatar')
+      .populate('donorId', 'userId name email phone avatar')
       .populate('requestId', 'type units unitType description school')
       .sort({ createdAt: -1 });
 

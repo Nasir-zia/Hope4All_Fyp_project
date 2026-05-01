@@ -9,28 +9,27 @@ export const useSocket = (userId: string | undefined, token: string | undefined)
   useEffect(() => {
     if (!userId || !token) return;
 
-    // Initialize socket with authentication
+    console.log(`[Socket] Connecting for user: ${userId}`);
     const socket = io(SOCKET_URL, {
       transports: ['websocket'],
       reconnectionAttempts: 5,
-      auth: { token } // BUG FIX: Pass token here for middleware
+      auth: { token } 
     });
 
     socketRef.current = socket;
 
     socket.on('connect', () => {
-      console.log('Socket connected:', socket.id);
+      console.log(`[Socket] Connected! ID: ${socket.id}`);
       setIsConnected(true);
-      // No need to emit 'join-user' manually, middleware handles it
     });
 
-    socket.on('disconnect', () => {
-      console.log('Socket disconnected');
+    socket.on('disconnect', (reason) => {
+      console.log(`[Socket] Disconnected. Reason: ${reason}`);
       setIsConnected(false);
     });
 
     socket.on('connect_error', (error) => {
-      console.error('Socket connection error:', error);
+      console.error('[Socket] Connection error:', error.message);
       setIsConnected(false);
     });
 

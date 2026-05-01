@@ -31,14 +31,16 @@ const app = express();
 const server = createServer(app);
 const io = new Server(server, {
   cors: {
-    
+    origin: '*',
     methods: ['GET', 'POST', 'PUT', 'DELETE', 'OPTIONS'],
+    credentials: true
   }
 });
 
 initSocket(io);
 
 app.use(cors({
+  origin: true, // Reflect request origin, essential for credentials: true
   credentials: true,
   methods: ['GET', 'POST', 'PUT', 'DELETE', 'OPTIONS'],
   allowedHeaders: ['Content-Type', 'Authorization', 'X-Requested-With'],

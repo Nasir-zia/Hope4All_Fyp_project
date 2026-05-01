@@ -1,5 +1,7 @@
 import React, { createContext, useContext, useState, useEffect } from 'react';
 import * as SecureStore from 'expo-secure-store';
+import { Platform } from 'react-native';
+
 interface User {
   id: string;
   token: string;
@@ -16,6 +18,30 @@ interface AuthContextType {
   login: (token: string, userData: Partial<User>) => Promise<void>;
   logout: () => Promise<void>;
 }
+
+// Storage Helper for Web Support
+const storage = {
+  getItem: async (key: string) => {
+    if (Platform.OS === 'web') {
+      return localStorage.getItem(key);
+    }
+    return await SecureStore.getItemAsync(key);
+  },
+  setItem: async (key: string, value: string) => {
+    if (Platform.OS === 'web') {
+      localStorage.setItem(key, value);
+      return;
+    }
+    await SecureStore.setItemAsync(key, value);
+  },
+  deleteItem: async (key: string) => {
+    if (Platform.OS === 'web') {
+      localStorage.removeItem(key);
+      return;
+    }
+    await SecureStore.deleteItemAsync(key);
+  }
+};
 
 const AuthContext = createContext<AuthContextType | undefined>(undefined);
 
@@ -37,8 +63,8 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
 
   const loadUser = async () => {
     try {
-      const token = await SecureStore.getItemAsync('token');
-      const userData = await SecureStore.getItemAsync('user');
+      const token = await storage.getItem('token');
+      const userData = await storage.getItem('user');
 
       if (token && userData) {
         setUser(JSON.parse(userData));
@@ -59,20 +85,27 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
     };
 
     setUser(fullUser);
-    await SecureStore.setItemAsync('token', token);
-    await SecureStore.setItemAsync('user', JSON.stringify(fullUser));
+    await storage.setItem('token', token);
+    await storage.setItem('user', JSON.stringify(fullUser));
   };
 
   const logout = async () => {
+    console.log('[Auth] Logging out...');
+    // Set user to null immediately for instant UI response
     setUser(null);
-    await SecureStore.deleteItemAsync('token');
-    await SecureStore.deleteItemAsync('user');
+    
+    try {
+      await storage.deleteItem('token');
+      await storage.deleteItem('user');
+      console.log('[Auth] Storage cleared');
+    } catch (err) {
+      console.error('[Auth] Error clearing storage:', err);
+    }
   };
 
-  // ✅ IMPORTANT RETURN
   return (
     <AuthContext.Provider value={{ user, loading, login, logout }}>
       {children}
     </AuthContext.Provider>
   );
-};
+};

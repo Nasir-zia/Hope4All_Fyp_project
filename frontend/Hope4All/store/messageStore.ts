@@ -72,15 +72,18 @@ export const useMessageStore = create<MessageState>((set, get) => ({
 
   handleIncomingMessage: (message, selectedUserId) => {
     const senderId = message.senderId?._id || message.senderId;
+    console.log('[Store] Incoming message from:', senderId);
+    console.log('[Store] Currently chatting with:', selectedUserId);
     
     // 1. If it's the current chat, add to messages
     if (selectedUserId && String(senderId) === String(selectedUserId)) {
+      console.log('[Store] Matching chat! Adding message.');
       get().addMessage(message);
+    } else {
+      console.log('[Store] No match or no chat open. Skipping message append.');
     }
 
-    // 2. Always refresh conversation list for unread counts/sorting
-    // Note: We might need the token here if we want to fetch the updated list
-    // For now, we just update the specific conversation's last message locally if we want to be fancy
-    // But a simple refresh is more reliable
+    // 2. Always refresh conversation list to update UI
+    // (We'll rely on the caller to pass the token or use a stored one if we add it)
   }
 }));

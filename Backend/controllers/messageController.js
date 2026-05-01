@@ -4,26 +4,39 @@ import User from '../model/user_model.js';
 export const sendMessage = async (req, res) => {
   try {
     const { receiverId, message, type } = req.body;
+    const senderId = req.user.id;
+
+    console.log(`[Message] Attempting to send from ${senderId} to ${receiverId}`);
+    console.log(`[Message] Content: "${message?.substring(0, 20)}..."`);
+
+    if (!receiverId || !message) {
+      return res.status(400).json({ success: false, error: 'ReceiverId and message are required' });
+    }
 
     const newMessage = new Message({
-      senderId: req.user.id, 
+      senderId, 
       receiverId,
       message,
       type: type || 'text',
     });
 
     await newMessage.save();
+    console.log(`[Message] Saved to DB with ID: ${newMessage._id}`);
+    
     await newMessage.populate('senderId', 'username role');
 
-    // Real-time emit to receiver room via the attached io instance
+    // Real-time emit to receiver room
     if (req.io) {
-      req.io.to(receiverId.toString()).emit('new-message', newMessage);
-      console.log(`[Socket] Emitted new-message to user ${receiverId}`);
+      const roomName = receiverId.toString();
+      req.io.to(roomName).emit('new-message', newMessage);
+      console.log(`[Socket] Emitted 'new-message' to room: ${roomName}`);
+    } else {
+      console.warn('[Socket] req.io not found! Real-time delivery skipped.');
     }
 
     res.status(201).json({ success: true, message: newMessage });
   } catch (error) {
-    console.error('Send message error:', error);
+    console.error('[Message] Send error:', error);
     res.status(500).json({ success: false, error: 'Error sending message', details: error.message });
   }
 };

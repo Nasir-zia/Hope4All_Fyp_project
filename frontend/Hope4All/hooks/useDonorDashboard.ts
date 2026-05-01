@@ -319,11 +319,14 @@ export const useDonorDashboard = () => {
   };
 
   const handleMessage = (orphan: any) => {
-    if (!orphan?._id) return;
+    // Messaging MUST use User IDs, not Profile IDs
+    const targetUserId = orphan?.userId?._id || orphan?.userId || orphan?._id;
+    if (!targetUserId) return;
+    
     router.push({
       pathname: '/messages',
       params: {
-        userId: orphan._id,
+        userId: String(targetUserId),
         username: orphan.name || orphan.username || 'User'
       }
     });

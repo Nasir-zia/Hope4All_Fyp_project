@@ -1,5 +1,5 @@
 import React from 'react';
-import { View, Text, StyleSheet, ScrollView, ActivityIndicator, Alert, TouchableOpacity } from 'react-native';
+import { View, Text, StyleSheet, ScrollView, ActivityIndicator, Alert, TouchableOpacity, Platform } from 'react-native';
 import { Ionicons } from '@expo/vector-icons';
 import { router } from 'expo-router';
 
@@ -66,10 +66,16 @@ export default function DonorDashboard() {
           name={donorProfile.name} 
           points={donorProfile.totalDonated || 0}
           onLogout={() => {
-            Alert.alert('Logout', 'Are you sure you want to log out?', [
-              { text: 'Cancel', style: 'cancel' },
-              { text: 'Logout', style: 'destructive', onPress: logout }
-            ]);
+            if (Platform.OS === 'web') {
+              if (window.confirm('Are you sure you want to log out?')) {
+                logout();
+              }
+            } else {
+              Alert.alert('Logout', 'Are you sure you want to log out?', [
+                { text: 'Cancel', style: 'cancel' },
+                { text: 'Logout', style: 'destructive', onPress: logout }
+              ]);
+            }
           }}
           onMessages={() => router.push('/messages')}
         />

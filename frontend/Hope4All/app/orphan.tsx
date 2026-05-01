@@ -1,5 +1,5 @@
 import React from 'react';
-import { View, ScrollView, StyleSheet, ActivityIndicator, Alert } from 'react-native';
+import { View, ScrollView, StyleSheet, ActivityIndicator, Alert, Platform } from 'react-native';
 import { router } from 'expo-router';
 import { useOrphanDashboard } from '@/hooks/useOrphanDashboard';
 
@@ -78,10 +78,16 @@ export default function OrphanDashboard() {
           profilePic={orphanProfile?.profilePic}
           onOpenSettings={openSettings}
           onLogout={() => {
-            Alert.alert('Logout', 'Are you sure you want to log out?', [
-              { text: 'Cancel', style: 'cancel' },
-              { text: 'Logout', style: 'destructive', onPress: logout }
-            ]);
+            if (Platform.OS === 'web') {
+              if (window.confirm('Are you sure you want to log out?')) {
+                logout();
+              }
+            } else {
+              Alert.alert('Logout', 'Are you sure you want to log out?', [
+                { text: 'Cancel', style: 'cancel' },
+                { text: 'Logout', style: 'destructive', onPress: logout }
+              ]);
+            }
           }}
         />
 
@@ -91,10 +97,14 @@ export default function OrphanDashboard() {
 
         <AidFeedSection
           aidItems={aidFeed}
-          onThanks={(donor) => router.push({
-            pathname: '/messages',
-            params: { userId: donor?._id, username: donor?.name }
-          })}
+          onThanks={(donor) => {
+            const targetUserId = donor?.userId?._id || donor?.userId || donor?._id;
+            if (!targetUserId) return;
+            router.push({
+              pathname: '/messages',
+              params: { userId: String(targetUserId), username: donor?.name }
+            });
+          }}
         />
 
         <CoursesSection courses={availableCourses} />
