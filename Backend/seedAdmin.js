@@ -11,16 +11,16 @@ dns.setServers(['8.8.8.8', '8.8.4.4']);
 const uri = process.env.MONGO_URI;
 
 if (!uri) {
-  console.error("❌ Error: MONGO_URI not found in .env file!");
+  console.error(" Error: MONGO_URI not found in .env file!");
   process.exit(1);
 }
 
 async function seedAdmin() {
   try {
-    await mongoose.connect(uri);
+    await mongoose.connect(uri, { dbName: 'Hope4AllDB' });
     console.log("Connected to DB.");
 
-    const email = 'nasirzia171@gmail.com'; // Fixed typo in user's prompt (added .com)
+    const email = 'nasirzia171@gmail.com';
     const password = 'Lakki123,.';
 
     let adminUser = await User.findOne({ email });

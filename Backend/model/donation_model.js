@@ -45,8 +45,13 @@ const donationSchema = new mongoose.Schema({
 
   status: {
     type: String,
-    enum: ['pending', 'in-progress', 'delivered'],
-    default: 'pending'
+    enum: ['pending-delivery', 'under-review', 'sent', 'completed'],
+    default: 'pending-delivery'
+  },
+  
+  donationPhoto: {
+    type: String,
+    required: false
   },
 
   receipt: {

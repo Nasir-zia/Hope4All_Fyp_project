@@ -1,4 +1,7 @@
+import mongoose from 'mongoose';
 import Orphan from '../model/orphan_model.js';
+import Donation from '../model/donation_model.js';
+import User from '../model/user_model.js';
 
 export const registerOrphan = async (req, res) => {
   try {
@@ -42,6 +45,10 @@ export const registerOrphan = async (req, res) => {
     });
 
     await newOrphan.save();
+    
+    // Update User status to pending for admin approval
+    await User.findByIdAndUpdate(userId, { status: 'pending' });
+
     console.log('[RegisterOrphan] Successfully saved profile for:', name);
     res.status(201).json({ message: 'Orphan registered successfully', orphan: newOrphan });
   } catch (error) {
@@ -96,5 +103,34 @@ export const updateOrphanProfile = async (req, res) => {
   } catch (error) {
     console.error('[UpdateOrphan] Error:', error);
     res.status(500).json({ message: 'Error updating orphan profile', error: error.message });
+  }
+};
+
+export const confirmDonationReceipt = async (req, res) => {
+  try {
+    const { donationId } = req.params;
+    
+    const donation = await Donation.findById(donationId);
+    if (!donation) {
+      return res.status(404).json({ message: 'Donation not found' });
+    }
+
+    donation.status = 'completed';
+    donation.deliveredAt = new Date();
+    await donation.save();
+
+    // If there's an associated request, mark it as fulfilled
+    if (donation.requestId) {
+      const Request = mongoose.model('Request'); // Dynamic import to avoid circular dependency if any
+      await Request.findByIdAndUpdate(donation.requestId, { status: 'fulfilled' });
+    }
+
+    if (!donation) {
+      return res.status(404).json({ message: 'Donation not found' });
+    }
+
+    res.status(200).json({ message: 'Donation confirmed as received', donation });
+  } catch (error) {
+    res.status(500).json({ message: 'Error confirming receipt', error: error.message });
   }
 };

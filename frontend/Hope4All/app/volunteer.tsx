@@ -12,6 +12,7 @@ import {
 } from 'react-native';
 import { Ionicons } from '@expo/vector-icons';
 import { router } from 'expo-router';
+import * as ImagePicker from 'expo-image-picker';
 import { useAuth } from '@/hooks/useAuth';
 import { fetchVolunteerTasks, fetchVolunteerStats, updateTaskStatusApi } from '@/constants/api';
 import { VolunteerHeader } from '@/components/volunteer/VolunteerHeader';
@@ -51,11 +52,43 @@ export default function VolunteerDashboard() {
 
   const handleUpdateStatus = async (taskId: string, newStatus: string) => {
     try {
-      await updateTaskStatusApi(taskId, newStatus);
+      await updateTaskStatusApi(taskId, { status: newStatus }, user?.token);
       Alert.alert('Success', `Task marked as ${newStatus.replace('_', ' ')}`);
       loadDashboardData();
     } catch (err) {
       Alert.alert('Error', 'Could not update task status');
+    }
+  };
+
+  const handlePickProof = async (taskId: string) => {
+    const result = await ImagePicker.launchImageLibraryAsync({
+      mediaTypes: ImagePicker.MediaTypeOptions.Images,
+      allowsEditing: true,
+      quality: 0.7,
+    });
+
+    if (!result.canceled) {
+      const uri = result.assets[0].uri;
+      const formData = new FormData();
+      formData.append('proofImage', {
+        uri,
+        name: `proof_${taskId}.jpg`,
+        type: 'image/jpeg',
+      } as any);
+      // We keep it in_progress but we could change it to 'review_pending' if we had that status
+      // For now, we just update the image
+      formData.append('status', 'in_progress'); 
+
+      try {
+        setLoading(true);
+        await updateTaskStatusApi(taskId, formData, user?.token, true);
+        Alert.alert('Success', 'Proof image submitted! Admin will verify soon.');
+        loadDashboardData();
+      } catch (err) {
+        Alert.alert('Error', 'Failed to upload proof');
+      } finally {
+        setLoading(false);
+      }
     }
   };
 
@@ -101,8 +134,8 @@ export default function VolunteerDashboard() {
             <Text style={styles.statLab}>Completed</Text>
           </View>
           <View style={styles.statItem}>
-            <Text style={styles.statVal}>{stats?.pendingTasks || 0}</Text>
-            <Text style={styles.statLab}>Pending</Text>
+            <Text style={styles.statVal}>{stats?.activeTasks || 0}</Text>
+            <Text style={styles.statLab}>Active Missions</Text>
           </View>
         </View>
 
@@ -118,6 +151,7 @@ export default function VolunteerDashboard() {
               key={task._id} 
               task={task} 
               onUpdateStatus={handleUpdateStatus} 
+              onSubmitProof={handlePickProof}
             />
           ))
         )}

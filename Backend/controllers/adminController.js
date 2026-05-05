@@ -62,6 +62,8 @@ export const getUsers = async (req, res) => {
             location: orphan.location,
             profilePic: orphan.profilePic,
             supportingDocs: orphan.supportingDocs,
+            bio: orphan.bio,
+            phone: orphan.phone,
           };
         }
       } else if (user.role === 'donor') {
@@ -82,8 +84,8 @@ export const getUsers = async (req, res) => {
           additionalData = {
             name: orphanage.name,
             location: orphanage.location,
-            phone: orphanage.phone,
-            city: orphanage.city,
+            phone: orphanage.contactInfo?.phone,
+            city: orphanage.location?.city,
             profilePic: orphanage.profilePic,
             documents: orphanage.documents,
           };
@@ -407,5 +409,34 @@ export const unsuspendUser = async (req, res) => {
     res.status(200).json({ message: 'User unsuspended successfully', user });
   } catch (error) {
     res.status(500).json({ message: 'Error unsuspending user', error: error.message });
+  }
+};
+// Forward donation to orphan (from under-review to sent)
+export const forwardDonation = async (req, res) => {
+  try {
+    const { donationId } = req.params;
+    const donation = await Donation.findByIdAndUpdate(
+      donationId,
+      { status: 'sent' },
+      { new: true }
+    );
+
+    if (!donation) {
+      return res.status(404).json({ message: 'Donation not found' });
+    }
+
+    // Create notification for orphan
+    const notification = new Notification({
+      recipientId: donation.recipientId,
+      type: 'delivery',
+      title: 'Donation En Route',
+      message: `A donation of ${donation.units} ${donation.unitType} has been verified and is being sent to you.`,
+    });
+
+    await notification.save();
+
+    res.status(200).json({ message: 'Donation forwarded to orphan', donation });
+  } catch (error) {
+    res.status(500).json({ message: 'Error forwarding donation', error: error.message });
   }
 };

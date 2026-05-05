@@ -6,6 +6,35 @@ export const createTask = async (req, res) => {
   try {
     const { volunteerId, title, description, type, school, orphanageId, date, priority, notes, assignedBy } = req.body;
 
+    if (volunteerId === 'all') {
+      const volunteers = await User.find({ role: 'volunteer' });
+      const tasks = volunteers.map(v => ({
+        volunteerId: v._id,
+        title,
+        description,
+        type: type || 'other',
+        school: school || 'N/A',
+        orphanageId,
+        date: date || new Date(),
+        priority: priority || 'medium',
+        assignedBy: assignedBy || v._id,
+        notes,
+      }));
+
+      await Task.insertMany(tasks);
+
+      // Create notifications
+      const notifications = volunteers.map(v => ({
+        userId: v._id,
+        type: 'task',
+        title: 'New Broadcast Mission',
+        message: `A new team mission "${title}" has been assigned.`,
+      }));
+      await Notification.insertMany(notifications);
+
+      return res.status(201).json({ message: 'Task assigned to all volunteers' });
+    }
+
     const newTask = new Task({
       volunteerId,
       title,
@@ -15,7 +44,7 @@ export const createTask = async (req, res) => {
       orphanageId,
       date: date || new Date(),
       priority: priority || 'medium',
-      assignedBy: assignedBy || volunteerId, // fallback to volunteerId if no assignedBy
+      assignedBy: assignedBy || volunteerId,
       notes,
     });
 
@@ -23,6 +52,7 @@ export const createTask = async (req, res) => {
 
     // Create notification for volunteer
     const notification = new Notification({
+      userId: volunteerId,
       type: 'task',
       title: 'New Task Assigned',
       message: `New task "${title}" has been assigned to you`,
@@ -70,10 +100,15 @@ export const getAllTasks = async (req, res) => {
 export const updateTaskStatus = async (req, res) => {
   try {
     const { status, notes } = req.body;
+    let updateData = { status, notes, updatedAt: Date.now() };
+
+    if (req.file) {
+      updateData.proofImage = req.file.path || req.file.url || req.file.secure_url;
+    }
 
     const updatedTask = await Task.findByIdAndUpdate(
       req.params.taskId,
-      { status, notes, updatedAt: Date.now() },
+      updateData,
       { new: true }
     ).populate('volunteerId', 'username');
 

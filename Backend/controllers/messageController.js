@@ -9,19 +9,40 @@ export const sendMessage = async (req, res) => {
     console.log(`[Message] Attempting to send from ${senderId} to ${receiverId}`);
     console.log(`[Message] Content: "${message?.substring(0, 20)}..."`);
 
-    if (!receiverId || !message) {
-      return res.status(400).json({ success: false, error: 'ReceiverId and message are required' });
+    if (!receiverId) {
+      return res.status(400).json({ success: false, error: 'ReceiverId is required' });
+    }
+
+    if (!message && !req.file) {
+      return res.status(400).json({ success: false, error: 'Message or file is required' });
+    }
+
+    let fileUrl = '';
+    let fileName = '';
+    let finalType = type || 'text';
+
+    if (req.file) {
+      fileUrl = req.file.path || req.file.url || req.file.secure_url;
+      fileName = req.file.originalname;
+      // Infer type from mimetype
+      if (req.file.mimetype.startsWith('image/')) {
+        finalType = 'image';
+      } else {
+        finalType = 'file';
+      }
     }
 
     const newMessage = new Message({
       senderId, 
       receiverId,
-      message,
-      type: type || 'text',
+      message: message || '',
+      type: finalType,
+      fileUrl,
+      fileName,
     });
 
     await newMessage.save();
-    console.log(`[Message] Saved to DB with ID: ${newMessage._id}`);
+    console.log(`[Message] Saved to DB with ID: ${newMessage._id} (Type: ${finalType})`);
     
     await newMessage.populate('senderId', 'username role');
 
@@ -78,10 +99,13 @@ export const getConversations = async (req, res) => {
     
     let conversationUserIds = [...new Set([...sentMessages, ...receivedMessages])];
 
-    // 2. If the user is a donor, also include ALL orphans in their list
+    // 2. Role-based expansion
     if (userRole === 'donor') {
       const allOrphans = await User.find({ role: 'orphan' }).distinct('_id');
       conversationUserIds = [...new Set([...conversationUserIds, ...allOrphans])];
+    } else if (userRole === 'volunteer') {
+      const allOthers = await User.find({ role: { $in: ['donor', 'admin', 'orphan'] } }).distinct('_id');
+      conversationUserIds = [...new Set([...conversationUserIds, ...allOthers])];
     }
 
     // 3. Fetch user details for all identified IDs

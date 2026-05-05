@@ -23,8 +23,8 @@ export const useMessages = (selectedUserId: string | null, socket: Socket | null
     await fetchMessages(otherUserId, token);
   }, [token, fetchMessages]);
 
-  const sendMessage = useCallback(async (receiverId: string, content: string) => {
-    console.log(`[useMessages] Sending to ${receiverId}: "${content}"`);
+  const sendMessage = useCallback(async (receiverId: string, content: string | FormData) => {
+    console.log(`[useMessages] Sending to ${receiverId}`);
     return await storeSendMessage(receiverId, content, token);
   }, [token, storeSendMessage]);
 

@@ -24,25 +24,27 @@ import { SuspendedScreen } from '@/components/SuspendedScreen';
 export default function DonorDashboard() {
   const {
     user, logout, donorProfile, loading, saving,
-    requests, orphans, filteredRequests, filteredOrphans,
+    filteredRequests, filteredOrphans,
     availableFees, donorCourses, myDonations, pledgingFee,
-    selectedOrphanForProfile, setSelectedOrphanForProfile,
+    selectedOrphanForProfile, 
     showProfileModal, setShowProfileModal,
     selectedOrphanage, setSelectedOrphanage,
     showOrphanageModal, setShowOrphanageModal,
     showPreferenceModal, setShowPreferenceModal,
     showAddDonationModal, setShowAddDonationModal,
     name, setName, phone, setPhone, city, setCity,
-    tempCauses,
     selectedRequest, setSelectedRequest, units, setUnits,
     manualType, setManualType, manualUnits, setManualUnits, manualDesc, setManualDesc,
     showCourseModal, setShowCourseModal,
     courseTitle, setCourseTitle, courseDesc, setCourseDesc, courseLink, setCourseLink, courseCategory, setCourseCategory,
     submittingCourse,
-    causeOptions, toggleTempCause,
+    causeOptions, areaOptions, levelOptions, toggleTempCause,
+    tempCauses, setTempCauses, tempAreas, setTempAreas, tempLevels, setTempLevels, toggleTempItem,
+    tempUrgentOnly, setTempUrgentOnly,
     handleRegister, handleDonate, handlePledgeFee,
     handleCourseSubmit, handleOpenDoc, handleUpdatePreferences, handleManualDonation, handleDeleteDonation,
-    handleOpenPreferenceModal, handleMessage,
+    handleOpenPreferenceModal, handleMessage, handleUploadDonationPhoto,
+    handleViewOrphanProfile, orphanProgress, loadingOrphanData,
     orphanages
   } = useDonorDashboard();
 
@@ -62,8 +64,8 @@ export default function DonorDashboard() {
   if (donorProfile) {
     return (
       <View style={styles.container}>
-        <DonorHeader 
-          name={donorProfile.name} 
+        <DonorHeader
+          name={donorProfile.name}
           points={donorProfile.totalDonated || 0}
           onLogout={() => {
             if (Platform.OS === 'web') {
@@ -80,83 +82,95 @@ export default function DonorDashboard() {
           onMessages={() => router.push('/messages')}
         />
 
-        <ScrollView 
-          showsVerticalScrollIndicator={false} 
+        <ScrollView
+          showsVerticalScrollIndicator={false}
           style={styles.dashboardScroll}
           contentContainerStyle={styles.scrollContent}
         >
-          <StatsSection 
-            totalDonated={donorProfile.totalDonated || 0} 
-            orphansCount={filteredOrphans.length} 
+          <StatsSection
+            totalDonated={donorProfile.totalDonated || 0}
+            orphansCount={filteredOrphans.length}
           />
 
-          <DonationSection 
+          <DonationSection
             requests={filteredRequests}
             selectedRequest={selectedRequest}
             setSelectedRequest={setSelectedRequest}
             units={units}
             setUnits={setUnits}
             handleDonate={handleDonate}
-            handleApproveRequest={() => {}}
-            handleRejectRequest={() => {}}
+            handleApproveRequest={() => { }}
+            handleRejectRequest={() => { }}
             onOpenPreferences={handleOpenPreferenceModal}
           />
 
-          <FeeSection 
+          <FeeSection
             availableFees={availableFees}
             pledgingFee={pledgingFee}
             handlePledgeFee={handlePledgeFee}
-            onViewOrphan={(o) => { setSelectedOrphanForProfile(o); setShowProfileModal(true); }}
+            onViewOrphan={handleViewOrphanProfile}
           />
 
-          <DonationHistorySection 
+          <DonationHistorySection
             myDonations={myDonations}
             onDeleteDonation={handleDeleteDonation}
             onOpenAddDonation={() => setShowAddDonationModal(true)}
+            onUploadPhoto={handleUploadDonationPhoto}
           />
 
-          <OrphanSection 
+          <OrphanSection
             orphans={filteredOrphans}
-            onViewOrphan={(o) => { setSelectedOrphanForProfile(o); setShowProfileModal(true); }}
+            onViewOrphan={handleViewOrphanProfile}
             onMessage={handleMessage}
           />
 
-          <OrphanageSection 
+          <OrphanageSection
             orphanages={orphanages}
             onSelect={(o) => { setSelectedOrphanage(o); setShowOrphanageModal(true); }}
           />
 
-          <CourseSection 
+          <CourseSection
             donorCourses={donorCourses}
             onOpenAddCourse={() => setShowCourseModal(true)}
           />
         </ScrollView>
 
         {/* Modals */}
-        <ProfileModal 
+        <ProfileModal
           visible={showProfileModal}
           orphan={selectedOrphanForProfile}
+          achievements={orphanProgress}
+          loadingAchievements={loadingOrphanData}
           onClose={() => setShowProfileModal(false)}
           onViewDoc={handleOpenDoc}
           onMessage={handleMessage}
         />
 
-        <OrphanageProfileModal 
+        <OrphanageProfileModal
           visible={showOrphanageModal}
           orphanage={selectedOrphanage}
           onClose={() => setShowOrphanageModal(false)}
         />
 
-        <PreferenceModal 
+        <PreferenceModal
           visible={showPreferenceModal}
           onClose={() => setShowPreferenceModal(false)}
           causeOptions={causeOptions}
+          areaOptions={areaOptions}
+          levelOptions={levelOptions}
           tempCauses={tempCauses}
-          toggleTempCause={toggleTempCause}
+          tempAreas={tempAreas}
+          tempLevels={tempLevels}
+          toggleTempItem={toggleTempItem}
+          setTempCauses={setTempCauses}
+          setTempAreas={setTempAreas}
+          setTempLevels={setTempLevels}
+          urgentOnly={tempUrgentOnly}
+          setUrgentOnly={setTempUrgentOnly}
           onUpdate={handleUpdatePreferences}
         />
 
-        <AddDonationModal 
+        <AddDonationModal
           visible={showAddDonationModal}
           onClose={() => setShowAddDonationModal(false)}
           manualType={manualType} setManualType={setManualType}
@@ -165,7 +179,7 @@ export default function DonorDashboard() {
           onSubmit={handleManualDonation}
         />
 
-        <CourseModal 
+        <CourseModal
           visible={showCourseModal}
           onClose={() => setShowCourseModal(false)}
           title={courseTitle} setTitle={setCourseTitle}
@@ -180,7 +194,7 @@ export default function DonorDashboard() {
   }
 
   return (
-    <RegistrationForm 
+    <RegistrationForm
       name={name} setName={setName}
       phone={phone} setPhone={setPhone}
       city={city} setCity={setCity}

@@ -30,6 +30,7 @@ export const submitRequest = async (req, res) => {
       school,
       class: classLevel,
       isInstitutional: isInstitutional || false,
+      isUrgent: req.body.isUrgent === 'true' || req.body.isUrgent === true,
       documents,
     });
 
@@ -84,12 +85,19 @@ export const getAllRequests = async (req, res) => {
     if (status) filter.status = status;
     if (type) filter.type = type;
 
-    const requests = await Request.find(filter)
+    let requests = await Request.find(filter)
       .populate('orphanId', 'name age gender')
       .populate('orphanageId', 'name')
       .sort({ createdAt: -1 });
 
-    res.status(200).json({ requests });
+    // Sanitize for Admin: Remove isUrgent field
+    const sanitizedRequests = requests.map(r => {
+      const obj = r.toObject();
+      delete obj.isUrgent;
+      return obj;
+    });
+
+    res.status(200).json({ requests: sanitizedRequests });
   } catch (error) {
     res.status(500).json({ message: 'Error fetching requests', error: error.message });
   }

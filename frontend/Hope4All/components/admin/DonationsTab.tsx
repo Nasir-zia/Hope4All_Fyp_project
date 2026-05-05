@@ -1,13 +1,14 @@
 import React from 'react';
-import { View, Text } from 'react-native';
+import { View, Text, Image, Linking, TouchableOpacity } from 'react-native';
 import { Ionicons } from '@expo/vector-icons';
 import { adminStyles as styles } from './AdminStyles';
 
 interface DonationsTabProps {
   donations: any[];
+  onForward: (donationId: string) => void;
 }
 
-export const DonationsTab: React.FC<DonationsTabProps> = ({ donations }) => {
+export const DonationsTab: React.FC<DonationsTabProps> = ({ donations, onForward }) => {
   return (
     <View style={styles.tabContent}>
       <Text style={styles.sectionTitle}>Audit Log: Aid Distribution</Text>
@@ -34,9 +35,44 @@ export const DonationsTab: React.FC<DonationsTabProps> = ({ donations }) => {
                 <Text style={styles.userNameSmall}>{d.recipientId?.name || d.recipientName || 'Unknown'}</Text>
               </View>
             </View>
+            
+            <View style={{ flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center', marginTop: 10 }}>
+              <View style={{ flexDirection: 'row', alignItems: 'center', gap: 8 }}>
+                <View style={{ backgroundColor: getStatusColor(d.status).bg, paddingHorizontal: 8, paddingVertical: 4, borderRadius: 6 }}>
+                  <Text style={{ fontSize: 10, fontWeight: '800', color: getStatusColor(d.status).text }}>
+                    {d.status?.toUpperCase() || 'PENDING'}
+                  </Text>
+                </View>
+                {d.status === 'under-review' && (
+                  <TouchableOpacity 
+                    style={{ backgroundColor: '#0077cc', paddingHorizontal: 10, paddingVertical: 4, borderRadius: 6, flexDirection: 'row', alignItems: 'center', gap: 4 }}
+                    onPress={() => onForward(d._id)}
+                  >
+                    <Ionicons name="send" size={10} color="#fff" />
+                    <Text style={{ color: '#fff', fontSize: 10, fontWeight: '700' }}>Verify & Forward</Text>
+                  </TouchableOpacity>
+                )}
+              </View>
+              
+              {d.donationPhoto && (
+                <TouchableOpacity onPress={() => Linking.openURL(d.donationPhoto)}>
+                  <Image source={{ uri: d.donationPhoto }} style={{ width: 40, height: 40, borderRadius: 8, backgroundColor: '#f1f5f9' }} />
+                </TouchableOpacity>
+              )}
+            </View>
           </View>
         ))
       )}
     </View>
   );
 };
+
+const getStatusColor = (status: string) => {
+  switch (status) {
+    case 'completed': return { bg: '#f0fdf4', text: '#16a34a' };
+    case 'sent': return { bg: '#eff6ff', text: '#3b82f6' };
+    case 'under-review': return { bg: '#fffbeb', text: '#d97706' };
+    default: return { bg: '#f8fafc', text: '#64748b' };
+  }
+};
+

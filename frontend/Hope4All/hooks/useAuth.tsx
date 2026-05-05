@@ -16,6 +16,7 @@ interface AuthContextType {
   user: User | null;
   loading: boolean;
   login: (token: string, userData: Partial<User>) => Promise<void>;
+  updateUser: (data: Partial<User>) => Promise<void>;
   logout: () => Promise<void>;
 }
 
@@ -89,6 +90,13 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
     await storage.setItem('user', JSON.stringify(fullUser));
   };
 
+  const updateUser = async (data: Partial<User>) => {
+    if (!user) return;
+    const updatedUser = { ...user, ...data };
+    setUser(updatedUser);
+    await storage.setItem('user', JSON.stringify(updatedUser));
+  };
+
   const logout = async () => {
     console.log('[Auth] Logging out...');
     // Set user to null immediately for instant UI response
@@ -104,7 +112,7 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
   };
 
   return (
-    <AuthContext.Provider value={{ user, loading, login, logout }}>
+    <AuthContext.Provider value={{ user, loading, login, updateUser, logout }}>
       {children}
     </AuthContext.Provider>
   );

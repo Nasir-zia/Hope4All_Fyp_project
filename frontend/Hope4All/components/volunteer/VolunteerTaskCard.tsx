@@ -5,9 +5,10 @@ import { Ionicons } from '@expo/vector-icons';
 interface VolunteerTaskCardProps {
   task: any;
   onUpdateStatus: (id: string, status: string) => void;
+  onSubmitProof: (id: string) => void;
 }
 
-export const VolunteerTaskCard: React.FC<VolunteerTaskCardProps> = ({ task, onUpdateStatus }) => {
+export const VolunteerTaskCard: React.FC<VolunteerTaskCardProps> = ({ task, onUpdateStatus, onSubmitProof }) => {
   return (
     <View style={styles.taskCard}>
       <View style={styles.taskHeader}>
@@ -36,10 +37,11 @@ export const VolunteerTaskCard: React.FC<VolunteerTaskCardProps> = ({ task, onUp
         )}
         {task.status === 'in_progress' && (
           <TouchableOpacity 
-            style={[styles.actionBtn, styles.completeBtn]} 
-            onPress={() => onUpdateStatus(task._id, 'completed')}
+            style={[styles.actionBtn, styles.proofBtn]} 
+            onPress={() => onSubmitProof(task._id)}
           >
-            <Text style={styles.actionBtnText}>Complete</Text>
+            <Ionicons name="camera" size={18} color="#fff" />
+            <Text style={styles.actionBtnText}>Submit Proof</Text>
           </TouchableOpacity>
         )}
       </View>
@@ -121,6 +123,11 @@ const styles = StyleSheet.create({
   },
   progressBtn: {
     backgroundColor: '#0077cc',
+  },
+  proofBtn: {
+    backgroundColor: '#3b82f6',
+    flexDirection: 'row',
+    gap: 8,
   },
   completeBtn: {
     backgroundColor: '#10b981',

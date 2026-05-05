@@ -3,6 +3,9 @@ import { Alert, Keyboard } from 'react-native';
 import { fetchConversations, fetchMessages, sendMessageApi } from '../constants/api';
 import { useAuth } from './useAuth';
 import { useSocket } from './useSocket';
+import * as ImagePicker from 'expo-image-picker';
+import * as DocumentPicker from 'expo-document-picker';
+import { Platform } from 'react-native';
 
 export function useMessages(initialUserId?: string, initialUsername?: string) {
   const { user, logout } = useAuth();
@@ -18,6 +21,8 @@ export function useMessages(initialUserId?: string, initialUsername?: string) {
   const [sending, setSending] = useState(false);
   const [searchQuery, setSearchQuery] = useState('');
   const [showSearch, setShowSearch] = useState(false);
+  const [attachment, setAttachment] = useState<any>(null);
+  const [pickingFile, setPickingFile] = useState(false);
   
   const flatListRef = useRef<any>(null);
 
@@ -74,29 +79,88 @@ export function useMessages(initialUserId?: string, initialUsername?: string) {
     };
   }, [socket, selectedUser, loadConversations]);
 
+  const pickAttachment = async (type: 'image' | 'file') => {
+    try {
+      setPickingFile(true);
+      if (type === 'image') {
+        const result = await ImagePicker.launchImageLibraryAsync({
+          mediaTypes: ['images'],
+          allowsEditing: true,
+          quality: 0.8,
+        });
+        if (!result.canceled) {
+          setAttachment({
+            uri: result.assets[0].uri,
+            name: result.assets[0].uri.split('/').pop() || 'image.jpg',
+            type: 'image'
+          });
+        }
+      } else {
+        const result = await DocumentPicker.getDocumentAsync({ type: '*/*' });
+        if (!result.canceled) {
+          setAttachment({
+            uri: result.assets[0].uri,
+            name: result.assets[0].name,
+            type: 'file'
+          });
+        }
+      }
+    } catch (err) {
+      console.error('Pick attachment error:', err);
+    } finally {
+      setPickingFile(false);
+    }
+  };
+
   const handleSendMessage = async () => {
-    if (!newMessage.trim() || !selectedUser) return;
+    if ((!newMessage.trim() && !attachment) || !selectedUser) return;
 
     const messageContent = newMessage.trim();
+    const currentAttachment = attachment;
+    
     setNewMessage('');
+    setAttachment(null);
     setSending(true);
 
     try {
-      const sentMsg = await sendMessageApi(selectedUser._id, messageContent);
+      let payload: string | FormData = messageContent;
+
+      if (currentAttachment) {
+        payload = new FormData();
+        payload.append('receiverId', selectedUser._id);
+        payload.append('message', messageContent);
+        
+        const fileName = currentAttachment.name;
+        if (Platform.OS === 'web') {
+          const response = await fetch(currentAttachment.uri);
+          const blob = await response.blob();
+          payload.append('file', blob, fileName);
+        } else {
+          payload.append('file', {
+            uri: Platform.OS === 'android' ? currentAttachment.uri : currentAttachment.uri.replace('file://', ''),
+            name: fileName,
+            type: currentAttachment.type === 'image' ? 'image/jpeg' : 'application/octet-stream',
+          } as any);
+        }
+      }
+
+      const sentMsg = await sendMessageApi(selectedUser._id, payload);
       
-      if (socket?.connected) {
+      if (socket?.connected && !currentAttachment) { // Socket only for simple text for now, API handles broadcast for files
         socket.emit('send-message', {
           receiverId: selectedUser._id,
           message: messageContent
         });
       }
 
-      setMessages(prev => [...prev, sentMsg.message || sentMsg]);
+      const finalMsg = sentMsg.message || sentMsg;
+      setMessages(prev => [...prev, finalMsg]);
       setTimeout(() => flatListRef.current?.scrollToEnd({ animated: true }), 100);
       loadConversations();
     } catch (err) {
       Alert.alert('Error', 'Could not send message. Please check your connection.');
-      setNewMessage(messageContent); // Restore message on fail
+      setNewMessage(messageContent); 
+      setAttachment(currentAttachment);
     } finally {
       setSending(false);
     }
@@ -122,6 +186,9 @@ export function useMessages(initialUserId?: string, initialUsername?: string) {
     filteredConversations,
     flatListRef,
     handleSendMessage,
+    pickAttachment,
+    attachment, setAttachment,
+    pickingFile,
     loadMessages,
     socketConnected: socket?.connected || false
   };

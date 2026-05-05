@@ -15,6 +15,7 @@ import {
   fetchAllRequests,
   updateRequestStatus,
   fetchAllVolunteers,
+  fetchAllTasks,
   createTaskApi,
   fetchAllUsers,
   updateUserStatusApi,
@@ -22,7 +23,9 @@ import {
   fetchPendingCourses,
   updateCourseStatusApi,
   addCourseApi,
-  fetchOrphanageOptions
+  fetchOrphanageOptions,
+  forwardDonationApi,
+  updateTaskStatusApi
 } from '@/constants/api';
 
 // Modular Components
@@ -34,12 +37,13 @@ import { UsersTab } from '@/components/admin/UsersTab';
 import { DonationsTab } from '@/components/admin/DonationsTab';
 import { CoursesTab } from '@/components/admin/CoursesTab';
 import { OrphanagesTab } from '@/components/admin/OrphanagesTab';
+import { TasksTab } from '@/components/admin/TasksTab';
 import { TaskModal } from '@/components/admin/TaskModal';
 
 // Styles
 import { adminStyles as styles } from '@/components/admin/AdminStyles';
 
-type TabType = 'stats' | 'requests' | 'donations' | 'users' | 'courses' | 'orphanages';
+type TabType = 'stats' | 'requests' | 'donations' | 'users' | 'orphanages' | 'courses' | 'tasks';
 
 export default function AdminDashboard() {
   const { user, logout } = useAuth();
@@ -53,6 +57,7 @@ export default function AdminDashboard() {
   const [donations, setDonations] = useState<any[]>([]);
   const [pendingCourses, setPendingCourses] = useState<any[]>([]);
   const [orphanagesList, setOrphanagesList] = useState<any[]>([]);
+  const [tasks, setTasks] = useState<any[]>([]);
   const [loading, setLoading] = useState(true);
   const [refreshing, setRefreshing] = useState(false);
 
@@ -77,10 +82,17 @@ export default function AdminDashboard() {
   const loadAllData = async () => {
     setLoading(true);
     try {
-      const [statsD, reqsD, volD, usersD, dontD, coursesD, orphanagesD] = await Promise.all([
-        fetchAdminStats(), fetchAllRequests(), fetchAllVolunteers(), fetchAllUsers(), fetchAllDonations(), fetchPendingCourses(), fetchOrphanageOptions()
+      const [statsD, reqsD, volD, usersD, dontD, coursesD, orphanagesD, tasksD] = await Promise.all([
+        fetchAdminStats(), fetchAllRequests(), fetchAllVolunteers(), fetchAllUsers(), fetchAllDonations(), fetchPendingCourses(), fetchOrphanageOptions(), fetchAllTasks()
       ]);
-      setStats(statsD); setRequests(reqsD); setVolunteers(volD); setUsersList(usersD); setDonations(dontD); setPendingCourses(coursesD); setOrphanagesList(orphanagesD);
+      setStats(statsD); 
+      setRequests(reqsD); 
+      setVolunteers(volD); 
+      setUsersList(usersD); 
+      setDonations(dontD); 
+      setPendingCourses(coursesD); 
+      setOrphanagesList(orphanagesD);
+      setTasks(tasksD);
     } catch (err) { console.error(err); } finally { setLoading(false); }
   };
 
@@ -98,7 +110,7 @@ export default function AdminDashboard() {
     if (!taskTitle || !taskDesc || !selectedVolunteer) return Alert.alert("Error", "Fill all fields");
     setSubmittingTask(true);
     try {
-      await createTaskApi({ title: taskTitle, description: taskDesc, volunteerId: selectedVolunteer, date: new Date().toISOString(), assignedBy: user?.id });
+      await createTaskApi({ title: taskTitle, description: taskDesc, volunteerId: selectedVolunteer, date: new Date().toISOString(), assignedBy: user?.id }, user?.token);
       Alert.alert("Success", "Task assigned!"); setShowTaskModal(false); loadAllData();
     } catch (err: any) { Alert.alert("Error", err.message); } finally { setSubmittingTask(false); }
   };
@@ -120,6 +132,26 @@ export default function AdminDashboard() {
     } catch (err: any) { Alert.alert('Error', err.message); } finally { setSubmittingCourse(false); }
   };
 
+  const handleForwardDonation = async (id: string) => {
+    try {
+      await forwardDonationApi(id, user?.token || '');
+      Alert.alert("Success", "Donation verified and forwarded!");
+      loadAllData();
+    } catch (err: any) {
+      Alert.alert("Error", err.message);
+    }
+  };
+
+  const handleCompleteTask = async (taskId: string) => {
+    try {
+      await updateTaskStatusApi(taskId, 'completed', user?.token);
+      Alert.alert("Success", "Task marked as completed!");
+      loadAllData();
+    } catch (err: any) {
+      Alert.alert("Error", "Could not complete task");
+    }
+  };
+
   if (loading && !refreshing) return <View style={styles.centered}><ActivityIndicator size="large" color="#0f172a" /><Text style={styles.loadingText}>Loading...</Text></View>;
 
   return (
@@ -133,7 +165,8 @@ export default function AdminDashboard() {
             { id: 'donations', icon: 'cash', label: 'Donations' },
             { id: 'users', icon: 'people', label: 'Users' },
             { id: 'orphanages', icon: 'business', label: 'Orphanages' },
-            { id: 'courses', icon: 'school', label: 'LMS' }
+            { id: 'courses', icon: 'school', label: 'LMS' },
+            { id: 'tasks', icon: 'clipboard', label: 'Tasks' }
           ].map(t => (
             <TouchableOpacity key={t.id} style={[styles.tabItem, activeTab === t.id && styles.tabActive]} onPress={() => setActiveTab(t.id as TabType)}>
               <Ionicons name={t.icon as any} size={18} color={activeTab === t.id ? '#fff' : '#64748b'} />
@@ -145,10 +178,11 @@ export default function AdminDashboard() {
       <ScrollView refreshControl={<RefreshControl refreshing={refreshing} onRefresh={onRefresh} />}>
         {activeTab === 'stats' && <StatsTab usersCount={usersList.length} donationsCount={donations.length} pendingRequestsCount={requests.filter(r => r.status === 'pending').length} volunteersCount={volunteers.length} stats={stats} />}
         {activeTab === 'requests' && <RequestsTab requests={requests} onApprove={handleApproveRequest} onReject={handleRejectRequest} />}
-        {activeTab === 'donations' && <DonationsTab donations={donations} />}
+        {activeTab === 'donations' && <DonationsTab donations={donations} onForward={handleForwardDonation} />}
         {activeTab === 'users' && <UsersTab users={usersList} onUpdateStatus={handleUpdateUserStatus} />}
         {activeTab === 'orphanages' && <OrphanagesTab orphanages={orphanagesList} onUpdateStatus={handleUpdateUserStatus} />}
         {activeTab === 'courses' && <CoursesTab pendingCourses={pendingCourses} onAddPress={() => setShowCourseModal(true)} onUpdateStatus={handleUpdateCourseStatus} />}
+        {activeTab === 'tasks' && <TasksTab tasks={tasks} onAssignNew={() => setShowTaskModal(true)} onComplete={handleCompleteTask} />}
       </ScrollView>
       <CourseModal visible={showCourseModal} onClose={() => setShowCourseModal(false)} onSubmit={handleAdminCourseSubmit} loading={submittingCourse} title={courseTitle} setTitle={setCourseTitle} desc={courseDesc} setDesc={setCourseDesc} link={courseLink} setLink={setCourseLink} category={courseCategory} setCategory={setCourseCategory} />
       <TaskModal visible={showTaskModal} onClose={() => setShowTaskModal(false)} onConfirm={handleCreateTask} submitting={submittingTask} taskTitle={taskTitle} setTaskTitle={setTaskTitle} taskDesc={taskDesc} setTaskDesc={setTaskDesc} volunteers={volunteers} selectedVolunteer={selectedVolunteer} setSelectedVolunteer={setSelectedVolunteer} />

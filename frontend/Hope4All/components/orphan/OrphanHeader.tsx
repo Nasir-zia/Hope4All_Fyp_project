@@ -1,6 +1,7 @@
 import React from 'react';
 import { View, Text, StyleSheet, TouchableOpacity, Image } from 'react-native';
 import { Ionicons } from '@expo/vector-icons';
+import { router } from 'expo-router';
 
 import BackButton from '@/components/BackButton';
 
@@ -27,6 +28,9 @@ export const OrphanHeader: React.FC<OrphanHeaderProps> = ({
           />
         </View>
         <View style={styles.rightActions}>
+          <TouchableOpacity style={styles.iconBtn} onPress={() => router.push('/messages')}>
+            <Ionicons name="chatbubbles-outline" size={22} color="#0077cc" />
+          </TouchableOpacity>
           <TouchableOpacity style={styles.iconBtn} onPress={onOpenSettings}>
             <Ionicons name="settings-outline" size={22} color="#475569" />
           </TouchableOpacity>
@@ -44,6 +48,9 @@ export const OrphanHeader: React.FC<OrphanHeaderProps> = ({
               <Text style={styles.avatarInitial}>{name?.charAt(0).toUpperCase()}</Text>
             </View>
           )}
+        </View>
+        <View style={styles.badge}>
+           <Text style={styles.badgeText}>ORPHAN DASHBOARD</Text>
         </View>
         <Text style={styles.welcomeText}>Welcome back,</Text>
         <Text style={styles.usernameText}>{name || 'Orphan'}</Text>
@@ -131,5 +138,20 @@ const styles = StyleSheet.create({
   logoutBtn: {
     backgroundColor: '#fef2f2',
     borderColor: '#fee2e2',
+  },
+  badge: {
+    backgroundColor: '#eff6ff',
+    paddingHorizontal: 12,
+    paddingVertical: 4,
+    borderRadius: 10,
+    marginBottom: 8,
+    borderWidth: 1,
+    borderColor: '#dbeafe',
+  },
+  badgeText: {
+    fontSize: 10,
+    fontWeight: '800',
+    color: '#0077cc',
+    letterSpacing: 0.5,
   },
 });

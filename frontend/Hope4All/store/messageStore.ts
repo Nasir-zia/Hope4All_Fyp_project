@@ -12,7 +12,7 @@ interface MessageState {
   addMessage: (message: any) => void;
   fetchConversations: (token?: string) => Promise<void>;
   fetchMessages: (otherUserId: string, token?: string) => Promise<void>;
-  sendMessage: (receiverId: string, content: string, token?: string) => Promise<any>;
+  sendMessage: (receiverId: string, content: string | FormData, token?: string) => Promise<any>;
   handleIncomingMessage: (message: any, selectedUserId: string | null) => void;
 }
 

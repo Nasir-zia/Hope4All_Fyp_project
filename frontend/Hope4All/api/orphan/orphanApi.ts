@@ -5,7 +5,7 @@ export const fetchOrphanProfile = async (userId: string) => {
     const data = await apiClient(`/orphans/profile/${userId}`);
     return data.orphan;
   } catch (error: any) {
-    if (error.message.includes('404')) return null;
+    if (error.message.includes('404') || error.message.includes('Orphan not found')) return null;
     throw error;
   }
 };
@@ -26,4 +26,16 @@ export const updateOrphanProfile = async (userId: string, formData: FormData) =>
     isFormData: true,
   });
   return result.orphan;
+};
+
+export const confirmDonationReceiptApi = async (donationId: string, token: string) => {
+  return apiClient(`/orphans/donations/${donationId}/confirm`, {
+    method: 'PUT',
+    token,
+  });
+};
+
+export const fetchIncomingDonations = async (orphanId: string) => {
+  const data = await apiClient(`/donors/aid/${orphanId}`);
+  return data.donations || [];
 };

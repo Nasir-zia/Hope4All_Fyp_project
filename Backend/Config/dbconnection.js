@@ -25,6 +25,7 @@ const dbConnection = async () => {
       console.log(` Connecting to MongoDB (Attempt ${attempts}/${MAX_RETRIES})...`);
 
       await mongoose.connect(mongoURI, {
+        dbName: 'Hope4AllDB',
         maxPoolSize: 10,
         serverSelectionTimeoutMS: 30000,
         socketTimeoutMS: 45000,

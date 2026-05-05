@@ -12,6 +12,7 @@ const taskSchema = new mongoose.Schema({
   priority: { type: String, required: true, enum: ['low', 'medium', 'high'], default: 'medium' },
   assignedBy: { type: mongoose.Schema.Types.ObjectId, ref: 'User', required: false },
   notes: { type: String, required: false },
+  proofImage: { type: String, required: false },
   createdAt: { type: Date, default: Date.now },
   updatedAt: { type: Date, default: Date.now },
 });

@@ -17,8 +17,11 @@ import {
   updateDonorProfile,
   fetchDonationHistory,
   deleteDonationApi,
-  fetchOrphanages
+  fetchOrphanages,
+  uploadDonationPhotoApi
 } from '@/constants/api';
+import { fetchOrphanProgress } from '@/api/progress/progressApi';
+import * as ImagePicker from 'expo-image-picker';
 
 export const useDonorDashboard = () => {
   const { user, logout } = useAuth();
@@ -37,6 +40,8 @@ export const useDonorDashboard = () => {
 
   // Profile View States
   const [selectedOrphanForProfile, setSelectedOrphanForProfile] = useState<any>(null);
+  const [orphanProgress, setOrphanProgress] = useState<any[]>([]);
+  const [loadingOrphanData, setLoadingOrphanData] = useState(false);
   const [selectedOrphanage, setSelectedOrphanage] = useState<any>(null);
   const [showProfileModal, setShowProfileModal] = useState(false);
   const [showOrphanageModal, setShowOrphanageModal] = useState(false);
@@ -51,6 +56,10 @@ export const useDonorDashboard = () => {
 
   // Temporary state for editing preferences
   const [tempCauses, setTempCauses] = useState<string[]>([]);
+  const [tempAreas, setTempAreas] = useState<string[]>([]);
+  const [tempLevels, setTempLevels] = useState<string[]>([]);
+  const [urgentOnly, setUrgentOnly] = useState(false);
+  const [tempUrgentOnly, setTempUrgentOnly] = useState(false);
 
   // Donation Form State
   const [selectedRequest, setSelectedRequest] = useState<any>(null);
@@ -104,9 +113,9 @@ export const useDonorDashboard = () => {
     try {
       const [reqsData, orphansData, feesData, coursesData, donationsData, orphanagesData] = await Promise.all([
         fetchApprovedRequests(),
-        fetchMatchedOrphans(donorId),
+        fetchMatchedOrphans(donorId), // Keep this for "Matches" if we want, but we'll prioritize all
         fetchAvailableFees(),
-        fetchDonorCourses(donorId),
+        fetchDonorCourses(user!.id),
         fetchDonationHistory(user!.id),
         fetchOrphanages()
       ]);
@@ -251,10 +260,14 @@ export const useDonorDashboard = () => {
       const updated = await updateDonorProfile(user!.id, {
         preferences: {
           ...donorProfile.preferences,
-          causeType: tempCauses
+          causeType: tempCauses,
+          area: tempAreas,
+          schoolLevel: tempLevels,
+          urgentOnly: tempUrgentOnly
         }
       });
       setDonorProfile(updated);
+      setUrgentOnly(tempUrgentOnly);
       setShowPreferenceModal(false);
       Alert.alert("Success", "Preferences updated!");
       loadDashboardData(updated._id);
@@ -307,14 +320,54 @@ export const useDonorDashboard = () => {
     ]);
   };
 
+  const handleUploadDonationPhoto = async (donationId: string) => {
+    try {
+      const result = await ImagePicker.launchImageLibraryAsync({
+        mediaTypes: ['images'],
+        allowsEditing: true,
+        quality: 0.7,
+      });
+
+      if (result.canceled) return;
+
+      const photoUri = result.assets[0].uri;
+      const formData = new FormData();
+      formData.append('photo', {
+        uri: photoUri,
+        name: `donation_${donationId}.jpg`,
+        type: 'image/jpeg',
+      } as any);
+
+      setSaving(true);
+      await uploadDonationPhotoApi(donationId, formData, user!.token);
+      Alert.alert("Success", "Donation photo uploaded! Status is now 'In-Progress'.");
+      loadDashboardData(donorProfile._id);
+    } catch (err: any) {
+      Alert.alert("Error", err.message || "Could not upload photo");
+    } finally {
+      setSaving(false);
+    }
+  };
+
   const toggleTempCause = (cause: string) => {
     setTempCauses(prev =>
       prev.includes(cause) ? prev.filter(c => c !== cause) : [...prev, cause]
     );
   };
 
+  const toggleTempItem = (list: string[], setter: (val: string[]) => void, item: string) => {
+    if (list.includes(item)) {
+      setter(list.filter(i => i !== item));
+    } else {
+      setter([...list, item]);
+    }
+  };
+
   const handleOpenPreferenceModal = () => {
     setTempCauses(donorProfile?.preferences?.causeType || []);
+    setTempAreas(donorProfile?.preferences?.area || []);
+    setTempLevels(donorProfile?.preferences?.schoolLevel || []);
+    setTempUrgentOnly(donorProfile?.preferences?.urgentOnly || false);
     setShowPreferenceModal(true);
   };
 
@@ -332,22 +385,45 @@ export const useDonorDashboard = () => {
     });
   };
 
+  const handleViewOrphanProfile = async (orphan: any) => {
+    setSelectedOrphanForProfile(orphan);
+    setLoadingOrphanData(true);
+    setShowProfileModal(true);
+    try {
+      const progress = await fetchOrphanProgress(orphan._id);
+      setOrphanProgress(progress || []);
+    } catch (err) {
+      console.log("Error fetching orphan progress:", err);
+    } finally {
+      setLoadingOrphanData(false);
+    }
+  };
+
   return {
     user, logout, donorProfile, loading, saving,
     requests, orphans, availableFees, donorCourses, myDonations, pledgingFee, orphanages,
-    filteredRequests: requests.filter(req =>
-      !donorProfile?.preferences?.causeType?.length ||
-      donorProfile.preferences.causeType.some((pref: string) => req.type.toLowerCase() === pref.toLowerCase())
-    ),
-    filteredOrphans: orphans,
-    selectedOrphanForProfile, setSelectedOrphanForProfile,
+    filteredRequests: requests.filter(req => {
+      const matchCause = !donorProfile?.preferences?.causeType?.length ||
+        donorProfile.preferences.causeType.some((pref: string) => req.type.toLowerCase() === pref.toLowerCase());
+      const matchUrgent = !donorProfile?.preferences?.urgentOnly || req.isUrgent;
+      return matchCause && matchUrgent;
+    }),
+    filteredOrphans: orphans, // Show all orphans now as requested
+    selectedOrphanForProfile, handleViewOrphanProfile,
+    orphanProgress, loadingOrphanData,
     selectedOrphanage, setSelectedOrphanage,
     showProfileModal, setShowProfileModal,
     showOrphanageModal, setShowOrphanageModal,
     showPreferenceModal, setShowPreferenceModal,
     showAddDonationModal, setShowAddDonationModal,
     name, setName, phone, setPhone, city, setCity, selectedCauses, setSelectedCauses,
+    areaOptions: ['Karachi', 'Lahore', 'Islamabad', 'Faisalabad', 'Multan', 'Quetta', 'Peshawar'],
+    levelOptions: ['Primary', 'Secondary', 'Higher'],
     tempCauses, setTempCauses,
+    tempAreas, setTempAreas,
+    tempLevels, setTempLevels,
+    toggleTempItem,
+    tempUrgentOnly, setTempUrgentOnly,
     selectedRequest, setSelectedRequest, units, setUnits,
     manualType, setManualType, manualUnits, setManualUnits, manualDesc, setManualDesc,
     showCourseModal, setShowCourseModal,
@@ -356,6 +432,6 @@ export const useDonorDashboard = () => {
     causeOptions, toggleCause, toggleTempCause,
     handleRegister, handleDonate, handlePledgeFee, handleApproveRequest, handleRejectRequest,
     handleCourseSubmit, handleOpenDoc, handleUpdatePreferences, handleManualDonation, handleDeleteDonation,
-    handleOpenPreferenceModal, handleMessage
+    handleOpenPreferenceModal, handleMessage, handleUploadDonationPhoto
   };
 };

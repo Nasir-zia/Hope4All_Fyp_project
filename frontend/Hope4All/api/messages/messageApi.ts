@@ -10,10 +10,20 @@ export const fetchMessages = async (otherUserId: string, token?: string) => {
   return data.messages || [];
 };
 
-export const sendMessageApi = async (receiverId: string, message: string, token?: string) => {
+export const sendMessageApi = async (receiverId: string, payload: string | FormData, token?: string) => {
+  if (payload instanceof FormData) {
+    payload.append('receiverId', receiverId);
+    return apiClient('/messages', {
+      method: 'POST',
+      body: payload,
+      token,
+      isFormData: true,
+    });
+  }
+  
   return apiClient('/messages', {
     method: 'POST',
-    body: { receiverId, message },
+    body: { receiverId, message: payload },
     token,
   });
 };

@@ -38,7 +38,7 @@ export const useSocket = (userId: string | undefined, token: string | undefined)
         socket.disconnect();
       }
     };
-  }, [userId]);
+  }, [userId, token]);
 
   return { socket: socketRef.current, isConnected };
 };

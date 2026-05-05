@@ -48,6 +48,12 @@ export const DonationSection: React.FC<DonationSectionProps> = ({
                     {req.isInstitutional ? 'INSTITUTION' : req.type.toUpperCase()}
                   </Text>
                 </View>
+                {req.isUrgent && (
+                  <View style={styles.urgentBadge}>
+                    <Ionicons name="flash" size={10} color="#fff" />
+                    <Text style={styles.urgentText}>URGENT</Text>
+                  </View>
+                )}
                 <Text style={styles.unitText}>{req.units} {req.unitType}</Text>
               </View>
               <Text style={styles.orphanName}>
@@ -112,4 +118,6 @@ const styles = StyleSheet.create({
   input: { height: 48, fontSize: 16, color: '#1e293b', fontWeight: '600' },
   donateBtn: { flex: 2, backgroundColor: '#0077cc', borderRadius: 14, justifyContent: 'center', alignItems: 'center' },
   donateBtnText: { color: '#fff', fontSize: 15, fontWeight: '700' },
+  urgentBadge: { flexDirection: 'row', alignItems: 'center', gap: 4, backgroundColor: '#ef4444', paddingHorizontal: 8, paddingVertical: 4, borderRadius: 8 },
+  urgentText: { fontSize: 8, fontWeight: '900', color: '#fff' },
 });

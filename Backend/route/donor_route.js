@@ -18,7 +18,8 @@ import {
   getOrphanAid,
   deleteDonor,
   approveDonor,
-  rejectDonor
+  rejectDonor,
+  uploadDonationPhoto
 } from "../controllers/donorController.js";
 import upload from "../middleware/uploadMiddleware.js";
 
@@ -57,6 +58,9 @@ router.get("/orphans/:id", getDonorOrphans);
 
 // Route to update donation
 router.put("/donation/:donationId", updateDonation);
+
+// Route to upload donation delivery photo
+router.post("/donation/:donationId/photo", upload.single('photo'), uploadDonationPhoto);
 
 // Route to delete donation
 router.delete("/donation/:donationId", deleteDonation);

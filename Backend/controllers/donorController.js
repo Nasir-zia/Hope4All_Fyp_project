@@ -204,7 +204,7 @@ export const makeDonation = async (req, res) => {
       donationData.type = type || request.type;
       donationData.unitType = unitType || request.unitType;
 
-      await Request.findByIdAndUpdate(requestId, { status: 'fulfilled' });
+      await Request.findByIdAndUpdate(requestId, { status: 'pledged' });
       
       // Add orphan to donor's matched orphans if not already matched
       const donor = await Donor.findById(donorId);
@@ -214,8 +214,9 @@ export const makeDonation = async (req, res) => {
       }
     } else {
       donationData.recipientName = recipientName || 'General Donation';
-      donationData.status = 'pending';
     }
+    
+    donationData.status = 'pending-delivery';
 
     const donation = new Donation(donationData);
     await donation.save();
@@ -265,7 +266,7 @@ export const getDonationHistory = async (req, res) => {
 
     const donations = await Donation.find({ donorId: donor._id })
       .populate('requestId', 'type unitType description school')
-      .populate('recipientId', 'name age gender location profilePic')
+      .populate('recipientId')
       .sort({ createdAt: -1 });
 
     res.status(200).json({ donations });
@@ -278,7 +279,7 @@ export const getDonationHistory = async (req, res) => {
 export const getDonorOrphans = async (req, res) => {
   try {
     const donations = await Donation.find({ donorId: req.params.id })
-      .populate('recipientId', 'name age gender location profilePic')
+      .populate('recipientId')
       .sort({ createdAt: -1 });
 
     // Get unique orphans
@@ -398,56 +399,9 @@ export const getMatchedOrphans = async (req, res) => {
       return res.status(404).json({ message: 'Donor not found' });
     }
 
-    // Determine if we should apply strict matching
-    const hasAreaPref = donor.preferences.area && donor.preferences.area.length > 0;
-    const hasLevelPref = donor.preferences.schoolLevel && donor.preferences.schoolLevel.length > 0;
-    const hasCausePref = donor.preferences.causeType && donor.preferences.causeType.length > 0;
-
-    let matchCriteria = {};
-
-    // 1. Filter by Location if preference exists
-    if (hasAreaPref) {
-      matchCriteria.location = { $in: donor.preferences.area };
-    }
-
-    // 2. Filter by School Level/Age if preference exists
-    if (hasLevelPref) {
-      const ageRanges = [];
-      donor.preferences.schoolLevel.forEach(level => {
-        switch (level.toLowerCase()) {
-          case 'primary': ageRanges.push({ $gte: 5, $lte: 12 }); break;
-          case 'secondary': ageRanges.push({ $gte: 13, $lte: 18 }); break;
-          case 'higher': ageRanges.push({ $gte: 19 }); break;
-        }
-      });
-      if (ageRanges.length > 0) {
-        matchCriteria.$or = ageRanges.map(range => ({ age: range }));
-      }
-    }
-
-    // Find orphans matching base criteria (location + age)
-    let orphans = await Orphan.find(matchCriteria);
-
-    // 3. Filter by Cause Type ONLY if explicitly requested
-    if (hasCausePref) {
-      const activeRequests = await Request.find({
-        type: { $in: donor.preferences.causeType.map(c => c.toLowerCase()) },
-        status: 'approved'
-      }).select('orphanId');
-
-      const orphanWithRequests = activeRequests.map(r => r.orphanId.toString());
-      orphans = orphans.filter(o => orphanWithRequests.includes(o._id.toString()));
-    }
-
-    // 4. Exclude already matched orphans (Optional - commenting out to show all matches)
-    // const matchedOrphanIds = donor.matchedOrphans.map(id => id.toString());
-    // orphans = orphans.filter(orphan => !matchedOrphanIds.includes(orphan._id.toString()));
-
-    // Fallback: If strict matching resulted in 0 orphans but there are orphans available, 
-    // return a few random ones or latest ones to keep dashboard alive
-    if (orphans.length === 0) {
-      orphans = await Orphan.find().limit(10);
-    }
+    // Return all orphans to the donor as requested
+    const orphans = await Orphan.find().populate('orphanageId').sort({ createdAt: -1 });
+    res.status(200).json({ orphans });
 
     res.status(200).json({ orphans });
   } catch (error) {
@@ -524,12 +478,39 @@ export const getOrphanAid = async (req, res) => {
     }
     
     const donations = await Donation.find({ recipientId: orphan._id })
-      .populate('donorId', 'userId name email phone avatar')
+      .populate('donorId')
       .populate('requestId', 'type units unitType description school')
       .sort({ createdAt: -1 });
 
     res.status(200).json({ donations });
   } catch (error) {
     res.status(500).json({ message: 'Error fetching orphan aid', error: error.message });
+  }
+};
+
+export const uploadDonationPhoto = async (req, res) => {
+  try {
+    const { donationId } = req.params;
+    
+    if (!req.file) {
+      return res.status(400).json({ message: 'No photo provided' });
+    }
+
+    const donation = await Donation.findByIdAndUpdate(
+      donationId,
+      { 
+        donationPhoto: req.file.path,
+        status: 'under-review' 
+      },
+      { new: true }
+    );
+
+    if (!donation) {
+      return res.status(404).json({ message: 'Donation not found' });
+    }
+
+    res.status(200).json({ message: 'Photo uploaded successfully', donation });
+  } catch (error) {
+    res.status(500).json({ message: 'Error uploading photo', error: error.message });
   }
 };

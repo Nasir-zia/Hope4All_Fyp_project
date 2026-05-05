@@ -19,7 +19,7 @@ export const messageService = {
     }
   },
 
-  sendMessage: async (receiverId: string, message: string, token?: string) => {
+  sendMessage: async (receiverId: string, message: string | FormData, token?: string) => {
     try {
       const response = await sendMessageApi(receiverId, message, token);
       // Ensure we return the message object correctly

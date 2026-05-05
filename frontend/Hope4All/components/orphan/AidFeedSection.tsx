@@ -5,9 +5,10 @@ import { Ionicons } from '@expo/vector-icons';
 interface AidFeedSectionProps {
   aidItems: any[];
   onThanks: (donor: any) => void;
+  onConfirm: (donationId: string) => void;
 }
 
-export const AidFeedSection: React.FC<AidFeedSectionProps> = ({ aidItems, onThanks }) => {
+export const AidFeedSection: React.FC<AidFeedSectionProps> = ({ aidItems, onThanks, onConfirm }) => {
   return (
     <View style={styles.container}>
       <View style={styles.sectionHeader}>
@@ -33,7 +34,9 @@ export const AidFeedSection: React.FC<AidFeedSectionProps> = ({ aidItems, onThan
                     <Text style={styles.donorInitial}>{(aid.donorId?.name?.charAt(0) || 'D').toUpperCase()}</Text>
                   </View>
                   <View>
-                    <Text style={styles.donorName}>{aid.donorId?.name || 'Anonymous Donor'}</Text>
+                    <Text style={styles.donorName}>
+                      {aid.recipientId ? (aid.donorId?.name || 'Anonymous Donor') : 'Community Support'}
+                    </Text>
                     <Text style={styles.aidTime}>{new Date(aid.createdAt).toLocaleDateString()}</Text>
                   </View>
                </View>
@@ -43,15 +46,43 @@ export const AidFeedSection: React.FC<AidFeedSectionProps> = ({ aidItems, onThan
                <View style={styles.aidDetail}>
                   <Text style={styles.aidType}>Sent: {aid.requestId?.type?.toUpperCase() || 'SUPPLIES'}</Text>
                   <Text style={styles.aidQty}>{aid.units} {aid.requestId?.unitType || 'Units'} provided</Text>
+                  <View style={[styles.statusBadge, { 
+                    backgroundColor: 
+                      aid.status === 'completed' ? '#ecfdf5' : 
+                      aid.status === 'sent' ? '#f0f9ff' : 
+                      aid.status === 'under-review' ? '#fffbeb' : 
+                      '#fef2f2' // pending-delivery
+                  }]}>
+                    <Text style={[styles.statusText, { 
+                      color: 
+                        aid.status === 'completed' ? '#10b981' : 
+                        aid.status === 'sent' ? '#0077cc' : 
+                        aid.status === 'under-review' ? '#f59e0b' : 
+                        '#ef4444' // pending-delivery
+                    }]}>
+                      {aid.status?.toUpperCase() || 'PENDING-DELIVERY'}
+                    </Text>
+                  </View>
                </View>
-
-               <TouchableOpacity 
-                 style={styles.thanksBtn}
-                 onPress={() => onThanks(aid.donorId)}
-               >
-                 <Ionicons name="chatbubble-ellipses-outline" size={16} color="#0077cc" />
-                 <Text style={styles.thanksBtnText}>Say Thanks</Text>
-               </TouchableOpacity>
+               
+               <View style={styles.btnRow}>
+                {aid.status === 'sent' && (
+                  <TouchableOpacity 
+                    style={styles.confirmBtn}
+                    onPress={() => onConfirm(aid._id)}
+                  >
+                    <Ionicons name="checkmark-circle-outline" size={14} color="#fff" />
+                    <Text style={styles.confirmBtnText}>Received</Text>
+                  </TouchableOpacity>
+                )}
+                <TouchableOpacity 
+                  style={[styles.thanksBtn, { flex: 1 }]}
+                  onPress={() => onThanks(aid.donorId)}
+                >
+                  <Ionicons name="chatbubble-ellipses-outline" size={16} color="#0077cc" />
+                  <Text style={styles.thanksBtnText}>Say Thanks</Text>
+                </TouchableOpacity>
+               </View>
             </View>
           ))
         )}
@@ -80,6 +111,11 @@ const styles = StyleSheet.create({
   aidDetail: { marginBottom: 15 },
   aidType: { fontSize: 10, fontWeight: '800', color: '#0077cc', marginBottom: 4 },
   aidQty: { fontSize: 13, fontWeight: '600', color: '#475569' },
+  statusBadge: { alignSelf: 'flex-start', paddingHorizontal: 6, paddingVertical: 2, borderRadius: 4, marginTop: 6 },
+  statusText: { fontSize: 8, fontWeight: '800' },
+  btnRow: { flexDirection: 'row', gap: 8 },
   thanksBtn: { flexDirection: 'row', alignItems: 'center', justifyContent: 'center', gap: 6, backgroundColor: '#f0f9ff', paddingVertical: 10, borderRadius: 12 },
   thanksBtnText: { fontSize: 12, fontWeight: '700', color: '#0077cc' },
+  confirmBtn: { flex: 1.5, flexDirection: 'row', alignItems: 'center', justifyContent: 'center', gap: 4, backgroundColor: '#10b981', paddingVertical: 10, borderRadius: 12 },
+  confirmBtnText: { fontSize: 12, fontWeight: '700', color: '#fff' },
 });

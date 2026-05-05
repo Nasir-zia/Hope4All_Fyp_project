@@ -11,6 +11,7 @@ import { MaterialRequestSection } from '@/components/orphan/MaterialRequestSecti
 import { ProgressSection } from '@/components/orphan/ProgressSection';
 import { CoursesSection } from '@/components/orphan/CoursesSection';
 import { AidFeedSection } from '@/components/orphan/AidFeedSection';
+import { AidHistorySection } from '@/components/orphan/AidHistorySection';
 import { ProfileModal } from '@/components/orphan/ProfileModal';
 import { ProgressModal } from '@/components/orphan/ProgressModal';
 import { RegistrationForm } from '@/components/orphan/RegistrationForm';
@@ -24,6 +25,7 @@ export default function OrphanDashboard() {
     fees, feeTitle, setFeeTitle, feeAmount, setFeeAmount, feeDate, setFeeDate, loadingFees, submittingFee,
     materialRequests, progressReports, aidFeed, availableCourses, showRequestModal, setShowRequestModal,
     reqType, setReqType, reqDesc, setReqDesc, reqUnits, setReqUnits, reqSchool, setReqSchool,
+    isUrgent, setIsUrgent,
     regName, setRegName, regAge, setRegAge, regGender, setRegGender, regLocation, setRegLocation, regPhone, setRegPhone,
     profilePicUri, docUri, docName, submittingProfile,
     showEditModal, setShowEditModal, editName, setEditName, editAge, setEditAge, editLocation, setEditLocation,
@@ -31,7 +33,7 @@ export default function OrphanDashboard() {
     showProgressModal, setShowProgressModal, progTitle, setProgTitle, progCategory, setProgCategory,
     progScore, setProgScore, progRemarks, setProgRemarks, progImgUri, submittingProg,
     handleAddFee, handleAddMaterialRequest, openSettings, handleUpdateProfile, handleAddProgress, handleDeleteProgress,
-    pickImage, pickDocument, handleProfileSubmit
+    pickImage, pickDocument, handleProfileSubmit, handleConfirmReceipt
   } = useOrphanDashboard();
 
   if (user?.status === 'suspended') {
@@ -96,7 +98,7 @@ export default function OrphanDashboard() {
         />
 
         <AidFeedSection
-          aidItems={aidFeed}
+          aidItems={aidFeed.filter(item => item.status !== 'completed')}
           onThanks={(donor) => {
             const targetUserId = donor?.userId?._id || donor?.userId || donor?._id;
             if (!targetUserId) return;
@@ -105,6 +107,20 @@ export default function OrphanDashboard() {
               params: { userId: String(targetUserId), username: donor?.name }
             });
           }}
+          onConfirm={handleConfirmReceipt}
+        />
+
+        <AidHistorySection 
+          aidHistory={aidFeed} 
+          onThanks={(donor) => {
+            const targetUserId = donor?.userId?._id || donor?.userId || donor?._id;
+            if (!targetUserId) return;
+            router.push({
+              pathname: '/messages',
+              params: { userId: String(targetUserId), username: donor?.name }
+            });
+          }}
+          onConfirm={handleConfirmReceipt}
         />
 
         <CoursesSection courses={availableCourses} />
@@ -134,6 +150,8 @@ export default function OrphanDashboard() {
           onAddRequest={handleAddMaterialRequest}
           showModal={showRequestModal}
           setShowModal={setShowRequestModal}
+          isUrgent={isUrgent}
+          setIsUrgent={setIsUrgent}
         />
       </ScrollView>
 

@@ -13,7 +13,7 @@ export const AdminHeader: React.FC<AdminHeaderProps> = ({ onLogout }) => {
     <View style={styles.header}>
       <View style={styles.topRow}>
         <View>
-          <Text style={styles.adminTag}>HOPE4ALL • SYSTEM ADMIN</Text>
+          <Text style={styles.adminTag}>HOPE4ALL • ADMIN DASHBOARD</Text>
           <Text style={styles.welcome}>Control Panel</Text>
         </View>
         <TouchableOpacity

@@ -32,6 +32,7 @@ export interface DonorData {
     causeType: string[];
     area: string[];
     schoolLevel: string[];
+    urgentOnly?: boolean;
   };
 }
 
@@ -60,6 +61,7 @@ export interface MaterialRequestData {
   unitType: string;
   description: string;
   school: string;
+  isUrgent?: boolean;
 }
 
 export interface CourseData {

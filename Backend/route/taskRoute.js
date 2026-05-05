@@ -7,6 +7,21 @@ import {
   getVolunteerStats
 } from "../controllers/taskController.js";
 
+import pkg from "multer-storage-cloudinary";
+const CloudinaryStorage = pkg;
+import cloudinary from "../Files/cloudinary.js";
+import multer from "multer";
+
+const storage = new CloudinaryStorage({
+  cloudinary,
+  params: {
+    folder: "task_proofs",
+    resource_type: "auto",
+  },
+});
+
+const upload = multer({ storage });
+
 const router = express.Router();
 
 // Create new task (admin)
@@ -19,7 +34,7 @@ router.get("/volunteer/:volunteerId", getTasksByVolunteer);
 router.get("/", getAllTasks);
 
 // Update task status
-router.put("/:taskId/status", updateTaskStatus);
+router.put("/:taskId/status", upload.single('proofImage'), updateTaskStatus);
 
 // Get volunteer stats
 router.get("/stats/:volunteerId", getVolunteerStats);

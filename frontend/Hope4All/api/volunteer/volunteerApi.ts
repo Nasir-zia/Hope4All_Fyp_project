@@ -10,10 +10,11 @@ export const fetchVolunteerStats = async (volunteerId: string, token?: string) =
   return data.stats;
 };
 
-export const updateTaskStatusApi = async (taskId: string, status: string, token?: string, notes?: string) => {
+export const updateTaskStatusApi = async (taskId: string, statusData: any, token?: string, isFormData: boolean = false) => {
   return apiClient(`/tasks/${taskId}/status`, {
     method: 'PUT',
-    body: { status, notes },
+    body: statusData,
     token,
+    isFormData,
   });
 };

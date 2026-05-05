@@ -1,5 +1,5 @@
 import React from 'react';
-import { View, Text, TouchableOpacity, Image } from 'react-native';
+import { View, Text, TouchableOpacity, Image, Linking, Alert, Platform } from 'react-native';
 import { Ionicons } from '@expo/vector-icons';
 import { adminStyles as styles } from './AdminStyles';
 
@@ -66,6 +66,91 @@ export const UsersTab: React.FC<UsersTabProps> = ({ users, onUpdateStatus }) => 
                       ? `${u.location.address || ''}, ${u.location.city || ''}` 
                       : u.location}
                   </Text>
+                </View>
+              )}
+              {u.role === 'orphan' && (
+                <View style={{ marginTop: 12, borderTopWidth: 1, borderTopColor: '#f1f5f9', paddingTop: 12 }}>
+                  <View style={{ flexDirection: 'row', flexWrap: 'wrap', gap: 15, marginBottom: 8 }}>
+                    <Text style={{ fontSize: 12, color: '#64748b' }}><Text style={{ fontWeight: '700' }}>Age:</Text> {u.age}</Text>
+                    <Text style={{ fontSize: 12, color: '#64748b' }}><Text style={{ fontWeight: '700' }}>Phone:</Text> {u.phone || 'N/A'}</Text>
+                  </View>
+                  {u.bio && (
+                    <Text style={{ fontSize: 12, color: '#64748b', fontStyle: 'italic', marginBottom: 12 }}>"{u.bio}"</Text>
+                  )}
+                  {u.supportingDocs && (
+                    <View style={{ gap: 8 }}>
+                      {u.supportingDocs.match(/\.(jpg|jpeg|png|webp|gif)$|cloudinary/i) && !u.supportingDocs.toLowerCase().endsWith('.pdf') ? (
+                        <Image 
+                          source={{ uri: u.supportingDocs }} 
+                          style={{ width: '100%', height: 120, borderRadius: 12, backgroundColor: '#f1f5f9', borderWidth: 1, borderColor: '#e2e8f0' }} 
+                          resizeMode="cover"
+                        />
+                      ) : (
+                        <View style={{ width: '100%', height: 80, borderRadius: 12, backgroundColor: '#f8fafc', justifyContent: 'center', alignItems: 'center', borderWidth: 1, borderColor: '#e2e8f0', borderStyle: 'dashed' }}>
+                          <Ionicons name="document-text-outline" size={32} color="#0077cc" />
+                          <Text style={{ fontSize: 12, color: '#64748b', marginTop: 4 }}>PDF / Verification Document</Text>
+                        </View>
+                      )}
+                      
+                      <View style={{ flexDirection: 'row', gap: 10 }}>
+                        <TouchableOpacity 
+                          style={{ 
+                            flex: 1,
+                            flexDirection: 'row', 
+                            alignItems: 'center', 
+                            justifyContent: 'center',
+                            gap: 6, 
+                            backgroundColor: '#f0f9ff', 
+                            padding: 12, 
+                            borderRadius: 12,
+                            borderWidth: 1,
+                            borderColor: '#bae6fd'
+                          }}
+                          onPress={() => {
+                            if (Platform.OS === 'web') {
+                              window.open(u.supportingDocs, '_blank');
+                            } else {
+                              Linking.openURL(u.supportingDocs).catch(() => {
+                                Alert.alert("Error", "Could not open document link.");
+                              });
+                            }
+                          }}
+                        >
+                          <Ionicons name="eye-outline" size={18} color="#0077cc" />
+                          <Text style={{ fontSize: 13, color: '#0077cc', fontWeight: '700' }}>View</Text>
+                        </TouchableOpacity>
+
+                        <TouchableOpacity 
+                          style={{ 
+                            flex: 1,
+                            flexDirection: 'row', 
+                            alignItems: 'center', 
+                            justifyContent: 'center',
+                            gap: 6, 
+                            backgroundColor: '#f0fdf4', 
+                            padding: 12, 
+                            borderRadius: 12,
+                            borderWidth: 1,
+                            borderColor: '#bbf7d0'
+                          }}
+                          onPress={() => {
+                            // Cloudinary download transformation: insert fl_attachment
+                            const downloadUrl = u.supportingDocs.replace('/upload/', '/upload/fl_attachment/');
+                            if (Platform.OS === 'web') {
+                              window.open(downloadUrl, '_blank');
+                            } else {
+                              Linking.openURL(downloadUrl).catch(() => {
+                                Alert.alert("Error", "Could not trigger download.");
+                              });
+                            }
+                          }}
+                        >
+                          <Ionicons name="download-outline" size={18} color="#16a34a" />
+                          <Text style={{ fontSize: 13, color: '#16a34a', fontWeight: '700' }}>Download</Text>
+                        </TouchableOpacity>
+                      </View>
+                    </View>
+                  )}
                 </View>
               )}
             </View>

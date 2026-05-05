@@ -15,11 +15,13 @@ interface MaterialRequestSectionProps {
   onAddRequest: () => void;
   showModal: boolean;
   setShowModal: (val: boolean) => void;
+  isUrgent: boolean;
+  setIsUrgent: (val: boolean) => void;
 }
 
 export const MaterialRequestSection: React.FC<MaterialRequestSectionProps> = ({
   requests, reqType, setReqType, reqDesc, setReqDesc, reqUnits, setReqUnits, reqSchool, setReqSchool,
-  onAddRequest, showModal, setShowModal
+  onAddRequest, showModal, setShowModal, isUrgent, setIsUrgent
 }) => {
   return (
     <View style={styles.container}>
@@ -137,6 +139,22 @@ export const MaterialRequestSection: React.FC<MaterialRequestSectionProps> = ({
               />
             </View>
 
+            <View style={styles.inputGroup}>
+              <TouchableOpacity 
+                style={[styles.urgentToggle, isUrgent && styles.urgentToggleActive]}
+                onPress={() => setIsUrgent(!isUrgent)}
+              >
+                <Ionicons 
+                  name={isUrgent ? "flash" : "flash-outline"} 
+                  size={18} 
+                  color={isUrgent ? "#fff" : "#64748b"} 
+                />
+                <Text style={[styles.urgentToggleText, isUrgent && styles.urgentToggleTextActive]}>
+                  Mark as Urgent Need
+                </Text>
+              </TouchableOpacity>
+            </View>
+
             <TouchableOpacity style={styles.submitBtn} onPress={onAddRequest}>
               <Text style={styles.submitBtnText}>Submit Request</Text>
             </TouchableOpacity>
@@ -233,4 +251,19 @@ const styles = StyleSheet.create({
   },
   submitBtn: { backgroundColor: '#0077cc', padding: 18, borderRadius: 20, alignItems: 'center', marginTop: 8 },
   submitBtnText: { color: '#fff', fontSize: 16, fontWeight: '800' },
+  urgentToggle: {
+    flexDirection: 'row', alignItems: 'center', gap: 10,
+    padding: 14, borderRadius: 16, backgroundColor: '#f8fafc',
+    borderWidth: 1, borderColor: '#e2e8f0',
+  },
+  urgentToggleActive: {
+    backgroundColor: '#ef4444',
+    borderColor: '#ef4444',
+  },
+  urgentToggleText: {
+    fontSize: 14, fontWeight: '700', color: '#64748b',
+  },
+  urgentToggleTextActive: {
+    color: '#fff',
+  },
 });

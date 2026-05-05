@@ -125,7 +125,7 @@ cron.schedule('* * * * *', async () => {
         });
 
         await newNotification.save();
-        
+
         // Update fee so it doesn't notify again
         fee.notificationSent = true;
         await fee.save();
@@ -137,5 +137,22 @@ cron.schedule('* * * * *', async () => {
   }
 });
 
-const PORT = process.env.PORT || 5000;
-server.listen(PORT, () => console.log(` Server + Socket.io running on port ${PORT}`));
+const PORT = process.env.PORT || 5001;
+const runningServer = server.listen(PORT, () => console.log(` Server + Socket.io running on port ${PORT}`));
+
+// Graceful shutdown
+process.on('SIGINT', () => {
+  console.log('SIGINT signal received: closing HTTP server');
+  runningServer.close(() => {
+    console.log('HTTP server closed');
+    process.exit(0);
+  });
+});
+
+process.on('SIGTERM', () => {
+  console.log('SIGTERM signal received: closing HTTP server');
+  runningServer.close(() => {
+    console.log('HTTP server closed');
+    process.exit(0);
+  });
+});

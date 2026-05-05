@@ -15,11 +15,13 @@ import {
   fetchOrphanAidFeed,
   createProgressApi,
   deleteProgressApi,
-  fetchApprovedCourses
+  fetchApprovedCourses,
+  confirmDonationReceiptApi,
+  fetchIncomingDonations
 } from '@/constants/api';
 
 export const useOrphanDashboard = () => {
-  const { user, logout } = useAuth();
+  const { user, logout, updateUser } = useAuth();
 
   const [fees, setFees] = useState<any[]>([]);
   const [feeTitle, setFeeTitle] = useState('');
@@ -41,6 +43,7 @@ export const useOrphanDashboard = () => {
   const [reqDesc, setReqDesc] = useState('');
   const [reqUnits, setReqUnits] = useState('1');
   const [reqSchool, setReqSchool] = useState('');
+  const [isUrgent, setIsUrgent] = useState(false);
 
   // Profile Completion States
   const [orphanProfile, setOrphanProfile] = useState<any>(null);
@@ -111,7 +114,7 @@ export const useOrphanDashboard = () => {
       const [reqs, progress, aid, courses] = await Promise.all([
         fetchOrphanRequests(targetId),
         fetchOrphanProgress(targetId),
-        fetchOrphanAidFeed(targetId),
+        fetchIncomingDonations(targetId),
         fetchApprovedCourses()
       ]);
       setMaterialRequests(reqs);
@@ -122,6 +125,16 @@ export const useOrphanDashboard = () => {
       console.log('Error loading extras:', err);
     } finally {
       setLoadingExtras(false);
+    }
+  };
+
+  const handleConfirmReceipt = async (donationId: string) => {
+    try {
+      await confirmDonationReceiptApi(donationId, user!.token);
+      Alert.alert("Success", "Donation confirmed! Status updated to 'Delivered'.");
+      loadExtras();
+    } catch (err: any) {
+      Alert.alert("Error", err.message || "Could not confirm receipt");
     }
   };
 
@@ -178,11 +191,13 @@ export const useOrphanDashboard = () => {
         units: Number(reqUnits),
         unitType: reqType === 'stationery' ? 'items' : 'sets',
         description: reqDesc,
-        school: reqSchool
+        school: reqSchool,
+        isUrgent
       });
       Alert.alert("Success", "Material request submitted!");
       setReqDesc('');
       setReqSchool('');
+      setIsUrgent(false);
       setShowRequestModal(false);
       loadExtras();
     } catch (err: any) {
@@ -219,11 +234,16 @@ export const useOrphanDashboard = () => {
 
       if (newProfilePicUri) {
         const picName = newProfilePicUri.split('/').pop() || 'profile.jpg';
-        formData.append('profilePic', {
-          uri: newProfilePicUri,
-          name: picName,
-          type: 'image/jpeg',
-        } as any);
+        if (Platform.OS === 'web') {
+          const picBlob = await (await fetch(newProfilePicUri)).blob();
+          formData.append('profilePic', picBlob, picName);
+        } else {
+          formData.append('profilePic', {
+            uri: newProfilePicUri,
+            name: picName,
+            type: 'image/jpeg',
+          } as any);
+        }
       }
 
       const updated = await updateOrphanProfile(user!.id, formData);
@@ -253,11 +273,16 @@ export const useOrphanDashboard = () => {
 
       if (progImgUri) {
         const picName = progImgUri.split('/').pop() || 'certificate.jpg';
-        formData.append('achievementImage', {
-          uri: progImgUri,
-          name: picName,
-          type: 'image/jpeg',
-        } as any);
+        if (Platform.OS === 'web') {
+          const picBlob = await (await fetch(progImgUri)).blob();
+          formData.append('achievementImage', picBlob, picName);
+        } else {
+          formData.append('achievementImage', {
+            uri: progImgUri,
+            name: picName,
+            type: 'image/jpeg',
+          } as any);
+        }
       }
 
       await createProgressApi(formData);
@@ -324,6 +349,16 @@ export const useOrphanDashboard = () => {
     }
     setSubmittingProfile(true);
     try {
+      const formatFileUri = (uri: string) => {
+        if (Platform.OS === 'web') return uri;
+        return Platform.OS === 'android' ? uri : uri.replace('file://', '');
+      };
+
+      const uriToBlob = async (uri: string) => {
+        const response = await fetch(uri);
+        return await response.blob();
+      };
+
       const formData = new FormData();
       formData.append('userId', user!.id);
       formData.append('name', regName);
@@ -333,20 +368,34 @@ export const useOrphanDashboard = () => {
       formData.append('phone', regPhone);
 
       const picName = profilePicUri.split('/').pop() || 'profile.jpg';
-      formData.append('profilePic', {
-        uri: profilePicUri,
-        name: picName,
-        type: 'image/jpeg',
-      } as any);
+      if (Platform.OS === 'web') {
+        const picBlob = await uriToBlob(profilePicUri);
+        formData.append('profilePic', picBlob, picName);
+      } else {
+        formData.append('profilePic', {
+          uri: formatFileUri(profilePicUri),
+          name: picName,
+          type: 'image/jpeg',
+        } as any);
+      }
 
       const documentName = docUri.split('/').pop() || 'document.pdf';
-      formData.append('supportingDocs', {
-        uri: docUri,
-        name: documentName,
-        type: 'application/pdf',
-      } as any);
+      if (Platform.OS === 'web') {
+        const docBlob = await uriToBlob(docUri);
+        formData.append('supportingDocs', docBlob, documentName);
+      } else {
+        formData.append('supportingDocs', {
+          uri: formatFileUri(docUri),
+          name: documentName,
+          type: 'application/pdf',
+        } as any);
+      }
 
       await registerOrphanProfile(formData);
+      
+      // Update local auth status to pending
+      await updateUser({ status: 'pending' });
+
       Alert.alert("Success", "Profile completed! Welcome to Hope4All.");
       setIsRegistering(false);
       loadProfileAndData();
@@ -362,6 +411,7 @@ export const useOrphanDashboard = () => {
     fees, feeTitle, setFeeTitle, feeAmount, setFeeAmount, feeDate, setFeeDate, loadingFees, submittingFee,
     materialRequests, progressReports, aidFeed, availableCourses, showRequestModal, setShowRequestModal,
     reqType, setReqType, reqDesc, setReqDesc, reqUnits, setReqUnits, reqSchool, setReqSchool,
+    isUrgent, setIsUrgent,
     regName, setRegName, regAge, setRegAge, regGender, setRegGender, regLocation, setRegLocation, regPhone, setRegPhone,
     profilePicUri, docUri, docName, submittingProfile,
     showEditModal, setShowEditModal, editName, setEditName, editAge, setEditAge, editLocation, setEditLocation,
@@ -369,6 +419,6 @@ export const useOrphanDashboard = () => {
     showProgressModal, setShowProgressModal, progTitle, setProgTitle, progCategory, setProgCategory,
     progScore, setProgScore, progRemarks, setProgRemarks, progImgUri, submittingProg, showFullProgressList, setShowFullProgressList,
     handleAddFee, handleAddMaterialRequest, openSettings, handleUpdateProfile, handleAddProgress, handleDeleteProgress,
-    pickImage, pickDocument, handleProfileSubmit
+    pickImage, pickDocument, handleProfileSubmit, handleConfirmReceipt
   };
 };

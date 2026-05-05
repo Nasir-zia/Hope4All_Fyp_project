@@ -18,7 +18,8 @@ import {
   testEndpoint,
   getAllDonations,
   suspendUser,
-  unsuspendUser
+  unsuspendUser,
+  forwardDonation
 } from "../controllers/adminController.js";
 
 const router = express.Router();
@@ -76,6 +77,9 @@ router.put("/users/:userId/suspend", suspendUser);
 
 // Unsuspend a user
 router.put("/users/:userId/unsuspend", unsuspendUser);
+
+// Forward donation to orphan
+router.put("/donations/:donationId/forward", forwardDonation);
 
 // Test endpoint
 router.get("/test", testEndpoint);

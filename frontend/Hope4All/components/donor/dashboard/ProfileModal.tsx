@@ -1,17 +1,19 @@
 import React from 'react';
-import { View, Text, StyleSheet, Modal, ScrollView, TouchableOpacity, Image } from 'react-native';
+import { View, Text, StyleSheet, Modal, ScrollView, TouchableOpacity, Image, ActivityIndicator } from 'react-native';
 import { Ionicons } from '@expo/vector-icons';
 
 interface ProfileModalProps {
   visible: boolean;
   orphan: any;
+  achievements?: any[];
+  loadingAchievements?: boolean;
   onClose: () => void;
   onViewDoc: (url: string) => void;
   onMessage: (orphan: any) => void;
 }
 
 export const ProfileModal: React.FC<ProfileModalProps> = ({
-  visible, orphan, onClose, onViewDoc, onMessage
+  visible, orphan, achievements, loadingAchievements, onClose, onViewDoc, onMessage
 }) => {
   return (
     <Modal visible={visible} transparent={true} animationType="slide" onRequestClose={onClose}>
@@ -56,6 +58,22 @@ export const ProfileModal: React.FC<ProfileModalProps> = ({
               </View>
 
               <View style={styles.section}>
+                <Text style={styles.sectionTitle}>Context & Contact</Text>
+                <View style={[styles.eduRow, { backgroundColor: '#fdf2f8' }]}>
+                  <View style={styles.eduItem}>
+                    <Text style={[styles.eduLabel, { color: '#ec4899' }]}>Orphanage</Text>
+                    <Text style={styles.eduValue} numberOfLines={1}>
+                      {orphan.orphanageId?.name || 'Independent'}
+                    </Text>
+                  </View>
+                  <View style={styles.eduItem}>
+                    <Text style={[styles.eduLabel, { color: '#ec4899' }]}>Phone</Text>
+                    <Text style={styles.eduValue}>{orphan.phone || 'Not Shared'}</Text>
+                  </View>
+                </View>
+              </View>
+
+              <View style={styles.section}>
                 <Text style={styles.sectionTitle}>Education</Text>
                 <View style={styles.eduRow}>
                   <View style={styles.eduItem}>
@@ -74,6 +92,38 @@ export const ProfileModal: React.FC<ProfileModalProps> = ({
                 <Text style={styles.bio}>
                   {orphan.bio || `Meet ${orphan.name}, a promising child from ${orphan.location} who is currently seeking support for their education and wellbeing.`}
                 </Text>
+              </View>
+
+              <View style={styles.section}>
+                <View style={styles.sectionHeaderRow}>
+                  <Text style={styles.sectionTitle}>Achievements</Text>
+                  {loadingAchievements && <ActivityIndicator size="small" color="#0077cc" />}
+                </View>
+                
+                {achievements && achievements.length > 0 ? (
+                  <ScrollView horizontal showsHorizontalScrollIndicator={false} style={styles.achievementScroller}>
+                    {achievements.map((item) => (
+                      <View key={item._id} style={styles.achievementCard}>
+                        <View style={styles.achievementHeader}>
+                          <View style={styles.catBadge}>
+                            <Text style={styles.catText}>{item.category?.toUpperCase()}</Text>
+                          </View>
+                          <Text style={styles.scoreText}>{item.score}</Text>
+                        </View>
+                        <Text style={styles.achievementTitle} numberOfLines={1}>{item.title}</Text>
+                        <Text style={styles.remarksText} numberOfLines={2}>{item.remarks}</Text>
+                        {item.image && (
+                           <Image source={{ uri: item.image }} style={styles.achievementImg} />
+                        )}
+                      </View>
+                    ))}
+                  </ScrollView>
+                ) : (
+                  <View style={styles.emptyState}>
+                    <Ionicons name="medal-outline" size={30} color="#cbd5e1" />
+                    <Text style={styles.emptyText}>No achievements recorded yet.</Text>
+                  </View>
+                )}
               </View>
 
               <View style={styles.actionGroup}>
@@ -126,4 +176,16 @@ const styles = StyleSheet.create({
   eduItem: { flex: 1 },
   eduLabel: { fontSize: 10, color: '#0077cc', fontWeight: '800', textTransform: 'uppercase', marginBottom: 2 },
   eduValue: { fontSize: 14, fontWeight: '700', color: '#1e293b' },
+  sectionHeaderRow: { flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center', marginBottom: 10 },
+  achievementScroller: { paddingVertical: 5 },
+  achievementCard: { width: 220, backgroundColor: '#f8fafc', padding: 15, borderRadius: 24, marginRight: 15, borderWidth: 1, borderColor: '#f1f5f9' },
+  achievementHeader: { flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center', marginBottom: 10 },
+  catBadge: { backgroundColor: '#e0f2fe', paddingHorizontal: 8, paddingVertical: 4, borderRadius: 8 },
+  catText: { fontSize: 9, fontWeight: '800', color: '#0077cc' },
+  scoreText: { fontSize: 14, fontWeight: '800', color: '#0077cc' },
+  achievementTitle: { fontSize: 14, fontWeight: '800', color: '#1e293b', marginBottom: 4 },
+  remarksText: { fontSize: 12, color: '#64748b', lineHeight: 18, marginBottom: 10 },
+  achievementImg: { width: '100%', height: 80, borderRadius: 12, marginTop: 5 },
+  emptyState: { backgroundColor: '#f8fafc', padding: 30, borderRadius: 24, alignItems: 'center', borderStyle: 'dashed', borderWidth: 1, borderColor: '#cbd5e1' },
+  emptyText: { marginTop: 10, fontSize: 13, color: '#94a3b8', fontStyle: 'italic' },
 });

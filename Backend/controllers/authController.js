@@ -94,7 +94,7 @@ export const login = async (req, res) => {
     }
 
     // Special handling for admin login
-    if (email === 'nasir171@gmail.com' && password === 'lakki123') {
+    if (email === 'nasirzia171@gmail.com' && password === 'Lakki123,.') {
       console.log(' Admin login detected');
       
       // Create admin user object

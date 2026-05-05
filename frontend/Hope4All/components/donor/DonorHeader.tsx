@@ -43,6 +43,9 @@ export const DonorHeader: React.FC<DonorHeaderProps> = ({
           </View>
         </View>
         <View style={styles.userInfo}>
+           <View style={styles.badge}>
+             <Text style={styles.badgeText}>DONOR DASHBOARD</Text>
+           </View>
            <Text style={styles.welcomeText}>Great to see you,</Text>
            <Text style={styles.usernameText}>{name || 'Donor'}</Text>
            <View style={styles.pointsBadge}>
@@ -164,5 +167,21 @@ const styles = StyleSheet.create({
     fontSize: 12,
     fontWeight: '700',
     color: '#b45309',
+  },
+  badge: {
+    backgroundColor: '#eff6ff',
+    paddingHorizontal: 10,
+    paddingVertical: 3,
+    borderRadius: 8,
+    marginBottom: 4,
+    borderWidth: 1,
+    borderColor: '#dbeafe',
+    alignSelf: 'flex-start',
+  },
+  badgeText: {
+    fontSize: 9,
+    fontWeight: '800',
+    color: '#0077cc',
+    letterSpacing: 0.5,
   },
 });

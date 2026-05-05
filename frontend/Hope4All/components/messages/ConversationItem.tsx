@@ -27,7 +27,10 @@ export const ConversationItem: React.FC<ConversationItemProps> = ({ item, index,
         </View>
         <View style={styles.convDetails}>
           <View style={styles.convHeader}>
-            <Text style={styles.convName}>{item.user.username}</Text>
+            <View>
+              <Text style={styles.convName}>{item.user.username}</Text>
+              <Text style={styles.roleLabel}>{item.user.role?.toUpperCase()}</Text>
+            </View>
             <Text style={styles.convTime}>
               {item.lastMessage ? new Date(item.lastMessage.createdAt).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' }) : ''}
             </Text>
@@ -58,6 +61,7 @@ const styles = StyleSheet.create({
   convDetails: { flex: 1, marginLeft: 15 },
   convHeader: { flexDirection: 'row', justifyContent: 'space-between', marginBottom: 4 },
   convName: { fontSize: 16, fontWeight: '700', color: '#1e293b' },
+  roleLabel: { fontSize: 9, fontWeight: '800', color: '#0077cc', marginTop: -2 },
   convTime: { fontSize: 11, color: '#94a3b8' },
   lastMsg: { fontSize: 14, color: '#64748b', flex: 1 },
   lastMsgRow: { flexDirection: 'row', alignItems: 'center' },

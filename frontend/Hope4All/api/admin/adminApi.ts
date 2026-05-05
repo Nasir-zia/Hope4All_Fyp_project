@@ -65,3 +65,25 @@ export const updateUserStatusApi = async (userId: string, status: string, token?
     token,
   });
 };
+
+export const suspendUserApi = async (userId: string, reason: string, token: string) => {
+  return apiClient(`/admin/users/${userId}/suspend`, {
+    method: 'PUT',
+    body: { reason },
+    token,
+  });
+};
+
+export const unsuspendUserApi = async (userId: string, token: string) => {
+  return apiClient(`/admin/users/${userId}/unsuspend`, {
+    method: 'PUT',
+    token,
+  });
+};
+
+export const forwardDonationApi = async (donationId: string, token: string) => {
+  return apiClient(`/admin/donations/${donationId}/forward`, {
+    method: 'PUT',
+    token,
+  });
+};

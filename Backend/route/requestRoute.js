@@ -49,7 +49,7 @@ router.get("/approved", async (req, res) => {
     const requests = await Request.find({ status: { $in: ['approved', 'pending'] } })
       .populate('orphanId', 'name age gender')
       .populate('orphanageId', 'name')
-      .sort({ createdAt: -1 });
+      .sort({ isUrgent: -1, createdAt: -1 });
 
     res.status(200).json({ requests });
   } catch (error) {

@@ -2,7 +2,7 @@ import { apiClient } from '../../utils/apiClient';
 import { FeeData } from '../../types/apiTypes';
 
 export const createOrphanFee = async (data: FeeData) => {
-  return apiClient('/fees/add', {
+  return apiClient('/fees/create', {
     method: 'POST',
     body: data,
   });

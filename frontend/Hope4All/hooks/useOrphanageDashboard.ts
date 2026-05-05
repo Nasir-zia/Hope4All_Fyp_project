@@ -1,5 +1,7 @@
 import { useState, useEffect } from 'react';
-import { Alert } from 'react-native';
+import { Alert, Platform } from 'react-native';
+import * as DocumentPicker from 'expo-document-picker';
+import * as ImagePicker from 'expo-image-picker';
 import { useAuth } from './useAuth';
 import { 
   fetchOrphanageProfile, 
@@ -27,6 +29,38 @@ export const useOrphanageDashboard = () => {
   const [zipCode, setZipCode] = useState('');
   const [capacity, setCapacity] = useState('');
   const [submitting, setSubmitting] = useState(false);
+  
+  // File states
+  const [regCert, setRegCert] = useState<any>(null);
+  const [buildingImages, setBuildingImages] = useState<any[]>([]);
+
+  const pickDocument = async () => {
+    try {
+      const result = await DocumentPicker.getDocumentAsync({
+        type: ['application/pdf', 'image/*'],
+      });
+      if (!result.canceled) {
+        setRegCert(result.assets[0]);
+      }
+    } catch (err) {
+      console.error('Error picking document:', err);
+    }
+  };
+
+  const pickImages = async () => {
+    try {
+      const result = await ImagePicker.launchImageLibraryAsync({
+        mediaTypes: ImagePicker.MediaTypeOptions.Images,
+        allowsMultipleSelection: true,
+        quality: 0.7,
+      });
+      if (!result.canceled) {
+        setBuildingImages(result.assets);
+      }
+    } catch (err) {
+      console.error('Error picking images:', err);
+    }
+  };
 
   useEffect(() => {
     if (user?.id) {
@@ -74,10 +108,29 @@ export const useOrphanageDashboard = () => {
       formData.append('capacity[current]', '0');
       formData.append('capacity[max]', capacity);
 
+      if (regCert) {
+        formData.append('registrationCert', {
+          uri: regCert.uri,
+          name: regCert.name,
+          type: regCert.mimeType || 'application/pdf',
+        } as any);
+      }
+
+      if (buildingImages.length > 0) {
+        buildingImages.forEach((img, index) => {
+          formData.append('buildingImages', {
+            uri: img.uri,
+            name: `building_${index}.jpg`,
+            type: 'image/jpeg',
+          } as any);
+        });
+      }
+
       await registerOrphanageApi(formData);
       Alert.alert('Success', 'Orphanage registered successfully! Please wait for admin approval.');
       loadProfile();
     } catch (err: any) {
+      console.error('Registration error:', err);
       Alert.alert('Error', err.message || 'Registration failed');
     } finally {
       setSubmitting(false);
@@ -88,6 +141,7 @@ export const useOrphanageDashboard = () => {
     user, logout, orphanageProfile, loading, isRegistering, requirements,
     name, setName, regNum, setRegNum, phone, setPhone, email, setEmail,
     address, setAddress, city, setCity, state, setState, zipCode, setZipCode,
-    capacity, setCapacity, submitting, handleRegister
+    capacity, setCapacity, submitting, handleRegister,
+    regCert, pickDocument, buildingImages, pickImages
   };
 };

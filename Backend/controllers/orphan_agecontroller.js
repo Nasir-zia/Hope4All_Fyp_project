@@ -9,8 +9,26 @@ export const createOrphanAge = async (req, res) => {
     const registrationCert = registrationCertFile ? registrationCertFile.path : null;
     const buildingImages = buildingImagesFiles.map(file => file.path);
 
+    const { 
+      userId, name, registrationNumber, establishedYear, managerName, staffCount,
+      "location[address]": address, "location[city]": city, "location[state]": state, "location[zipCode]": zipCode,
+      "contactInfo[phone]": phone, "contactInfo[email]": email,
+      "capacity[current]": currentCapacity, "capacity[max]": maxCapacity
+    } = req.body;
+    
     const newOrphanage = new OrphanAge({
-      ...req.body,
+      userId,
+      name,
+      registrationNumber,
+      establishedYear,
+      managerName,
+      staffCount,
+      location: { address, city, state, zipCode },
+      contactInfo: { phone, email },
+      capacity: { 
+        current: parseInt(currentCapacity) || 0, 
+        max: parseInt(maxCapacity) || 0 
+      },
       documents: {
         registrationCert,
         buildingImages,

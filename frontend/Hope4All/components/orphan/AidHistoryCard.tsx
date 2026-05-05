@@ -1,39 +1,75 @@
 import React from 'react';
-import { View, Text, StyleSheet, TouchableOpacity } from 'react-native';
+import { View, Text, StyleSheet, TouchableOpacity, Image } from 'react-native';
 import { Ionicons } from '@expo/vector-icons';
 
 interface AidHistoryCardProps {
   aid: any;
   onThanks: (id: string) => void;
+  onConfirm?: (id: string) => void;
 }
 
-export const AidHistoryCard: React.FC<AidHistoryCardProps> = ({ aid, onThanks }) => {
+export const AidHistoryCard: React.FC<AidHistoryCardProps> = ({ aid, onThanks, onConfirm }) => {
+  const isGeneral = !aid.recipientId;
+  const donorName = isGeneral ? 'Community Support' : (aid.donorId?.name || 'Kind Donor');
+  const profilePic = aid.donorId?.profilePic;
+
   return (
-    <View style={styles.aidCard}>
+    <View style={[styles.aidCard, { borderLeftColor: aid.status === 'completed' ? '#10b981' : '#f59e0b' }]}>
       <View style={styles.donorHeader}>
         <View style={styles.donorAvatar}>
-          <Text style={styles.donorInitial}>{(aid.donorId?.name?.charAt(0) || 'D').toUpperCase()}</Text>
+          {profilePic && !isGeneral ? (
+            <Image source={{ uri: profilePic }} style={styles.avatarImage} />
+          ) : (
+            <Text style={styles.donorInitial}>{(donorName.charAt(0)).toUpperCase()}</Text>
+          )}
         </View>
         <View>
-          <Text style={styles.donorName}>{aid.donorId?.name || 'Kind Donor'}</Text>
-          <Text style={styles.aidTime}>{new Date(aid.donatedAt).toLocaleDateString()}</Text>
+          <Text style={styles.donorName}>{donorName}</Text>
+          <Text style={styles.aidTime}>{new Date(aid.donatedAt || aid.createdAt).toLocaleDateString()}</Text>
         </View>
       </View>
-      
+
       <View style={styles.aidDetail}>
         <Text style={styles.aidType}>{aid.type?.toUpperCase()}</Text>
         <Text style={styles.aidQty}>{aid.units} {aid.unitType || 'Units'}</Text>
+        <View style={[styles.statusBadge, { 
+          backgroundColor: 
+            aid.status === 'completed' ? '#ecfdf5' : 
+            aid.status === 'sent' ? '#f0f9ff' : 
+            aid.status === 'under-review' ? '#fffbeb' : 
+            '#fef2f2' // pending-delivery
+        }]}>
+          <Text style={[styles.statusText, { 
+            color: 
+              aid.status === 'completed' ? '#10b981' : 
+              aid.status === 'sent' ? '#0077cc' : 
+              aid.status === 'under-review' ? '#f59e0b' : 
+              '#ef4444' // pending-delivery
+          }]}>
+            {aid.status?.toUpperCase() || 'PENDING-DELIVERY'}
+          </Text>
+        </View>
       </View>
 
-      {!aid.thanked && (
-        <TouchableOpacity 
-          style={styles.thanksBtn}
-          onPress={() => onThanks(aid._id)}
+      <View style={styles.btnRow}>
+        {aid.status === 'sent' && onConfirm && (
+          <TouchableOpacity
+            style={styles.confirmBtn}
+            onPress={() => onConfirm(aid._id)}
+          >
+            <Ionicons name="checkmark-circle" size={16} color="#fff" />
+            <Text style={styles.confirmBtnText}>Receive</Text>
+          </TouchableOpacity>
+        )}
+
+        <TouchableOpacity
+          style={[styles.thanksBtn, { flex: 1 }]}
+          onPress={() => onThanks(aid.donorId)}
         >
           <Ionicons name="heart" size={16} color="#0077cc" />
-          <Text style={styles.thanksBtnText}>Send Thanks</Text>
+          <Text style={styles.thanksBtnText}>Say Thanks</Text>
         </TouchableOpacity>
-      )}
+      </View>
     </View>
   );
 };
@@ -103,14 +139,33 @@ const styles = StyleSheet.create({
     flexDirection: 'row',
     alignItems: 'center',
     justifyContent: 'center',
-    paddingVertical: 8,
-    borderRadius: 10,
-    backgroundColor: '#e6f4ff',
+    paddingVertical: 10,
+    borderRadius: 12,
+    backgroundColor: '#f0f9ff',
   },
   thanksBtnText: {
     fontSize: 13,
-    fontWeight: '600',
+    fontWeight: '700',
     color: '#0077cc',
     marginLeft: 6,
   },
+  avatarImage: { width: '100%', height: '100%', borderRadius: 20 },
+  confirmBtn: {
+    flex: 1.2,
+    flexDirection: 'row',
+    alignItems: 'center',
+    justifyContent: 'center',
+    paddingVertical: 10,
+    borderRadius: 12,
+    backgroundColor: '#10b981',
+  },
+  confirmBtnText: {
+    fontSize: 13,
+    fontWeight: '700',
+    color: '#fff',
+    marginLeft: 6,
+  },
+  btnRow: { flexDirection: 'row', gap: 8 },
+  statusBadge: { alignSelf: 'flex-start', paddingHorizontal: 8, paddingVertical: 4, borderRadius: 6, marginTop: 8 },
+  statusText: { fontSize: 9, fontWeight: '800' },
 });

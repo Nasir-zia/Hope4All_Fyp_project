@@ -6,7 +6,7 @@ export const fetchDonorProfile = async (userId: string) => {
     const data = await apiClient(`/donors/profile/${userId}`);
     return data.donor;
   } catch (error: any) {
-    if (error.message.includes('404')) return null;
+    if (error.message.includes('404') || error.message.includes('Donor not found')) return null;
     throw error;
   }
 };
@@ -37,9 +37,8 @@ export const fetchMatchedOrphans = async (donorId: string) => {
     const data = await apiClient(`/donors/matched-orphans/${donorId}`);
     return data.orphans || [];
   } catch (error) {
-    // Try the other endpoint if this one fails
-    const altData = await apiClient(`/donors/${donorId}/matches`);
-    return altData.orphans || [];
+    console.error('Error fetching matched orphans:', error);
+    return [];
   }
 };
 
@@ -65,4 +64,13 @@ export const deleteDonationApi = async (donationId: string) => {
 export const fetchOrphanAidFeed = async (orphanId: string) => {
   const data = await apiClient(`/donors/aid/${orphanId}`);
   return data.donations || [];
+};
+
+export const uploadDonationPhotoApi = async (donationId: string, photoFormData: FormData, token: string) => {
+  return apiClient(`/donors/donation/${donationId}/photo`, {
+    method: 'POST',
+    body: photoFormData,
+    token,
+    isFormData: true,
+  });
 };

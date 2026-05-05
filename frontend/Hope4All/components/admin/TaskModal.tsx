@@ -57,14 +57,24 @@ export const TaskModal: React.FC<TaskModalProps> = ({
 
           <Text style={styles.label}>Assign to Volunteer</Text>
           <ScrollView horizontal showsHorizontalScrollIndicator={false} style={styles.volSelect}>
+            <TouchableOpacity
+              style={[styles.volChip, selectedVolunteer === 'all' && { backgroundColor: '#0077cc', borderColor: '#0077cc' }]}
+              onPress={() => setSelectedVolunteer('all')}
+            >
+              <Ionicons name="people" size={14} color={selectedVolunteer === 'all' ? '#fff' : '#64748b'} style={{ marginRight: 4 }} />
+              <Text style={[styles.volChipText, selectedVolunteer === 'all' && { color: '#fff' }]}>
+                Everyone
+              </Text>
+            </TouchableOpacity>
+
             {volunteers.map(v => (
               <TouchableOpacity
                 key={v._id}
-                style={[styles.volChip, selectedVolunteer === v.userId?._id && styles.volChipActive]}
-                onPress={() => setSelectedVolunteer(v.userId?._id)}
+                style={[styles.volChip, selectedVolunteer === v._id && styles.volChipActive]}
+                onPress={() => setSelectedVolunteer(v._id)}
               >
-                <Text style={[styles.volChipText, selectedVolunteer === v.userId?._id && styles.volChipTextActive]}>
-                  {v.name}
+                <Text style={[styles.volChipText, selectedVolunteer === v._id && styles.volChipTextActive]}>
+                  {v.username || v.name}
                 </Text>
               </TouchableOpacity>
             ))}

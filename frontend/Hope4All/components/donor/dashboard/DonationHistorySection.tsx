@@ -6,10 +6,11 @@ interface DonationHistorySectionProps {
   myDonations: any[];
   onDeleteDonation: (id: string) => void;
   onOpenAddDonation: () => void;
+  onUploadPhoto: (id: string) => void;
 }
 
 export const DonationHistorySection: React.FC<DonationHistorySectionProps> = ({
-  myDonations, onDeleteDonation, onOpenAddDonation
+  myDonations, onDeleteDonation, onOpenAddDonation, onUploadPhoto
 }) => {
   return (
     <View style={styles.container}>
@@ -39,11 +40,37 @@ export const DonationHistorySection: React.FC<DonationHistorySectionProps> = ({
                   <Text style={styles.historyDate}>{new Date(item.createdAt).toLocaleDateString()}</Text>
                 </View>
                 <Text style={styles.historyOrphan}>{item.recipientName || 'Community Support'}</Text>
-                <Text style={styles.historyUnits}>{item.units} {item.unitType || 'Units'}</Text>
+                <View style={styles.statusRow}>
+                  <Text style={styles.historyUnits}>{item.units} {item.unitType || 'Units'}</Text>
+                  <View style={[styles.statusBadge, { 
+                    backgroundColor: 
+                      item.status === 'completed' ? '#ecfdf5' : 
+                      item.status === 'sent' ? '#f0f9ff' : 
+                      item.status === 'under-review' ? '#fffbeb' : 
+                      '#fef2f2' // pending-delivery
+                  }]}>
+                    <Text style={[styles.statusText, { 
+                      color: 
+                        item.status === 'completed' ? '#10b981' : 
+                        item.status === 'sent' ? '#0077cc' : 
+                        item.status === 'under-review' ? '#f59e0b' : 
+                        '#ef4444' // pending-delivery
+                    }]}>
+                      {item.status?.toUpperCase() || 'PENDING-DELIVERY'}
+                    </Text>
+                  </View>
+                </View>
               </View>
-              <TouchableOpacity style={styles.deleteBtn} onPress={() => onDeleteDonation(item._id)}>
-                <Ionicons name="trash-outline" size={18} color="#ef4444" />
-              </TouchableOpacity>
+              <View style={styles.actionRow}>
+                {item.status === 'pending-delivery' && (
+                  <TouchableOpacity style={styles.uploadBtn} onPress={() => onUploadPhoto(item._id)}>
+                    <Ionicons name="camera" size={18} color="#0077cc" />
+                  </TouchableOpacity>
+                )}
+                <TouchableOpacity style={styles.deleteBtn} onPress={() => onDeleteDonation(item._id)}>
+                  <Ionicons name="trash-outline" size={18} color="#ef4444" />
+                </TouchableOpacity>
+              </View>
             </View>
           ))
         )}
@@ -69,5 +96,10 @@ const styles = StyleSheet.create({
   historyDate: { fontSize: 10, color: '#94a3b8' },
   historyOrphan: { fontSize: 16, fontWeight: '800', color: '#1e293b', marginBottom: 2 },
   historyUnits: { fontSize: 13, color: '#64748b', fontWeight: '600' },
+  statusRow: { flexDirection: 'row', alignItems: 'center', gap: 10, marginTop: 4 },
+  statusBadge: { paddingHorizontal: 8, paddingVertical: 2, borderRadius: 6 },
+  statusText: { fontSize: 9, fontWeight: '800' },
+  actionRow: { flexDirection: 'row', gap: 8 },
+  uploadBtn: { width: 36, height: 36, borderRadius: 10, backgroundColor: '#f0f9ff', justifyContent: 'center', alignItems: 'center', borderWidth: 1, borderColor: '#e0f2fe' },
   deleteBtn: { width: 36, height: 36, borderRadius: 10, backgroundColor: '#fef2f2', justifyContent: 'center', alignItems: 'center' },
 });

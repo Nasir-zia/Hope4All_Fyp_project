@@ -13,7 +13,8 @@ export default function OrphanageDashboard() {
     user, logout, orphanageProfile, loading, isRegistering, requirements,
     name, setName, regNum, setRegNum, phone, setPhone, email, setEmail,
     address, setAddress, city, setCity, state, setState, zipCode, setZipCode,
-    capacity, setCapacity, submitting, handleRegister
+    capacity, setCapacity, submitting, handleRegister,
+    regCert, pickDocument, buildingImages, pickImages
   } = useOrphanageDashboard();
 
   const [showReqModal, setShowReqModal] = React.useState(false);
@@ -98,6 +99,26 @@ export default function OrphanageDashboard() {
             <Text style={styles.label}>Capacity (Max Children) *</Text>
             <TextInput style={styles.input} value={capacity} onChangeText={setCapacity} placeholder="50" keyboardType="numeric" />
           </View>
+        </View>
+        
+        <View style={styles.inputGroup}>
+          <Text style={styles.label}>Registration Certificate (PDF/Image) *</Text>
+          <TouchableOpacity style={styles.filePicker} onPress={pickDocument}>
+            <Ionicons name={regCert ? "checkmark-circle" : "document-attach-outline"} size={20} color={regCert ? "#10b981" : "#64748b"} />
+            <Text style={[styles.filePickerText, regCert && { color: '#10b981' }]}>
+              {regCert ? regCert.name : "Select Document"}
+            </Text>
+          </TouchableOpacity>
+        </View>
+
+        <View style={styles.inputGroup}>
+          <Text style={styles.label}>Building Images (Multiple) *</Text>
+          <TouchableOpacity style={styles.filePicker} onPress={pickImages}>
+            <Ionicons name={buildingImages.length > 0 ? "images" : "images-outline"} size={20} color={buildingImages.length > 0 ? "#10b981" : "#64748b"} />
+            <Text style={[styles.filePickerText, buildingImages.length > 0 && { color: '#10b981' }]}>
+              {buildingImages.length > 0 ? `${buildingImages.length} images selected` : "Select Images"}
+            </Text>
+          </TouchableOpacity>
         </View>
 
         <TouchableOpacity style={styles.submitBtn} onPress={handleRegister} disabled={submitting}>
@@ -188,5 +209,19 @@ const styles = StyleSheet.create({
   submitBtn: { backgroundColor: '#0077cc', padding: 20, borderRadius: 20, alignItems: 'center', marginTop: 20 },
   submitBtnText: { color: '#fff', fontSize: 18, fontWeight: '800' },
   logoutBtn: { padding: 20, alignItems: 'center' },
-  logoutBtnText: { color: '#ef4444', fontWeight: '700' }
+  logoutBtnText: { color: '#ef4444', fontWeight: '700' },
+  filePicker: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    backgroundColor: '#f8fafc',
+    padding: 15,
+    borderRadius: 15,
+    borderWidth: 1,
+    borderColor: '#e2e8f0',
+    gap: 10
+  },
+  filePickerText: {
+    fontSize: 14,
+    color: '#64748b'
+  }
 });

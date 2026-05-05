@@ -1,7 +1,8 @@
 import React from 'react';
-import { View, Text, StyleSheet } from 'react-native';
+import { View, Text, StyleSheet, Image, TouchableOpacity, Linking } from 'react-native';
 import Animated, { FadeInRight, FadeInLeft } from 'react-native-reanimated';
 import { LinearGradient } from 'expo-linear-gradient';
+import { Ionicons } from '@expo/vector-icons';
 
 interface MessageBubbleProps {
   item: any;
@@ -18,9 +19,30 @@ export const MessageBubble: React.FC<MessageBubbleProps> = ({ item, isMine }) =>
         colors={isMine ? ['#4da6ff', '#0077cc'] : ['#f1f5f9', '#e2e8f0']}
         style={[styles.msgBubble, isMine ? styles.bubbleMine : styles.bubbleTheirs]}
       >
-        <Text style={[styles.msgText, isMine ? styles.textMine : styles.textTheirs]}>
-          {item.message}
-        </Text>
+        {item.type === 'image' && item.fileUrl && (
+          <TouchableOpacity onPress={() => Linking.openURL(item.fileUrl)}>
+            <Image source={{ uri: item.fileUrl }} style={styles.msgImage} resizeMode="cover" />
+          </TouchableOpacity>
+        )}
+        {item.type === 'file' && item.fileUrl && (
+          <TouchableOpacity 
+            style={[styles.fileContainer, isMine ? styles.fileMine : styles.fileTheirs]} 
+            onPress={() => Linking.openURL(item.fileUrl)}
+          >
+            <Ionicons name="document-attach" size={24} color={isMine ? "#fff" : "#0077cc"} />
+            <View style={{ flex: 1 }}>
+              <Text style={[styles.fileName, isMine ? styles.textMine : styles.textTheirs]} numberOfLines={1}>
+                {item.fileName || 'Document'}
+              </Text>
+              <Text style={[styles.fileSize, isMine ? styles.timeMine : styles.timeTheirs]}>Click to download</Text>
+            </View>
+          </TouchableOpacity>
+        )}
+        {item.message ? (
+          <Text style={[styles.msgText, isMine ? styles.textMine : styles.textTheirs]}>
+            {item.message}
+          </Text>
+        ) : null}
         <Text style={[styles.msgTime, isMine ? styles.timeMine : styles.timeTheirs]}>
           {new Date(item.createdAt).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })}
         </Text>
@@ -51,4 +73,10 @@ const styles = StyleSheet.create({
   msgTime: { fontSize: 10, marginTop: 4, alignSelf: 'flex-end', opacity: 0.7 },
   timeMine: { color: '#fff' },
   timeTheirs: { color: '#64748b' },
+  msgImage: { width: 200, height: 200, borderRadius: 12, marginBottom: 8 },
+  fileContainer: { flexDirection: 'row', alignItems: 'center', gap: 10, padding: 10, borderRadius: 12, marginBottom: 8, minWidth: 150 },
+  fileMine: { backgroundColor: 'rgba(255,255,255,0.2)' },
+  fileTheirs: { backgroundColor: 'rgba(0,119,204,0.05)' },
+  fileName: { fontSize: 14, fontWeight: '700' },
+  fileSize: { fontSize: 10 },
 });

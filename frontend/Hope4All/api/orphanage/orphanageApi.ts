@@ -12,7 +12,7 @@ export const fetchOrphanageProfile = async (userId: string) => {
     const data = await apiClient(`/orphanages/profile/${userId}`);
     return data.orphanage;
   } catch (error: any) {
-    if (error.message.includes('404')) return null;
+    if (error.message.includes('404') || error.message.includes('Orphanage not found')) return null;
     throw error;
   }
 };
