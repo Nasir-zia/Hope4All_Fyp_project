@@ -130,7 +130,46 @@ export const confirmDonationReceipt = async (req, res) => {
     }
 
     res.status(200).json({ message: 'Donation confirmed as received', donation });
+
+    // Notify the donor
+    const Notification = mongoose.model('Notification');
+    const donorNotification = new Notification({
+      donorId: donation.donorId,
+      type: 'delivery',
+      title: 'Donation Received!',
+      message: `The recipient has confirmed they received your donation of ${donation.units} ${donation.unitType}. Thank you!`,
+    });
+    await donorNotification.save();
   } catch (error) {
     res.status(500).json({ message: 'Error confirming receipt', error: error.message });
+  }
+};
+
+export const reportDonationIssue = async (req, res) => {
+  try {
+    const { donationId } = req.params;
+    const { reason } = req.body;
+
+    const donation = await Donation.findById(donationId);
+    if (!donation) {
+      return res.status(404).json({ message: 'Donation not found' });
+    }
+
+    donation.status = 'not-received';
+    await donation.save();
+
+    // Create notification for admin/donor
+    const Notification = mongoose.model('Notification');
+    const issueNotification = new Notification({
+      donorId: donation.donorId,
+      type: 'alert',
+      title: 'Delivery Issue Reported',
+      message: `An issue was reported for your donation. The recipient marked it as not received. Reason: ${reason || 'Not provided'}`,
+    });
+    await issueNotification.save();
+
+    res.status(200).json({ message: 'Issue reported successfully', donation });
+  } catch (error) {
+    res.status(500).json({ message: 'Error reporting issue', error: error.message });
   }
 };

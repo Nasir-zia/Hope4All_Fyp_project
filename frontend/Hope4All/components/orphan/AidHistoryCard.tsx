@@ -6,9 +6,10 @@ interface AidHistoryCardProps {
   aid: any;
   onThanks: (id: string) => void;
   onConfirm?: (id: string) => void;
+  onReport?: (id: string) => void;
 }
 
-export const AidHistoryCard: React.FC<AidHistoryCardProps> = ({ aid, onThanks, onConfirm }) => {
+export const AidHistoryCard: React.FC<AidHistoryCardProps> = ({ aid, onThanks, onConfirm, onReport }) => {
   const isGeneral = !aid.recipientId;
   const donorName = isGeneral ? 'Community Support' : (aid.donorId?.name || 'Kind Donor');
   const profilePic = aid.donorId?.profilePic;
@@ -49,17 +50,36 @@ export const AidHistoryCard: React.FC<AidHistoryCardProps> = ({ aid, onThanks, o
             {aid.status?.toUpperCase() || 'PENDING-DELIVERY'}
           </Text>
         </View>
+
+        {aid.donationPhoto && (
+          <View style={{ marginTop: 10 }}>
+            <Image 
+              source={{ uri: aid.donationPhoto }} 
+              style={{ width: '100%', height: 100, borderRadius: 12, backgroundColor: '#f1f5f9' }} 
+              resizeMode="cover"
+            />
+          </View>
+        )}
       </View>
 
       <View style={styles.btnRow}>
-        {aid.status === 'sent' && onConfirm && (
-          <TouchableOpacity
-            style={styles.confirmBtn}
-            onPress={() => onConfirm(aid._id)}
-          >
-            <Ionicons name="checkmark-circle" size={16} color="#fff" />
-            <Text style={styles.confirmBtnText}>Receive</Text>
-          </TouchableOpacity>
+        {aid.status === 'sent' && onConfirm && onReport && (
+          <View style={{ gap: 8, flex: 1.5 }}>
+            <TouchableOpacity
+              style={styles.confirmBtn}
+              onPress={() => onConfirm(aid._id)}
+            >
+              <Ionicons name="checkmark-circle" size={16} color="#fff" />
+              <Text style={styles.confirmBtnText}>Receive</Text>
+            </TouchableOpacity>
+            <TouchableOpacity
+              style={[styles.confirmBtn, { backgroundColor: '#ef4444' }]}
+              onPress={() => onReport(aid._id)}
+            >
+              <Ionicons name="close-circle" size={16} color="#fff" />
+              <Text style={styles.confirmBtnText}>Not Received</Text>
+            </TouchableOpacity>
+          </View>
         )}
 
         <TouchableOpacity

@@ -181,6 +181,7 @@ export const updateDonorProfile = async (req, res) => {
 
 export const makeDonation = async (req, res) => {
   try {
+    console.log('Incoming Donation Request:', req.body);
     const { donorId, requestId, units, recipientName, type, description, unitType } = req.body;
 
     let donationData = {
@@ -201,6 +202,14 @@ export const makeDonation = async (req, res) => {
       donationData.requestId = requestId;
       donationData.recipientName = recipientName || (request.orphanId ? request.orphanId.name : 'Institutional');
       donationData.recipientId = request.orphanId ? request.orphanId._id : null;
+      donationData.orphanageId = request.orphanageId; // Link to the orphanage
+      
+      // If it's a specific orphan, ensure we have their orphanage link too
+      if (request.orphanId && !donationData.orphanageId) {
+        const Orphan = mongoose.model('Orphan');
+        const orphanDoc = await Orphan.findById(request.orphanId);
+        if (orphanDoc) donationData.orphanageId = orphanDoc.orphanageId;
+      }
       donationData.type = type || request.type;
       donationData.unitType = unitType || request.unitType;
 
@@ -208,7 +217,7 @@ export const makeDonation = async (req, res) => {
       
       // Add orphan to donor's matched orphans if not already matched
       const donor = await Donor.findById(donorId);
-      if (donor && !donor.matchedOrphans.includes(request.orphanId._id)) {
+      if (donor && request.orphanId && !donor.matchedOrphans.includes(request.orphanId._id)) {
         donor.matchedOrphans.push(request.orphanId._id);
         await donor.save();
       }
@@ -477,7 +486,12 @@ export const getOrphanAid = async (req, res) => {
       return res.status(404).json({ message: 'Orphan not found' });
     }
     
-    const donations = await Donation.find({ recipientId: orphan._id })
+    const donations = await Donation.find({ 
+      $or: [
+        { recipientId: orphan._id },
+        { recipientId: null, status: { $ne: 'completed' } } // Show general available donations
+      ]
+    })
       .populate('donorId')
       .populate('requestId', 'type units unitType description school')
       .sort({ createdAt: -1 });

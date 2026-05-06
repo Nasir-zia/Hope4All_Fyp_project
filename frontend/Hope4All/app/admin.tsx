@@ -89,19 +89,19 @@ export default function AdminDashboard() {
       const [statsD, reqsD, volD, usersD, dontD, coursesD, orphanagesD, tasksD] = await Promise.all([
         fetchAdminStats(), fetchAllRequests(), fetchAllVolunteers(), fetchAllUsers(), fetchAllDonations(), fetchPendingCourses(), fetchOrphanageOptions(), fetchAllTasks()
       ]);
-      setStats(statsD.stats); 
-      setRequests(reqsD); 
-      setVolunteers(volD); 
-      setUsersList(usersD); 
-      setDonations(dontD); 
-      setPendingCourses(coursesD); 
+      setStats(statsD.stats);
+      setRequests(reqsD);
+      setVolunteers(volD);
+      setUsersList(usersD);
+      setDonations(dontD);
+      setPendingCourses(coursesD);
       setOrphanagesList(orphanagesD);
       setTasks(tasksD);
-      
+
       // We can also store the recent lists if needed, but for now we'll update StatsTab to use them from the statsD object if we pass it correctly.
       // Actually, let's keep setStats(statsD) and update StatsTab to handle the nesting, or better, pass everything.
       // Let's go with setStats(statsD) and fix StatsTab.
-      setStats(statsD); 
+      setStats(statsD);
     } catch (err) { console.error(err); } finally { setLoading(false); }
   };
 
@@ -125,26 +125,26 @@ export default function AdminDashboard() {
   };
 
   const handleUpdateUserStatus = async (id: string, targetStatus: string, reason?: string) => {
-    try { 
+    try {
       if (targetStatus === 'suspended') {
         await suspendUserApi(id, reason || "Violation of terms", user?.token || '');
       } else if (targetStatus === 'verified' && usersList.find(u => u._id === id)?.status === 'suspended') {
         await unsuspendUserApi(id, user?.token || '');
       } else {
-        await updateUserStatusApi(id, targetStatus, user?.token || ''); 
+        await updateUserStatusApi(id, targetStatus, user?.token || '');
       }
-      
+
       Alert.alert("Success", `User status updated!`);
-      loadAllData(); 
-    } catch (err: any) { 
-      Alert.alert("Error", err.message); 
+      loadAllData();
+    } catch (err: any) {
+      Alert.alert("Error", err.message);
     }
   };
 
   const handleDeleteUser = async (id: string) => {
-    const confirm = Platform.OS === 'web' 
+    const confirm = Platform.OS === 'web'
       ? window.confirm("Are you sure you want to PERMANENTLY delete this user?")
-      : true; // In mobile we'd use Alert.alert with buttons
+      : true;
 
     if (!confirm) return;
 

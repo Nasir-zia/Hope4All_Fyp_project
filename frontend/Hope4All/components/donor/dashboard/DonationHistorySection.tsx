@@ -45,6 +45,7 @@ export const DonationHistorySection: React.FC<DonationHistorySectionProps> = ({
                   <View style={[styles.statusBadge, { 
                     backgroundColor: 
                       item.status === 'completed' ? '#ecfdf5' : 
+                      item.status === 'received' ? '#ecfdf5' :
                       item.status === 'sent' ? '#f0f9ff' : 
                       item.status === 'under-review' ? '#fffbeb' : 
                       '#fef2f2' // pending-delivery
@@ -52,6 +53,7 @@ export const DonationHistorySection: React.FC<DonationHistorySectionProps> = ({
                     <Text style={[styles.statusText, { 
                       color: 
                         item.status === 'completed' ? '#10b981' : 
+                        item.status === 'received' ? '#10b981' :
                         item.status === 'sent' ? '#0077cc' : 
                         item.status === 'under-review' ? '#f59e0b' : 
                         '#ef4444' // pending-delivery

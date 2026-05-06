@@ -17,7 +17,8 @@ import {
   deleteProgressApi,
   fetchApprovedCourses,
   confirmDonationReceiptApi,
-  fetchIncomingDonations
+  fetchIncomingDonations,
+  reportDonationIssueApi
 } from '@/constants/api';
 
 export const useOrphanDashboard = () => {
@@ -137,6 +138,30 @@ export const useOrphanDashboard = () => {
       Alert.alert("Error", err.message || "Could not confirm receipt");
     }
   };
+
+  const handleReportIssue = async (donationId: string) => {
+    Alert.prompt(
+      "Report Issue",
+      "Why was this donation not received? (e.g., missing items, wrong address)",
+      [
+        { text: "Cancel", style: "cancel" },
+        {
+          text: "Report",
+          style: "destructive",
+          onPress: async (reason) => {
+            try {
+              await reportDonationIssueApi(donationId, reason || "Not received", user!.token);
+              Alert.alert("Reported", "The issue has been reported to the admin and donor.");
+              loadExtras();
+            } catch (err: any) {
+              Alert.alert("Error", err.message || "Could not report issue");
+            }
+          }
+        }
+      ]
+    );
+  };
+
 
   const loadFees = async (profileId?: string) => {
     const targetId = profileId || orphanProfile?._id;
@@ -419,6 +444,6 @@ export const useOrphanDashboard = () => {
     showProgressModal, setShowProgressModal, progTitle, setProgTitle, progCategory, setProgCategory,
     progScore, setProgScore, progRemarks, setProgRemarks, progImgUri, submittingProg, showFullProgressList, setShowFullProgressList,
     handleAddFee, handleAddMaterialRequest, openSettings, handleUpdateProfile, handleAddProgress, handleDeleteProgress,
-    pickImage, pickDocument, handleProfileSubmit, handleConfirmReceipt
+    pickImage, pickDocument, handleProfileSubmit, handleConfirmReceipt, handleReportIssue
   };
 };

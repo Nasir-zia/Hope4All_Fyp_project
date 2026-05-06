@@ -43,7 +43,7 @@ export const DonationsTab: React.FC<DonationsTabProps> = ({ donations, onForward
                     {d.status?.toUpperCase() || 'PENDING'}
                   </Text>
                 </View>
-                {d.status === 'under-review' && (
+                {(d.status === 'under-review' || d.status === 'pending-delivery') && (
                   <TouchableOpacity 
                     style={{ backgroundColor: '#0077cc', paddingHorizontal: 10, paddingVertical: 4, borderRadius: 6, flexDirection: 'row', alignItems: 'center', gap: 4 }}
                     onPress={() => onForward(d._id)}

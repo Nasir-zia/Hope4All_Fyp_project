@@ -34,7 +34,7 @@ export default function OrphanDashboard() {
     showProgressModal, setShowProgressModal, progTitle, setProgTitle, progCategory, setProgCategory,
     progScore, setProgScore, progRemarks, setProgRemarks, progImgUri, submittingProg,
     handleAddFee, handleAddMaterialRequest, openSettings, handleUpdateProfile, handleAddProgress, handleDeleteProgress,
-    pickImage, pickDocument, handleProfileSubmit, handleConfirmReceipt
+    pickImage, pickDocument, handleProfileSubmit, handleConfirmReceipt, handleReportIssue
   } = useOrphanDashboard();
 
   if (user?.status === 'suspended') {
@@ -109,6 +109,7 @@ export default function OrphanDashboard() {
             });
           }}
           onConfirm={handleConfirmReceipt}
+          onReport={handleReportIssue}
         />
 
         <AidHistorySection 
@@ -122,6 +123,7 @@ export default function OrphanDashboard() {
             });
           }}
           onConfirm={handleConfirmReceipt}
+          onReport={handleReportIssue}
         />
 
         <CoursesSection courses={availableCourses} />

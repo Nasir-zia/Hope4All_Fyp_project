@@ -1,5 +1,5 @@
 import React from 'react';
-import { View, Text, StyleSheet, ScrollView, TouchableOpacity, TextInput } from 'react-native';
+import { View, Text, StyleSheet, ScrollView, TouchableOpacity, TextInput, Image } from 'react-native';
 import { Ionicons } from '@expo/vector-icons';
 
 interface DonationSectionProps {
@@ -8,6 +8,8 @@ interface DonationSectionProps {
   setSelectedRequest: (req: any) => void;
   units: string;
   setUnits: (u: string) => void;
+  requestPhoto: string | null;
+  onPickPhoto: () => void;
   handleDonate: () => void;
   handleApproveRequest: (id: string) => void;
   handleRejectRequest: (id: string) => void;
@@ -15,7 +17,7 @@ interface DonationSectionProps {
 }
 
 export const DonationSection: React.FC<DonationSectionProps> = ({
-  requests, selectedRequest, setSelectedRequest, units, setUnits,
+  requests, selectedRequest, setSelectedRequest, units, setUnits, requestPhoto, onPickPhoto,
   handleDonate, handleApproveRequest, handleRejectRequest, onOpenPreferences
 }) => {
   return (
@@ -73,6 +75,36 @@ export const DonationSection: React.FC<DonationSectionProps> = ({
            <Text style={styles.actionLabel}>
              Donate to {selectedRequest.isInstitutional ? selectedRequest.orphanageId?.name : selectedRequest.orphanId?.name}
            </Text>
+           
+           {selectedRequest.isUrgent && (
+             <View style={{ marginBottom: 15 }}>
+                <Text style={{ fontSize: 12, fontWeight: '700', color: '#ef4444', marginBottom: 8 }}>PHOTO REQUIRED FOR URGENT NEED:</Text>
+                <TouchableOpacity 
+                  style={{ 
+                    height: 120, 
+                    backgroundColor: '#fef2f2', 
+                    borderRadius: 14, 
+                    borderStyle: 'dashed', 
+                    borderWidth: 1, 
+                    borderColor: '#fecaca',
+                    overflow: 'hidden',
+                    justifyContent: 'center',
+                    alignItems: 'center'
+                  }}
+                  onPress={onPickPhoto}
+                >
+                  {requestPhoto ? (
+                    <Image source={{ uri: requestPhoto }} style={{ width: '100%', height: '100%' }} />
+                  ) : (
+                    <View style={{ alignItems: 'center', gap: 5 }}>
+                      <Ionicons name="camera" size={24} color="#ef4444" />
+                      <Text style={{ fontSize: 11, color: '#ef4444', fontWeight: '600' }}>Upload Item Photo</Text>
+                    </View>
+                  )}
+                </TouchableOpacity>
+             </View>
+           )}
+
            <View style={styles.inputRow}>
               <View style={styles.inputBox}>
                 <TextInput 

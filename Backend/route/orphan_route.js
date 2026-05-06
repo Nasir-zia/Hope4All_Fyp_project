@@ -3,7 +3,7 @@ import multer from "multer";
 import pkg from "multer-storage-cloudinary";
 const CloudinaryStorage = pkg; // v2 style, no destructuring
 import cloudinary from "../Files/cloudinary.js";
-import { registerOrphan, getOrphanProfile, updateOrphanProfile, confirmDonationReceipt } from "../controllers/orphanController.js";
+import { registerOrphan, getOrphanProfile, updateOrphanProfile, confirmDonationReceipt, reportDonationIssue } from "../controllers/orphanController.js";
 
 const router = express.Router();
 
@@ -43,5 +43,8 @@ router.put(
 
 // Route to confirm donation receipt
 router.put("/donations/:donationId/confirm", confirmDonationReceipt);
+
+// Route to report donation issue
+router.put("/donations/:donationId/report", reportDonationIssue);
 
 export default router;

@@ -64,11 +64,13 @@ export const useDonorDashboard = () => {
   // Donation Form State
   const [selectedRequest, setSelectedRequest] = useState<any>(null);
   const [units, setUnits] = useState('');
+  const [requestPhoto, setRequestPhoto] = useState<string | null>(null);
 
   // Manual Donation State
   const [manualType, setManualType] = useState('Books');
   const [manualUnits, setManualUnits] = useState('');
   const [manualDesc, setManualDesc] = useState('');
+  const [manualPhoto, setManualPhoto] = useState<string | null>(null);
 
   // Course Form State
   const [showCourseModal, setShowCourseModal] = useState(false);
@@ -158,14 +160,49 @@ export const useDonorDashboard = () => {
       Alert.alert("Error", "Please select a request and enter units.");
       return;
     }
+
+    const unitsNum = Number(units);
+    if (isNaN(unitsNum) || unitsNum <= 0) {
+      Alert.alert("Error", "Please enter a valid quantity.");
+      return;
+    }
+
+    if (selectedRequest.isUrgent && !requestPhoto) {
+      Alert.alert("Photo Required", "Urgent needs require a photo of the item being sent.");
+      return;
+    }
+
     setSaving(true);
+    console.log("Attempting Urgent Donation with data:", {
+      requestId: selectedRequest._id,
+      units: unitsNum,
+      isUrgent: selectedRequest.isUrgent,
+      hasPhoto: !!requestPhoto
+    });
     try {
-      await makeDonation({
+      const res = await makeDonation({
         donorId: donorProfile._id,
         requestId: selectedRequest._id,
-        units: Number(units),
-        recipientName: selectedRequest.orphanId?.name || 'Child'
-      });
+        units: unitsNum,
+        recipientName: selectedRequest.orphanId?.name || (selectedRequest.isInstitutional ? selectedRequest.orphanageId?.name : 'Child')
+      }, user?.token);
+
+      const donationId = res.donation?._id;
+
+      if (requestPhoto && donationId) {
+        try {
+          const formData = new FormData();
+          formData.append('photo', {
+            uri: requestPhoto,
+            name: `urgent_don_${donationId}.jpg`,
+            type: 'image/jpeg',
+          } as any);
+          await uploadDonationPhotoApi(donationId, formData, user!.token);
+        } catch (uploadErr) {
+          console.error("Photo upload failed, but donation was created:", uploadErr);
+        }
+      }
+
       Alert.alert(
         "Donation Confirmed",
         "Thank you! Please send your donated items to our main office:\n\n Address: Faisalabad D Ground, Office #12\n\nPlease mention your Donation ID on the package.",
@@ -173,6 +210,7 @@ export const useDonorDashboard = () => {
       );
       setUnits('');
       setSelectedRequest(null);
+      setRequestPhoto(null);
       loadDashboardData(donorProfile._id);
     } catch (err: any) {
       Alert.alert("Error", err.message || "Could not process donation");
@@ -278,24 +316,70 @@ export const useDonorDashboard = () => {
     }
   };
 
+  const handlePickRequestPhoto = async () => {
+    try {
+      const result = await ImagePicker.launchImageLibraryAsync({
+        mediaTypes: ['images'],
+        allowsEditing: true,
+        quality: 0.7,
+      });
+      if (!result.canceled) setRequestPhoto(result.assets[0].uri);
+    } catch (err) {
+      Alert.alert("Error", "Could not pick image");
+    }
+  };
+
+  const handlePickDonationPhoto = async () => {
+    try {
+      const result = await ImagePicker.launchImageLibraryAsync({
+        mediaTypes: ['images'],
+        allowsEditing: true,
+        quality: 0.7,
+      });
+      if (!result.canceled) setManualPhoto(result.assets[0].uri);
+    } catch (err) {
+      Alert.alert("Error", "Could not pick image");
+    }
+  };
+
   const handleManualDonation = async () => {
     if (!manualUnits || !manualType) {
       Alert.alert("Error", "Please enter units and type.");
       return;
     }
+
+    if (manualType.toLowerCase().includes('stationary') && !manualPhoto) {
+      Alert.alert("Photo Required", "Please upload a photo of the stationery item.");
+      return;
+    }
+
     setSaving(true);
     try {
-      await makeDonation({
+      const res = await makeDonation({
         donorId: donorProfile._id,
         units: Number(manualUnits),
         type: manualType,
         description: manualDesc,
         unitType: manualType === 'Cash' ? 'PKR' : 'Units'
-      });
+      }, user?.token);
+
+      const donationId = res.donation?._id;
+
+      if (manualPhoto && donationId) {
+        const formData = new FormData();
+        formData.append('photo', {
+          uri: manualPhoto,
+          name: `manual_don_${donationId}.jpg`,
+          type: 'image/jpeg',
+        } as any);
+        await uploadDonationPhotoApi(donationId, formData, user!.token);
+      }
+
       Alert.alert("Success", "Donation recorded successfully!");
       setShowAddDonationModal(false);
       setManualUnits('');
       setManualDesc('');
+      setManualPhoto(null);
       loadDashboardData(donorProfile._id);
     } catch (err: any) {
       Alert.alert("Error", err.message);
@@ -432,6 +516,6 @@ export const useDonorDashboard = () => {
     causeOptions, toggleCause, toggleTempCause,
     handleRegister, handleDonate, handlePledgeFee, handleApproveRequest, handleRejectRequest,
     handleCourseSubmit, handleOpenDoc, handleUpdatePreferences, handleManualDonation, handleDeleteDonation,
-    handleOpenPreferenceModal, handleMessage, handleUploadDonationPhoto
+    handleOpenPreferenceModal, handleMessage, handleUploadDonationPhoto, handlePickDonationPhoto, manualPhoto, handlePickRequestPhoto, requestPhoto
   };
 };

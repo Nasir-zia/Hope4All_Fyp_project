@@ -39,3 +39,11 @@ export const fetchIncomingDonations = async (orphanId: string) => {
   const data = await apiClient(`/donors/aid/${orphanId}`);
   return data.donations || [];
 };
+
+export const reportDonationIssueApi = async (donationId: string, reason: string, token: string) => {
+  return apiClient(`/orphans/donations/${donationId}/report`, {
+    method: 'PUT',
+    token,
+    body: { reason },
+  });
+};

@@ -43,7 +43,7 @@ export default function DonorDashboard() {
     tempUrgentOnly, setTempUrgentOnly,
     handleRegister, handleDonate, handlePledgeFee,
     handleCourseSubmit, handleOpenDoc, handleUpdatePreferences, handleManualDonation, handleDeleteDonation,
-    handleOpenPreferenceModal, handleMessage, handleUploadDonationPhoto,
+    handleOpenPreferenceModal, handleMessage, handleUploadDonationPhoto, handlePickDonationPhoto, manualPhoto, handlePickRequestPhoto, requestPhoto,
     handleViewOrphanProfile, orphanProgress, loadingOrphanData,
     orphanages
   } = useDonorDashboard();
@@ -98,6 +98,8 @@ export default function DonorDashboard() {
             setSelectedRequest={setSelectedRequest}
             units={units}
             setUnits={setUnits}
+            requestPhoto={requestPhoto}
+            onPickPhoto={handlePickRequestPhoto}
             handleDonate={handleDonate}
             handleApproveRequest={() => { }}
             handleRejectRequest={() => { }}
@@ -176,6 +178,8 @@ export default function DonorDashboard() {
           manualType={manualType} setManualType={setManualType}
           manualUnits={manualUnits} setManualUnits={setManualUnits}
           manualDesc={manualDesc} setManualDesc={setManualDesc}
+          manualPhoto={manualPhoto}
+          onPickPhoto={handlePickDonationPhoto}
           onSubmit={handleManualDonation}
         />
 

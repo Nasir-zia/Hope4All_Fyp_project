@@ -42,10 +42,14 @@ const donationSchema = new mongoose.Schema({
     type: mongoose.Schema.Types.ObjectId,
     ref: 'Orphan'
   },
+  orphanageId: {
+    type: mongoose.Schema.Types.ObjectId,
+    ref: 'OrphanAge'
+  },
 
   status: {
     type: String,
-    enum: ['pending-delivery', 'under-review', 'sent', 'completed'],
+    enum: ['pending-delivery', 'under-review', 'sent', 'received', 'not-received', 'completed'],
     default: 'pending-delivery'
   },
   

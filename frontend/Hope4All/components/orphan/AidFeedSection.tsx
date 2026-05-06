@@ -1,14 +1,15 @@
 import React from 'react';
-import { View, Text, StyleSheet, ScrollView, TouchableOpacity } from 'react-native';
+import { View, Text, StyleSheet, ScrollView, TouchableOpacity, Image } from 'react-native';
 import { Ionicons } from '@expo/vector-icons';
 
 interface AidFeedSectionProps {
   aidItems: any[];
   onThanks: (donor: any) => void;
   onConfirm: (donationId: string) => void;
+  onReport: (donationId: string) => void;
 }
 
-export const AidFeedSection: React.FC<AidFeedSectionProps> = ({ aidItems, onThanks, onConfirm }) => {
+export const AidFeedSection: React.FC<AidFeedSectionProps> = ({ aidItems, onThanks, onConfirm, onReport }) => {
   return (
     <View style={styles.container}>
       <View style={styles.sectionHeader}>
@@ -49,6 +50,7 @@ export const AidFeedSection: React.FC<AidFeedSectionProps> = ({ aidItems, onThan
                   <View style={[styles.statusBadge, { 
                     backgroundColor: 
                       aid.status === 'completed' ? '#ecfdf5' : 
+                      aid.status === 'received' ? '#ecfdf5' :
                       aid.status === 'sent' ? '#f0f9ff' : 
                       aid.status === 'under-review' ? '#fffbeb' : 
                       '#fef2f2' // pending-delivery
@@ -56,6 +58,7 @@ export const AidFeedSection: React.FC<AidFeedSectionProps> = ({ aidItems, onThan
                     <Text style={[styles.statusText, { 
                       color: 
                         aid.status === 'completed' ? '#10b981' : 
+                        aid.status === 'received' ? '#10b981' :
                         aid.status === 'sent' ? '#0077cc' : 
                         aid.status === 'under-review' ? '#f59e0b' : 
                         '#ef4444' // pending-delivery
@@ -63,17 +66,37 @@ export const AidFeedSection: React.FC<AidFeedSectionProps> = ({ aidItems, onThan
                       {aid.status?.toUpperCase() || 'PENDING-DELIVERY'}
                     </Text>
                   </View>
+                  
+                  {aid.donationPhoto && (
+                    <View style={{ marginTop: 10 }}>
+                      <Text style={{ fontSize: 9, fontWeight: '700', color: '#64748b', marginBottom: 4 }}>DELIVERY PHOTO:</Text>
+                      <Image 
+                        source={{ uri: aid.donationPhoto }} 
+                        style={{ width: '100%', height: 100, borderRadius: 12, backgroundColor: '#f1f5f9' }} 
+                        resizeMode="cover"
+                      />
+                    </View>
+                  )}
                </View>
                
                <View style={styles.btnRow}>
-                {aid.status === 'sent' && (
-                  <TouchableOpacity 
-                    style={styles.confirmBtn}
-                    onPress={() => onConfirm(aid._id)}
-                  >
-                    <Ionicons name="checkmark-circle-outline" size={14} color="#fff" />
-                    <Text style={styles.confirmBtnText}>Received</Text>
-                  </TouchableOpacity>
+                {(aid.status === 'sent' || aid.status === 'under-review') && (
+                  <View style={{ gap: 8, flex: 1 }}>
+                    <TouchableOpacity 
+                      style={styles.confirmBtn}
+                      onPress={() => onConfirm(aid._id)}
+                    >
+                      <Ionicons name="checkmark-circle-outline" size={14} color="#fff" />
+                      <Text style={styles.confirmBtnText}>Received</Text>
+                    </TouchableOpacity>
+                    <TouchableOpacity 
+                      style={[styles.confirmBtn, { backgroundColor: '#ef4444' }]}
+                      onPress={() => onReport(aid._id)}
+                    >
+                      <Ionicons name="close-circle-outline" size={14} color="#fff" />
+                      <Text style={styles.confirmBtnText}>Not Received</Text>
+                    </TouchableOpacity>
+                  </View>
                 )}
                 <TouchableOpacity 
                   style={[styles.thanksBtn, { flex: 1 }]}

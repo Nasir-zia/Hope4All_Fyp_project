@@ -7,9 +7,10 @@ interface AidHistorySectionProps {
   aidHistory: any[];
   onThanks: (donor: any) => void;
   onConfirm: (id: string) => void;
+  onReport: (id: string) => void;
 }
 
-export const AidHistorySection: React.FC<AidHistorySectionProps> = ({ aidHistory, onThanks, onConfirm }) => {
+export const AidHistorySection: React.FC<AidHistorySectionProps> = ({ aidHistory, onThanks, onConfirm, onReport }) => {
   // Show both en-route items and history items here if desired, 
   // or keep it for all if that's what user prefers.
   const history = aidHistory; // Showing everything for now as per "Show here" request
@@ -35,6 +36,7 @@ export const AidHistorySection: React.FC<AidHistorySectionProps> = ({ aidHistory
             aid={aid} 
             onThanks={() => onThanks(aid.donorId)} 
             onConfirm={onConfirm}
+            onReport={onReport}
           />
         ))}
       </ScrollView>

@@ -1,5 +1,5 @@
 import React from 'react';
-import { View, Text, StyleSheet, Modal, ScrollView, TouchableOpacity, TextInput } from 'react-native';
+import { View, Text, StyleSheet, Modal, ScrollView, TouchableOpacity, TextInput, Image } from 'react-native';
 import { Ionicons } from '@expo/vector-icons';
 
 interface AddDonationModalProps {
@@ -11,11 +11,13 @@ interface AddDonationModalProps {
   setManualUnits: (v: string) => void;
   manualDesc: string;
   setManualDesc: (v: string) => void;
+  manualPhoto: string | null;
+  onPickPhoto: () => void;
   onSubmit: () => void;
 }
 
 export const AddDonationModal: React.FC<AddDonationModalProps> = ({
-  visible, onClose, manualType, setManualType, manualUnits, setManualUnits, manualDesc, setManualDesc, onSubmit
+  visible, onClose, manualType, setManualType, manualUnits, setManualUnits, manualDesc, setManualDesc, manualPhoto, onPickPhoto, onSubmit
 }) => {
   return (
     <Modal visible={visible} transparent={true} animationType="slide" onRequestClose={onClose}>
@@ -52,6 +54,20 @@ export const AddDonationModal: React.FC<AddDonationModalProps> = ({
               />
             </View>
 
+            <View style={styles.inputGroup}>
+              <Text style={styles.label}>Item Photo (Required for Stationery)</Text>
+              <TouchableOpacity style={styles.photoPicker} onPress={onPickPhoto}>
+                {manualPhoto ? (
+                  <Image source={{ uri: manualPhoto }} style={styles.photoPreview} />
+                ) : (
+                  <View style={styles.photoPlaceholder}>
+                    <Ionicons name="camera-outline" size={32} color="#94a3b8" />
+                    <Text style={styles.photoPlaceholderText}>Capture/Upload Item Image</Text>
+                  </View>
+                )}
+              </TouchableOpacity>
+            </View>
+
             <TouchableOpacity style={styles.submitBtn} onPress={onSubmit}>
               <Text style={styles.submitBtnText}>Save Record</Text>
             </TouchableOpacity>
@@ -75,4 +91,8 @@ const styles = StyleSheet.create({
   input: { backgroundColor: '#f8fafc', borderRadius: 16, padding: 16, borderWidth: 1, borderColor: '#e2e8f0', color: '#1e293b', fontSize: 15 },
   submitBtn: { backgroundColor: '#0077cc', padding: 18, borderRadius: 20, alignItems: 'center', marginTop: 10 },
   submitBtnText: { color: '#fff', fontSize: 16, fontWeight: '800' },
+  photoPicker: { height: 180, backgroundColor: '#f8fafc', borderRadius: 24, borderStyle: 'dashed', borderWidth: 2, borderColor: '#e2e8f0', overflow: 'hidden' },
+  photoPreview: { width: '100%', height: '100%' },
+  photoPlaceholder: { flex: 1, justifyContent: 'center', alignItems: 'center', gap: 10 },
+  photoPlaceholderText: { fontSize: 13, color: '#94a3b8', fontWeight: '600' },
 });
