@@ -19,7 +19,8 @@ import {
   getAllDonations,
   suspendUser,
   unsuspendUser,
-  forwardDonation
+  forwardDonation,
+  deleteUser
 } from "../controllers/adminController.js";
 
 const router = express.Router();
@@ -80,6 +81,9 @@ router.put("/users/:userId/unsuspend", unsuspendUser);
 
 // Forward donation to orphan
 router.put("/donations/:donationId/forward", forwardDonation);
+
+// Delete user
+router.delete("/users/:userId", deleteUser);
 
 // Test endpoint
 router.get("/test", testEndpoint);

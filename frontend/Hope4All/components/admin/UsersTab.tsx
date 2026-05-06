@@ -1,14 +1,20 @@
 import React from 'react';
-import { View, Text, TouchableOpacity, Image, Linking, Alert, Platform } from 'react-native';
+import { View, Text, TouchableOpacity, Image, Linking, Alert, Platform, TextInput } from 'react-native';
 import { Ionicons } from '@expo/vector-icons';
 import { adminStyles as styles } from './AdminStyles';
 
 interface UsersTabProps {
   users: any[];
-  onUpdateStatus: (id: string, currentStatus: string) => void;
+  onUpdateStatus: (id: string, currentStatus: string, reason?: string) => void;
+  onDelete: (id: string) => void;
 }
 
-export const UsersTab: React.FC<UsersTabProps> = ({ users, onUpdateStatus }) => {
+export const UsersTab: React.FC<UsersTabProps> = ({ users, onUpdateStatus, onDelete }) => {
+  const [reasons, setReasons] = React.useState<{[key: string]: string}>({});
+
+  const handleReasonChange = (id: string, text: string) => {
+    setReasons(prev => ({ ...prev, [id]: text }));
+  };
   return (
     <View style={styles.tabContent}>
       <View style={styles.rowBetween}>
@@ -43,15 +49,59 @@ export const UsersTab: React.FC<UsersTabProps> = ({ users, onUpdateStatus }) => 
                   </View>
                 </View>
               </View>
-              <TouchableOpacity
-                style={[styles.userActionBtn, u.status === 'suspended' && { backgroundColor: '#fee2e2' }]}
-                onPress={() => onUpdateStatus(u._id, u.status)}
-              >
-                <Text style={[styles.userActionText, u.status === 'suspended' && { color: '#dc2626' }]}>
-                  {u.status === 'verified' ? 'Suspend' : 'Verify'}
-                </Text>
-              </TouchableOpacity>
+              <View style={{ flexDirection: 'row', gap: 8 }}>
+                {u.status === 'pending' ? (
+                  <>
+                    <TouchableOpacity
+                      style={[styles.userActionBtn, { backgroundColor: '#f0fdf4', borderColor: '#bbf7d0', borderWidth: 1 }]}
+                      onPress={() => onUpdateStatus(u._id, 'verified')}
+                    >
+                      <Text style={[styles.userActionText, { color: '#16a34a' }]}>Approve</Text>
+                    </TouchableOpacity>
+                    <TouchableOpacity
+                      style={[styles.userActionBtn, { backgroundColor: '#fef2f2', borderColor: '#fecaca', borderWidth: 1 }]}
+                      onPress={() => onUpdateStatus(u._id, 'rejected')}
+                    >
+                      <Text style={[styles.userActionText, { color: '#dc2626' }]}>Reject</Text>
+                    </TouchableOpacity>
+                  </>
+                ) : (
+                  <TouchableOpacity
+                    style={[styles.userActionBtn, u.status === 'suspended' && { backgroundColor: '#fee2e2' }]}
+                    onPress={() => onUpdateStatus(u._id, u.status === 'verified' ? 'suspended' : 'verified', reasons[u._id])}
+                  >
+                    <Text style={[styles.userActionText, u.status === 'suspended' && { color: '#dc2626' }]}>
+                      {u.status === 'verified' ? 'Suspend' : 'Verify'}
+                    </Text>
+                  </TouchableOpacity>
+                )}
+                <TouchableOpacity
+                  style={[styles.userActionBtn, { backgroundColor: '#f8fafc', borderColor: '#e2e8f0', borderWidth: 1, paddingHorizontal: 10 }]}
+                  onPress={() => onDelete(u._id)}
+                >
+                  <Ionicons name="trash-outline" size={18} color="#ef4444" />
+                </TouchableOpacity>
+              </View>
             </View>
+
+            {u.status === 'verified' && (
+              <View style={{ marginTop: 10, paddingHorizontal: 5 }}>
+                <TextInput
+                  style={{ 
+                    backgroundColor: '#f8fafc', 
+                    borderWidth: 1, 
+                    borderColor: '#e2e8f0', 
+                    borderRadius: 10, 
+                    padding: 8, 
+                    fontSize: 12,
+                    color: '#475569'
+                  }}
+                  placeholder="Enter reason for suspension..."
+                  value={reasons[u._id] || ''}
+                  onChangeText={(text) => handleReasonChange(u._id, text)}
+                />
+              </View>
+            )}
 
             <View style={styles.userDetails}>
               <View style={styles.detailRow}>
@@ -77,9 +127,9 @@ export const UsersTab: React.FC<UsersTabProps> = ({ users, onUpdateStatus }) => 
                   {u.bio && (
                     <Text style={{ fontSize: 12, color: '#64748b', fontStyle: 'italic', marginBottom: 12 }}>"{u.bio}"</Text>
                   )}
-                  {u.supportingDocs && (
+                  {u.supportingDocs ? (
                     <View style={{ gap: 8 }}>
-                      {u.supportingDocs.match(/\.(jpg|jpeg|png|webp|gif)$|cloudinary/i) && !u.supportingDocs.toLowerCase().endsWith('.pdf') ? (
+                      {u.supportingDocs.match(/\\.(jpg|jpeg|png|webp|gif)$|cloudinary/i) && !u.supportingDocs.toLowerCase().endsWith('.pdf') ? (
                         <Image 
                           source={{ uri: u.supportingDocs }} 
                           style={{ width: '100%', height: 120, borderRadius: 12, backgroundColor: '#f1f5f9', borderWidth: 1, borderColor: '#e2e8f0' }} 
@@ -149,6 +199,40 @@ export const UsersTab: React.FC<UsersTabProps> = ({ users, onUpdateStatus }) => 
                           <Text style={{ fontSize: 13, color: '#16a34a', fontWeight: '700' }}>Download</Text>
                         </TouchableOpacity>
                       </View>
+                    </View>
+                  ) : (
+                    <Text style={{ fontSize: 12, color: '#94a3b8' }}>No supporting documents uploaded.</Text>
+                  )}
+                </View>
+              )}
+
+              {u.role === 'orphanage' && u.documents && (
+                <View style={{ marginTop: 12, borderTopWidth: 1, borderTopColor: '#f1f5f9', paddingTop: 12 }}>
+                  <Text style={{ fontSize: 13, fontWeight: '700', color: '#1e293b', marginBottom: 8 }}>Orphanage Documents</Text>
+                  
+                  {u.documents.registrationCert && (
+                    <View style={{ marginBottom: 12 }}>
+                      <Text style={{ fontSize: 12, color: '#64748b', marginBottom: 4 }}>Registration Certificate:</Text>
+                      <TouchableOpacity 
+                        style={{ flexDirection: 'row', alignItems: 'center', gap: 8, backgroundColor: '#f8fafc', padding: 10, borderRadius: 10, borderWidth: 1, borderColor: '#e2e8f0' }}
+                        onPress={() => Linking.openURL(u.documents.registrationCert)}
+                      >
+                        <Ionicons name="document-attach" size={20} color="#0077cc" />
+                        <Text style={{ color: '#0077cc', fontSize: 13, fontWeight: '600' }}>View Certificate</Text>
+                      </TouchableOpacity>
+                    </View>
+                  )}
+
+                  {u.documents.buildingImages && u.documents.buildingImages.length > 0 && (
+                    <View>
+                      <Text style={{ fontSize: 12, color: '#64748b', marginBottom: 4 }}>Building Images:</Text>
+                      <ScrollView horizontal showsHorizontalScrollIndicator={false} contentContainerStyle={{ gap: 8 }}>
+                        {u.documents.buildingImages.map((img: string, idx: number) => (
+                          <TouchableOpacity key={idx} onPress={() => Linking.openURL(img)}>
+                            <Image source={{ uri: img }} style={{ width: 100, height: 70, borderRadius: 8, backgroundColor: '#f1f5f9' }} />
+                          </TouchableOpacity>
+                        ))}
+                      </ScrollView>
                     </View>
                   )}
                 </View>

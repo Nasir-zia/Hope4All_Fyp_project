@@ -1,5 +1,5 @@
 import React from 'react';
-import { View, Text, StyleSheet, ScrollView, ActivityIndicator, Alert, TouchableOpacity, TextInput } from 'react-native';
+import { View, Text, StyleSheet, ScrollView, ActivityIndicator, Alert, TouchableOpacity, TextInput, Image, Linking } from 'react-native';
 import { Ionicons } from '@expo/vector-icons';
 import { useOrphanageDashboard } from '@/hooks/useOrphanageDashboard';
 import { SuspendedScreen } from '@/components/SuspendedScreen';
@@ -165,7 +165,44 @@ export default function OrphanageDashboard() {
           onAdd={() => setShowReqModal(true)} 
         />
 
-        <Text style={styles.sectionTitle}>Upcoming Features</Text>
+        {/* Profile Documents Section */}
+        {orphanageProfile?.documents && (
+          <View style={{ marginTop: 25, backgroundColor: '#fff', padding: 20, borderRadius: 24, elevation: 2 }}>
+            <Text style={styles.sectionTitle}>Registration Documents</Text>
+            
+            {orphanageProfile.documents.registrationCert && (
+              <View style={{ marginBottom: 15 }}>
+                <Text style={styles.label}>Certificate:</Text>
+                <TouchableOpacity 
+                  style={styles.filePicker}
+                  onPress={() => Alert.alert("Document", "Opening document link...") && Linking.openURL(orphanageProfile.documents.registrationCert)}
+                >
+                  <Ionicons name="document-text" size={20} color="#0077cc" />
+                  <Text style={{ color: '#0077cc', fontWeight: '600' }}>View Certificate</Text>
+                </TouchableOpacity>
+              </View>
+            )}
+
+            {orphanageProfile.documents.buildingImages && orphanageProfile.documents.buildingImages.length > 0 && (
+              <View>
+                <Text style={styles.label}>Building Images:</Text>
+                <ScrollView horizontal showsHorizontalScrollIndicator={false} contentContainerStyle={{ gap: 10, paddingBottom: 5 }}>
+                  {orphanageProfile.documents.buildingImages.map((img: string, idx: number) => (
+                    <TouchableOpacity key={idx} onPress={() => Linking.openURL(img)}>
+                      <Image 
+                        source={{ uri: img }} 
+                        style={{ width: 120, height: 90, borderRadius: 12, backgroundColor: '#f1f5f9' }} 
+                        resizeMode="cover"
+                      />
+                    </TouchableOpacity>
+                  ))}
+                </ScrollView>
+              </View>
+            )}
+          </View>
+        )}
+
+        <Text style={[styles.sectionTitle, { marginTop: 25 }]}>Upcoming Features</Text>
         <View style={styles.placeholderCard}>
           <Ionicons name="construct-outline" size={40} color="#64748b" />
           <Text style={styles.placeholderText}>Orphan Management coming soon!</Text>

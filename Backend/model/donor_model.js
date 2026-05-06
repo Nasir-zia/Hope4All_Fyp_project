@@ -16,7 +16,7 @@ const donorSchema = new mongoose.Schema({
   city: { type: String,
      default: '' },
 
-  status: { type: String, enum: ['pending', 'approved', 'rejected'], default: 'approved' },
+  status: { type: String, enum: ['pending', 'approved', 'rejected', 'suspended'], default: 'approved' },
 
   totalDonated: { type: Number,
      default: 0 },

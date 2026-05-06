@@ -87,3 +87,10 @@ export const forwardDonationApi = async (donationId: string, token: string) => {
     token,
   });
 };
+
+export const deleteUserApi = async (userId: string, token: string) => {
+  return apiClient(`/admin/users/${userId}`, {
+    method: 'DELETE',
+    token,
+  });
+};

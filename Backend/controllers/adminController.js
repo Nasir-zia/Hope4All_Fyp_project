@@ -10,10 +10,10 @@ import Notification from '../model/notification_model.js';
 export const getDashboardStats = async (req, res) => {
   try {
     const totalUsers = await User.countDocuments();
-    const activeDonors = await Donor.countDocuments();
-    const totalOrphans = await Orphan.countDocuments();
-    const totalOrphanages = await OrphanAge.countDocuments();
-    const activeVolunteers = await User.countDocuments({ role: 'volunteer' });
+    const totalDonors = await User.countDocuments({ role: 'donor' });
+    const totalOrphans = await User.countDocuments({ role: 'orphan' });
+    const totalOrphanages = await User.countDocuments({ role: 'orphanage' });
+    const totalVolunteers = await User.countDocuments({ role: 'volunteer' });
 
     const pendingRequests = await Request.countDocuments({ status: 'pending' });
     const totalDonations = await Donation.aggregate([
@@ -29,18 +29,27 @@ export const getDashboardStats = async (req, res) => {
       .sort({ createdAt: -1 })
       .limit(5);
 
+    const recentOrphans = await User.find({ role: 'orphan' }).sort({ createdAt: -1 }).limit(5);
+    const recentDonors = await User.find({ role: 'donor' }).sort({ createdAt: -1 }).limit(5);
+    const recentOrphanages = await User.find({ role: 'orphanage' }).sort({ createdAt: -1 }).limit(5);
+    const recentVolunteers = await User.find({ role: 'volunteer' }).sort({ createdAt: -1 }).limit(5);
+
     res.status(200).json({
       stats: {
         totalUsers,
-        activeDonors,
+        totalDonors,
         totalOrphans,
         totalOrphanages,
-        activeVolunteers,
+        totalVolunteers,
         pendingRequests,
         totalDonations: totalDonations[0]?.total || 0,
         lowStockItems,
       },
       recentDonations,
+      recentOrphans,
+      recentDonors,
+      recentOrphanages,
+      recentVolunteers
     });
   } catch (error) {
     res.status(500).json({ message: 'Error fetching dashboard stats', error: error.message });
@@ -86,7 +95,8 @@ export const getUsers = async (req, res) => {
             location: orphanage.location,
             phone: orphanage.contactInfo?.phone,
             city: orphanage.location?.city,
-            profilePic: orphanage.profilePic,
+            // Use first building image as profile pic if available
+            profilePic: orphanage.documents?.buildingImages?.[0] || null,
             documents: orphanage.documents,
           };
         }
@@ -391,6 +401,14 @@ export const suspendUser = async (req, res) => {
       { new: true }
     );
     if (!user) return res.status(404).json({ message: 'User not found' });
+
+    // Global suspension: update status in related models
+    if (user.role === 'donor') {
+      await Donor.findOneAndUpdate({ userId: user._id }, { status: 'suspended' });
+    } else if (user.role === 'orphanage') {
+      await OrphanAge.findOneAndUpdate({ userId: user._id }, { status: 'suspended' });
+    }
+
     res.status(200).json({ message: 'User suspended successfully', user });
   } catch (error) {
     res.status(500).json({ message: 'Error suspending user', error: error.message });
@@ -406,6 +424,14 @@ export const unsuspendUser = async (req, res) => {
       { new: true }
     );
     if (!user) return res.status(404).json({ message: 'User not found' });
+
+    // Restore status in related models
+    if (user.role === 'donor') {
+      await Donor.findOneAndUpdate({ userId: user._id }, { status: 'approved' });
+    } else if (user.role === 'orphanage') {
+      await OrphanAge.findOneAndUpdate({ userId: user._id }, { status: 'approved' });
+    }
+
     res.status(200).json({ message: 'User unsuspended successfully', user });
   } catch (error) {
     res.status(500).json({ message: 'Error unsuspending user', error: error.message });
@@ -438,5 +464,27 @@ export const forwardDonation = async (req, res) => {
     res.status(200).json({ message: 'Donation forwarded to orphan', donation });
   } catch (error) {
     res.status(500).json({ message: 'Error forwarding donation', error: error.message });
+  }
+};
+
+export const deleteUser = async (req, res) => {
+  try {
+    const { userId } = req.params;
+    const user = await User.findById(userId);
+    if (!user) return res.status(404).json({ message: 'User not found' });
+
+    // Delete associated profile data
+    if (user.role === 'donor') {
+      await Donor.findOneAndDelete({ userId: user._id });
+    } else if (user.role === 'orphan') {
+      await Orphan.findOneAndDelete({ userId: user._id });
+    } else if (user.role === 'orphanage') {
+      await OrphanAge.findOneAndDelete({ userId: user._id });
+    }
+
+    await User.findByIdAndDelete(userId);
+    res.status(200).json({ message: 'User and associated profile deleted successfully' });
+  } catch (error) {
+    res.status(500).json({ message: 'Error deleting user', error: error.message });
   }
 };

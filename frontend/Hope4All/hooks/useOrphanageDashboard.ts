@@ -12,7 +12,7 @@ import {
 } from '../constants/api';
 
 export const useOrphanageDashboard = () => {
-  const { user, logout } = useAuth();
+  const { user, logout, updateUser } = useAuth();
   const [orphanageProfile, setOrphanageProfile] = useState<any>(null);
   const [requirements, setRequirements] = useState<any[]>([]);
   const [loading, setLoading] = useState(true);
@@ -127,7 +127,11 @@ export const useOrphanageDashboard = () => {
       }
 
       await registerOrphanageApi(formData);
-      Alert.alert('Success', 'Orphanage registered successfully! Please wait for admin approval.');
+      
+      // Update local auth status to pending
+      await updateUser({ status: 'pending' });
+
+      Alert.alert('Success', 'Orphanage Registered Successfully! Please wait for admin approval.');
       loadProfile();
     } catch (err: any) {
       console.error('Registration error:', err);

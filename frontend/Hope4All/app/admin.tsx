@@ -6,7 +6,8 @@ import {
   Alert,
   ActivityIndicator,
   RefreshControl,
-  TouchableOpacity
+  TouchableOpacity,
+  Platform
 } from 'react-native';
 import { Ionicons } from '@expo/vector-icons';
 import { useAuth } from '@/hooks/useAuth';
@@ -19,6 +20,9 @@ import {
   createTaskApi,
   fetchAllUsers,
   updateUserStatusApi,
+  suspendUserApi,
+  unsuspendUserApi,
+  deleteUserApi,
   fetchAllDonations,
   fetchPendingCourses,
   updateCourseStatusApi,
@@ -85,7 +89,7 @@ export default function AdminDashboard() {
       const [statsD, reqsD, volD, usersD, dontD, coursesD, orphanagesD, tasksD] = await Promise.all([
         fetchAdminStats(), fetchAllRequests(), fetchAllVolunteers(), fetchAllUsers(), fetchAllDonations(), fetchPendingCourses(), fetchOrphanageOptions(), fetchAllTasks()
       ]);
-      setStats(statsD); 
+      setStats(statsD.stats); 
       setRequests(reqsD); 
       setVolunteers(volD); 
       setUsersList(usersD); 
@@ -93,6 +97,11 @@ export default function AdminDashboard() {
       setPendingCourses(coursesD); 
       setOrphanagesList(orphanagesD);
       setTasks(tasksD);
+      
+      // We can also store the recent lists if needed, but for now we'll update StatsTab to use them from the statsD object if we pass it correctly.
+      // Actually, let's keep setStats(statsD) and update StatsTab to handle the nesting, or better, pass everything.
+      // Let's go with setStats(statsD) and fix StatsTab.
+      setStats(statsD); 
     } catch (err) { console.error(err); } finally { setLoading(false); }
   };
 
@@ -115,9 +124,37 @@ export default function AdminDashboard() {
     } catch (err: any) { Alert.alert("Error", err.message); } finally { setSubmittingTask(false); }
   };
 
-  const handleUpdateUserStatus = async (id: string, status: string) => {
-    const next = status === 'verified' ? 'suspended' : 'verified';
-    try { await updateUserStatusApi(id, next, user?.token || ''); loadAllData(); } catch (err: any) { Alert.alert("Error", err.message); }
+  const handleUpdateUserStatus = async (id: string, targetStatus: string, reason?: string) => {
+    try { 
+      if (targetStatus === 'suspended') {
+        await suspendUserApi(id, reason || "Violation of terms", user?.token || '');
+      } else if (targetStatus === 'verified' && usersList.find(u => u._id === id)?.status === 'suspended') {
+        await unsuspendUserApi(id, user?.token || '');
+      } else {
+        await updateUserStatusApi(id, targetStatus, user?.token || ''); 
+      }
+      
+      Alert.alert("Success", `User status updated!`);
+      loadAllData(); 
+    } catch (err: any) { 
+      Alert.alert("Error", err.message); 
+    }
+  };
+
+  const handleDeleteUser = async (id: string) => {
+    const confirm = Platform.OS === 'web' 
+      ? window.confirm("Are you sure you want to PERMANENTLY delete this user?")
+      : true; // In mobile we'd use Alert.alert with buttons
+
+    if (!confirm) return;
+
+    try {
+      await deleteUserApi(id, user?.token || '');
+      Alert.alert("Deleted", "User has been removed from the system.");
+      loadAllData();
+    } catch (err: any) {
+      Alert.alert("Error", err.message);
+    }
   };
 
   const handleUpdateCourseStatus = async (id: string, s: string) => {
@@ -179,8 +216,8 @@ export default function AdminDashboard() {
         {activeTab === 'stats' && <StatsTab usersCount={usersList.length} donationsCount={donations.length} pendingRequestsCount={requests.filter(r => r.status === 'pending').length} volunteersCount={volunteers.length} stats={stats} />}
         {activeTab === 'requests' && <RequestsTab requests={requests} onApprove={handleApproveRequest} onReject={handleRejectRequest} />}
         {activeTab === 'donations' && <DonationsTab donations={donations} onForward={handleForwardDonation} />}
-        {activeTab === 'users' && <UsersTab users={usersList} onUpdateStatus={handleUpdateUserStatus} />}
-        {activeTab === 'orphanages' && <OrphanagesTab orphanages={orphanagesList} onUpdateStatus={handleUpdateUserStatus} />}
+        {activeTab === 'users' && <UsersTab users={usersList} onUpdateStatus={handleUpdateUserStatus} onDelete={handleDeleteUser} />}
+        {activeTab === 'orphanages' && <OrphanagesTab orphanages={orphanagesList} onUpdateStatus={handleUpdateUserStatus} onDelete={handleDeleteUser} />}
         {activeTab === 'courses' && <CoursesTab pendingCourses={pendingCourses} onAddPress={() => setShowCourseModal(true)} onUpdateStatus={handleUpdateCourseStatus} />}
         {activeTab === 'tasks' && <TasksTab tasks={tasks} onAssignNew={() => setShowTaskModal(true)} onComplete={handleCompleteTask} />}
       </ScrollView>

@@ -1,5 +1,5 @@
 import React from 'react';
-import { View, Text } from 'react-native';
+import { View, Text, ScrollView } from 'react-native';
 import { Ionicons, FontAwesome5, MaterialIcons } from '@expo/vector-icons';
 import { adminStyles as styles } from './AdminStyles';
 
@@ -23,55 +23,34 @@ export const StatsTab: React.FC<StatsTabProps> = ({
       <View style={styles.statsGrid}>
         <View style={[styles.statCard, { backgroundColor: '#eff6ff' }]}>
           <View style={[styles.iconBox, { backgroundColor: '#dbeafe' }]}>
-            <Ionicons name="people" size={24} color="#2563eb" />
+            <Ionicons name="heart" size={24} color="#2563eb" />
           </View>
-          <Text style={styles.statVal}>{usersCount || stats?.totalUsers || 0}</Text>
-          <Text style={styles.statLab}>Total Users</Text>
+          <Text style={styles.statVal}>{stats?.stats?.totalDonors || 0}</Text>
+          <Text style={styles.statLab}>Donors</Text>
         </View>
         <View style={[styles.statCard, { backgroundColor: '#f0fdf4' }]}>
           <View style={[styles.iconBox, { backgroundColor: '#dcfce7' }]}>
-            <FontAwesome5 name="hand-holding-heart" size={20} color="#16a34a" />
+            <FontAwesome5 name="child" size={20} color="#16a34a" />
           </View>
-          <Text style={styles.statVal}>{donationsCount}</Text>
-          <Text style={styles.statLab}>Donations</Text>
+          <Text style={styles.statVal}>{stats?.stats?.totalOrphans || 0}</Text>
+          <Text style={styles.statLab}>Orphans</Text>
         </View>
         <View style={[styles.statCard, { backgroundColor: '#fffbeb' }]}>
           <View style={[styles.iconBox, { backgroundColor: '#fef3c7' }]}>
-            <Ionicons name="list" size={24} color="#d97706" />
+            <Ionicons name="business" size={24} color="#d97706" />
           </View>
-          <Text style={styles.statVal}>{pendingRequestsCount}</Text>
-          <Text style={styles.statLab}>Pending Reqs</Text>
+          <Text style={styles.statVal}>{stats?.stats?.totalOrphanages || 0}</Text>
+          <Text style={styles.statLab}>Orphanages</Text>
         </View>
         <View style={[styles.statCard, { backgroundColor: '#fef2f2' }]}>
           <View style={[styles.iconBox, { backgroundColor: '#fee2e2' }]}>
-            <MaterialIcons name="assignment" size={24} color="#dc2626" />
+            <MaterialIcons name="people" size={24} color="#dc2626" />
           </View>
-          <Text style={styles.statVal}>{stats?.activeVolunteers || volunteersCount || 0}</Text>
-          <Text style={styles.statLab}>Active Tasks</Text>
+          <Text style={styles.statVal}>{stats?.stats?.totalVolunteers || 0}</Text>
+          <Text style={styles.statLab}>Volunteers</Text>
         </View>
       </View>
 
-      <View style={styles.summarySection}>
-        <Text style={styles.sectionTitle}>System Overview</Text>
-        <View style={styles.infoCard}>
-          <View style={styles.infoRow}>
-            <View style={styles.infoItem}>
-              <Text style={styles.infoLabel}>Total Donors</Text>
-              <Text style={styles.infoVal}>{stats?.activeDonors || 0}</Text>
-            </View>
-            <View style={styles.infoItem}>
-              <Text style={styles.infoLabel}>Total Orphans</Text>
-              <Text style={styles.infoVal}>{stats?.totalOrphans || 0}</Text>
-            </View>
-          </View>
-          <View style={styles.infoRow}>
-            <View style={styles.infoItem}>
-              <Text style={styles.infoLabel}>Active Orphanages</Text>
-              <Text style={styles.infoVal}>{stats?.totalOrphanages || 0}</Text>
-            </View>
-          </View>
-        </View>
-      </View>
     </View>
   );
 };

@@ -1,5 +1,6 @@
 import React from 'react';
-import { View, ScrollView, StyleSheet, ActivityIndicator, Alert, Platform } from 'react-native';
+import { View, Text, Image, Linking, TouchableOpacity, ScrollView, StyleSheet, ActivityIndicator, Alert, Platform } from 'react-native';
+import { Ionicons } from '@expo/vector-icons';
 import { router } from 'expo-router';
 import { useOrphanDashboard } from '@/hooks/useOrphanDashboard';
 
@@ -153,6 +154,45 @@ export default function OrphanDashboard() {
           isUrgent={isUrgent}
           setIsUrgent={setIsUrgent}
         />
+
+        {/* Supporting Documents Section */}
+        {orphanProfile?.supportingDocs && (
+          <View style={{ marginHorizontal: 20, marginTop: 25, backgroundColor: '#fff', padding: 20, borderRadius: 24, elevation: 2 }}>
+            <Text style={{ fontSize: 18, fontWeight: '700', color: '#1e293b', marginBottom: 15 }}>Verification Documents</Text>
+            <View style={{ gap: 12 }}>
+              {orphanProfile.supportingDocs.match(/\\.(jpg|jpeg|png|webp|gif)$|cloudinary/i) && !orphanProfile.supportingDocs.toLowerCase().endsWith('.pdf') ? (
+                <Image 
+                  source={{ uri: orphanProfile.supportingDocs }} 
+                  style={{ width: '100%', height: 200, borderRadius: 16, backgroundColor: '#f1f5f9' }} 
+                  resizeMode="cover"
+                />
+              ) : (
+                <View style={{ padding: 20, backgroundColor: '#f8fafc', borderRadius: 16, alignItems: 'center', borderStyle: 'dashed', borderWidth: 1, borderColor: '#cbd5e1' }}>
+                  <Ionicons name="document-text" size={40} color="#0077cc" />
+                  <Text style={{ marginTop: 8, color: '#64748b' }}>PDF Document Uploaded</Text>
+                </View>
+              )}
+              
+              <TouchableOpacity 
+                style={{ 
+                  flexDirection: 'row', 
+                  alignItems: 'center', 
+                  justifyContent: 'center',
+                  gap: 8, 
+                  backgroundColor: '#f0f9ff', 
+                  padding: 16, 
+                  borderRadius: 16,
+                  borderWidth: 1,
+                  borderColor: '#bae6fd'
+                }}
+                onPress={() => Linking.openURL(orphanProfile.supportingDocs)}
+              >
+                <Ionicons name="eye-outline" size={20} color="#0077cc" />
+                <Text style={{ color: '#0077cc', fontWeight: '700' }}>View Document</Text>
+              </TouchableOpacity>
+            </View>
+          </View>
+        )}
       </ScrollView>
 
       {/* Modals */}
