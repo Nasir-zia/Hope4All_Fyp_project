@@ -4,12 +4,12 @@ const notificationSchema = new mongoose.Schema({
   donorId: {
     type: mongoose.Schema.Types.ObjectId,
     ref: 'Donor',
-    required: true
+    required: false // Made optional for admin/system notifications
   },
 
   type: {
     type: String,
-    enum: ['delivery', 'update', 'thanks', 'shipping'],
+    enum: ['delivery', 'update', 'thanks', 'shipping', 'request', 'alert'],
     required: true
   },
 

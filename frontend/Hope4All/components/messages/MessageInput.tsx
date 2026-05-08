@@ -1,7 +1,6 @@
 import React, { useState } from 'react';
-import { View, TextInput, TouchableOpacity, ActivityIndicator, StyleSheet, Platform, Image, Text } from 'react-native';
+import { View, TextInput, TouchableOpacity, ActivityIndicator, StyleSheet, Platform, Image, Text, Alert } from 'react-native';
 import { Ionicons } from '@expo/vector-icons';
-import { LinearGradient } from 'expo-linear-gradient';
 import * as ImagePicker from 'expo-image-picker';
 import * as DocumentPicker from 'expo-document-picker';
 
@@ -30,9 +29,9 @@ export const MessageInput: React.FC<MessageInputProps> = ({ onSend, sending }) =
   };
 
   const pickFile = async () => {
-    const result = await DocumentPicker.getDocumentAsync({ 
+    const result = await DocumentPicker.getDocumentAsync({
       type: 'application/pdf',
-      copyToCacheDirectory: true 
+      copyToCacheDirectory: true
     });
     if (!result.canceled) {
       setAttachment({
@@ -49,10 +48,9 @@ export const MessageInput: React.FC<MessageInputProps> = ({ onSend, sending }) =
     if (!attachment) {
       onSend(message);
     } else {
-      // Construct FormData for attachments
       const formData = new FormData();
       formData.append('message', message.trim());
-      
+
       const fileName = attachment.name;
       if (Platform.OS === 'web') {
         const response = await fetch(attachment.uri);
@@ -67,9 +65,21 @@ export const MessageInput: React.FC<MessageInputProps> = ({ onSend, sending }) =
       }
       onSend(formData as any);
     }
-    
+
     setMessage('');
     setAttachment(null);
+  };
+
+  const showAttachmentOptions = () => {
+    if (Platform.OS === 'web') {
+      if (confirm('Attach Image?')) pickImage();
+    } else {
+      Alert.alert('Attach', 'Choose a file type', [
+        { text: 'Image', onPress: pickImage },
+        { text: 'Document', onPress: pickFile },
+        { text: 'Cancel', style: 'cancel' }
+      ]);
+    }
   };
 
   return (
@@ -80,7 +90,7 @@ export const MessageInput: React.FC<MessageInputProps> = ({ onSend, sending }) =
             <Image source={{ uri: attachment.uri }} style={styles.previewImage} />
           ) : (
             <View style={styles.filePreview}>
-              <Ionicons name="document-text" size={20} color="#0077cc" />
+              <Ionicons name="document-text" size={20} color="#00C2E0" />
               <Text style={styles.fileName} numberOfLines={1}>{attachment.name}</Text>
             </View>
           )}
@@ -90,32 +100,36 @@ export const MessageInput: React.FC<MessageInputProps> = ({ onSend, sending }) =
         </View>
       )}
       <View style={styles.inputArea}>
-        <TouchableOpacity style={styles.attachBtn} onPress={pickImage}>
-          <Ionicons name="image-outline" size={22} color="#64748b" />
+        <TouchableOpacity style={styles.addBtn} onPress={showAttachmentOptions}>
+          <View style={styles.addIconCircle}>
+            <Ionicons name="add" size={24} color="#fff" />
+          </View>
         </TouchableOpacity>
-        <TouchableOpacity style={styles.attachBtn} onPress={pickFile}>
-          <Ionicons name="attach-outline" size={22} color="#64748b" />
-        </TouchableOpacity>
-        <TextInput
-          style={styles.input}
-          placeholder="Type a message..."
-          placeholderTextColor="#94a3b8"
-          value={message}
-          onChangeText={setMessage}
-          multiline
-        />
-        <TouchableOpacity 
-          style={[styles.sendBtn, (!message.trim() && !attachment || sending) && styles.sendBtnDisabled]} 
+
+        <View style={styles.inputBar}>
+          <TextInput
+            style={styles.input}
+            placeholder="Type your message"
+            placeholderTextColor="#94a3b8"
+            value={message}
+            onChangeText={setMessage}
+            multiline
+          />
+          <TouchableOpacity style={styles.emojiBtn}>
+            <Ionicons name="happy-outline" size={24} color="#00C2E0" />
+          </TouchableOpacity>
+        </View>
+
+        <TouchableOpacity
+          style={[styles.sendBtn, (!message.trim() && !attachment || sending) && styles.sendBtnDisabled]}
           onPress={handleSend}
           disabled={(!message.trim() && !attachment) || sending}
-          activeOpacity={0.7}
         >
-          <LinearGradient
-            colors={(message.trim() || attachment) && !sending ? ['#4da6ff', '#0077cc'] : ['#e2e8f0', '#cbd5e1']}
-            style={styles.sendGradient}
-          >
-            {sending ? <ActivityIndicator size="small" color="#fff" /> : <Ionicons name="send" size={20} color="#fff" />}
-          </LinearGradient>
+          {sending ? (
+            <ActivityIndicator size="small" color="#00C2E0" />
+          ) : (
+            <Ionicons name="send" size={22} color={message.trim() || attachment ? "#00C2E0" : "#94a3b8"} />
+          )}
         </TouchableOpacity>
       </View>
     </View>
@@ -123,35 +137,64 @@ export const MessageInput: React.FC<MessageInputProps> = ({ onSend, sending }) =
 };
 
 const styles = StyleSheet.create({
-  inputAreaWrapper: { 
-    paddingHorizontal: 15, 
-    paddingVertical: 12, 
-    backgroundColor: '#fff', 
-    borderTopWidth: 1, 
-    borderTopColor: '#f1f5f9' 
+  inputAreaWrapper: {
+    paddingHorizontal: 15,
+    paddingVertical: 12,
+    backgroundColor: '#fff',
+    borderTopWidth: 1,
+    borderTopColor: '#f1f5f9'
   },
-  inputArea: { 
-    flexDirection: 'row', 
-    alignItems: 'center', 
-    backgroundColor: '#f8fafc', 
-    borderRadius: 25, 
-    paddingHorizontal: 5, 
-    borderWidth: 1, 
-    borderColor: '#e2e8f0' 
+  inputArea: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: 10,
   },
-  input: { 
-    flex: 1, 
-    fontSize: 15, 
-    color: '#1e293b', 
-    paddingHorizontal: 15, 
-    maxHeight: 100, 
-    paddingVertical: 10 
+  addBtn: {
+    padding: 5,
   },
-  sendBtn: { width: 42, height: 42, borderRadius: 21, overflow: 'hidden', margin: 4 },
-  sendGradient: { flex: 1, justifyContent: 'center', alignItems: 'center' },
-  sendBtnDisabled: { opacity: 0.6 },
-  attachBtn: { padding: 10 },
-  previewContainer: { flexDirection: 'row', alignItems: 'center', backgroundColor: '#f1f5f9', borderRadius: 12, padding: 8, marginBottom: 10, position: 'relative' },
+  addIconCircle: {
+    width: 36,
+    height: 36,
+    borderRadius: 18,
+    backgroundColor: '#00C2E0',
+    justifyContent: 'center',
+    alignItems: 'center',
+  },
+  inputBar: {
+    flex: 1,
+    flexDirection: 'row',
+    alignItems: 'center',
+    backgroundColor: '#f1f5f9',
+    borderRadius: 24,
+    paddingHorizontal: 15,
+  },
+  input: {
+    flex: 1,
+    fontSize: 16,
+    color: '#1e293b',
+    maxHeight: 100,
+    paddingVertical: 10,
+    fontWeight: '500'
+  },
+  emojiBtn: {
+    padding: 5,
+  },
+  sendBtn: {
+    width: 44,
+    height: 44,
+    justifyContent: 'center',
+    alignItems: 'center'
+  },
+  sendBtnDisabled: { opacity: 0.5 },
+  previewContainer: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    backgroundColor: '#f1f5f9',
+    borderRadius: 12,
+    padding: 8,
+    marginBottom: 12,
+    position: 'relative'
+  },
   previewImage: { width: 50, height: 50, borderRadius: 8 },
   filePreview: { flexDirection: 'row', alignItems: 'center', gap: 8, flex: 1 },
   fileName: { fontSize: 12, color: '#475569', fontWeight: '600' },

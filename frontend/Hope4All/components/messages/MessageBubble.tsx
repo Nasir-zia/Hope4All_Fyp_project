@@ -15,8 +15,7 @@ export const MessageBubble: React.FC<MessageBubbleProps> = ({ item, isMine }) =>
       entering={isMine ? FadeInRight : FadeInLeft} 
       style={[styles.msgWrapper, isMine ? styles.msgMine : styles.msgTheirs]}
     >
-      <LinearGradient
-        colors={isMine ? ['#4da6ff', '#0077cc'] : ['#f1f5f9', '#e2e8f0']}
+      <View
         style={[styles.msgBubble, isMine ? styles.bubbleMine : styles.bubbleTheirs]}
       >
         {item.type === 'image' && item.fileUrl && (
@@ -29,7 +28,7 @@ export const MessageBubble: React.FC<MessageBubbleProps> = ({ item, isMine }) =>
             style={[styles.fileContainer, isMine ? styles.fileMine : styles.fileTheirs]} 
             onPress={() => Linking.openURL(item.fileUrl)}
           >
-            <Ionicons name="document-attach" size={24} color={isMine ? "#fff" : "#0077cc"} />
+            <Ionicons name="document-attach" size={24} color={isMine ? "#fff" : "#00C2E0"} />
             <View style={{ flex: 1 }}>
               <Text style={[styles.fileName, isMine ? styles.textMine : styles.textTheirs]} numberOfLines={1}>
                 {item.fileName || 'Document'}
@@ -43,40 +42,52 @@ export const MessageBubble: React.FC<MessageBubbleProps> = ({ item, isMine }) =>
             {item.message}
           </Text>
         ) : null}
-        <Text style={[styles.msgTime, isMine ? styles.timeMine : styles.timeTheirs]}>
-          {new Date(item.createdAt).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })}
-        </Text>
-      </LinearGradient>
+      </View>
+      <Text style={[styles.msgTime, isMine ? styles.timeMine : styles.timeTheirs]}>
+        {new Date(item.createdAt).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })}
+      </Text>
     </Animated.View>
   );
 };
 
 const styles = StyleSheet.create({
-  msgWrapper: { marginBottom: 12, maxWidth: '85%' },
+  msgWrapper: { marginBottom: 16, maxWidth: '80%' },
   msgMine: { alignSelf: 'flex-end' },
   msgTheirs: { alignSelf: 'flex-start' },
   msgBubble: { 
     paddingHorizontal: 16, 
-    paddingVertical: 10, 
-    borderRadius: 20,
+    paddingVertical: 12, 
+    borderRadius: 24,
     shadowColor: "#000",
     shadowOffset: { width: 0, height: 1 },
-    shadowOpacity: 0.1,
-    shadowRadius: 2,
-    elevation: 1,
+    shadowOpacity: 0.05,
+    shadowRadius: 5,
+    elevation: 2,
   },
-  bubbleMine: { borderBottomRightRadius: 4 },
-  bubbleTheirs: { borderBottomLeftRadius: 4 },
-  msgText: { fontSize: 15, lineHeight: 21 },
+  bubbleMine: { 
+    backgroundColor: '#00C2E0', 
+    borderTopRightRadius: 4 
+  },
+  bubbleTheirs: { 
+    backgroundColor: '#f1f5f9', 
+    borderTopLeftRadius: 4 
+  },
+  msgText: { fontSize: 15, lineHeight: 22, fontWeight: '500' },
   textMine: { color: '#fff' },
   textTheirs: { color: '#1e293b' },
-  msgTime: { fontSize: 10, marginTop: 4, alignSelf: 'flex-end', opacity: 0.7 },
-  timeMine: { color: '#fff' },
-  timeTheirs: { color: '#64748b' },
-  msgImage: { width: 200, height: 200, borderRadius: 12, marginBottom: 8 },
+  msgTime: { 
+    fontSize: 10, 
+    marginTop: 4, 
+    marginHorizontal: 4,
+    color: '#94a3b8',
+    fontWeight: '600'
+  },
+  timeMine: { alignSelf: 'flex-end' },
+  timeTheirs: { alignSelf: 'flex-start' },
+  msgImage: { width: 200, height: 200, borderRadius: 16, marginBottom: 8 },
   fileContainer: { flexDirection: 'row', alignItems: 'center', gap: 10, padding: 10, borderRadius: 12, marginBottom: 8, minWidth: 150 },
   fileMine: { backgroundColor: 'rgba(255,255,255,0.2)' },
-  fileTheirs: { backgroundColor: 'rgba(0,119,204,0.05)' },
+  fileTheirs: { backgroundColor: 'rgba(0,194,224,0.05)' },
   fileName: { fontSize: 14, fontWeight: '700' },
   fileSize: { fontSize: 10 },
 });

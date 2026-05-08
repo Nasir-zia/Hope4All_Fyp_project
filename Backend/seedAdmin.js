@@ -34,7 +34,7 @@ async function seedAdmin() {
       adminUser.password = await bcrypt.hash(password, salt);
 
       await adminUser.save();
-      console.log("\x1b[32m%s\x1b[0m", "✅ Admin account updated successfully!");
+      console.log("\x1b[32m%s\x1b[0m", " Admin account updated successfully!");
     } else {
       console.log("Creating new admin user...");
       const salt = await bcrypt.genSalt(10);
@@ -49,13 +49,13 @@ async function seedAdmin() {
       });
 
       await adminUser.save();
-      console.log("\x1b[32m%s\x1b[0m", "✅ Admin account created successfully!");
+      console.log("\x1b[32m%s\x1b[0m", " Admin account created successfully!");
     }
 
-    console.log("-----------------------------------------");
+    console.log("");
     console.log(`Email: ${email}`);
     console.log(`Password: ${password}`);
-    console.log("-----------------------------------------");
+    console.log("");
 
   } catch (error) {
     console.error("Error seeding admin:", error);

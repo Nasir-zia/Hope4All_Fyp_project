@@ -16,7 +16,7 @@ export const registerOrphan = async (req, res) => {
       return res.status(400).json({ message: 'Orphan profile already exists' });
     }
 
-    const { name, age, gender, location, orphanageId, phone, school, classLevel, bio } = req.body;
+    const { name, age, gender, location, orphanageId, phone, school, classLevel, bio, cnicOrBForm } = req.body;
     
     // Check files presence - handle various Cloudinary/Multer response structures
     const profilePic = req.files?.profilePic?.[0] 
@@ -25,6 +25,10 @@ export const registerOrphan = async (req, res) => {
       
     const supportingDocs = req.files?.supportingDocs?.[0]
       ? (req.files.supportingDocs[0].path || req.files.supportingDocs[0].url || req.files.supportingDocs[0].secure_url)
+      : '';
+
+    const bFormDoc = req.files?.bFormDoc?.[0]
+      ? (req.files.bFormDoc[0].path || req.files.bFormDoc[0].url || req.files.bFormDoc[0].secure_url)
       : '';
 
     console.log('[RegisterOrphan] Detetcted Paths:', { profilePic, supportingDocs });
@@ -39,9 +43,11 @@ export const registerOrphan = async (req, res) => {
       school,
       classLevel,
       bio,
+      cnicOrBForm,
       orphanageId: orphanageId || undefined,
       profilePic,
       supportingDocs,
+      bFormDoc,
     });
 
     await newOrphan.save();

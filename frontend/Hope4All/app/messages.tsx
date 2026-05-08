@@ -4,6 +4,7 @@ import {
   Text,
   StyleSheet,
   FlatList,
+  ScrollView,
   TouchableOpacity,
   TextInput,
   KeyboardAvoidingView,
@@ -32,11 +33,10 @@ export default function MessagesScreen() {
   
   const [selectedUser, setSelectedUser] = useState<any>(null);
   const [searchQuery, setSearchQuery] = useState('');
-  const [showSearch, setShowSearch] = useState(false);
+  const [activeTab, setActiveTab] = useState<'Message' | 'Group'>('Message');
   
   const flatListRef = useRef<FlatList>(null);
 
-  // BUG FIX: Join socket using middleware auth
   const { socket, isConnected } = useSocket(user?.id, user?.token);
   
   const {
@@ -70,17 +70,17 @@ export default function MessagesScreen() {
     if (!selectedUser) return;
     try {
       await sendMessage(selectedUser._id, content);
-      // Scroll to bottom after sending
       setTimeout(() => flatListRef.current?.scrollToEnd({ animated: true }), 100);
     } catch (err) {
-      Alert.alert('Error', 'Could not send message. Please check your connection.');
+      Alert.alert('Error', 'Could not send message.');
     }
   };
 
   const filteredConversations = useMemo(() => {
     if (!searchQuery.trim()) return conversations;
     return conversations.filter(conv => 
-      conv.user.username?.toLowerCase().includes(searchQuery.toLowerCase())
+      conv.user.username?.toLowerCase().includes(searchQuery.toLowerCase()) ||
+      conv.user.name?.toLowerCase().includes(searchQuery.toLowerCase())
     );
   }, [conversations, searchQuery]);
 
@@ -88,34 +88,63 @@ export default function MessagesScreen() {
   if (!selectedUser) {
     return (
       <View style={styles.container}>
-        <LinearGradient colors={['#0077cc', '#005fa3']} style={styles.listHeader}>
-          <TouchableOpacity onPress={() => router.back()} style={styles.headerIcon}>
-            <Ionicons name="arrow-back" size={24} color="#fff" />
+        <View style={styles.header}>
+          <TouchableOpacity onPress={() => router.back()}>
+            <Ionicons name="arrow-back" size={24} color="#1e293b" />
           </TouchableOpacity>
-          {showSearch ? (
-            <TextInput
-              autoFocus
-              style={styles.headerSearchInput}
-              placeholder="Search people..."
-              placeholderTextColor="rgba(255,255,255,0.7)"
-              value={searchQuery}
-              onChangeText={setSearchQuery}
-            />
-          ) : (
-            <Text style={styles.mainTitle}>Messages</Text>
-          )}
-          <TouchableOpacity onPress={() => setShowSearch(!showSearch)} style={styles.headerIcon}>
-            <Ionicons name={showSearch ? "close" : "search-outline"} size={24} color="#fff" />
-          </TouchableOpacity>
-        </LinearGradient>
-
-        {loading ? (
-          <View style={styles.centered}>
-            <ActivityIndicator size="large" color="#0077cc" />
+          <Text style={styles.headerTitle}>All Chat</Text>
+          <View style={styles.headerRight}>
+            <TouchableOpacity style={styles.headerIconButton}>
+              <Ionicons name="search-outline" size={22} color="#1e293b" />
+            </TouchableOpacity>
+            <TouchableOpacity style={styles.headerIconButton}>
+              <Ionicons name="person-add-outline" size={22} color="#1e293b" />
+            </TouchableOpacity>
           </View>
-        ) : (
-          <View style={styles.listContent}>
+        </View>
+
+        {/* Tab Bar */}
+        <View style={styles.tabBar}>
+          <TouchableOpacity 
+            onPress={() => setActiveTab('Message')}
+            style={[styles.tabItem, activeTab === 'Message' && styles.activeTabItem]}
+          >
+            <Text style={[styles.tabText, activeTab === 'Message' && styles.activeTabText]}>Message</Text>
+            {activeTab === 'Message' && <View style={styles.activeDot} />}
+          </TouchableOpacity>
+          <TouchableOpacity 
+            onPress={() => setActiveTab('Group')}
+            style={[styles.tabItem, activeTab === 'Group' && styles.activeTabItem]}
+          >
+            <Text style={[styles.tabText, activeTab === 'Group' && styles.activeTabText]}>Group</Text>
+          </TouchableOpacity>
+        </View>
+
+        <ScrollView showsVerticalScrollIndicator={false}>
+          {/* Active Now List */}
+          <View style={styles.activeNowContainer}>
+            <ScrollView horizontal showsHorizontalScrollIndicator={false} contentContainerStyle={styles.activeNowScroll}>
+              {conversations.map((conv, idx) => (
+                <TouchableOpacity key={conv.user._id} style={styles.activeUserItem} onPress={() => handleSelectUser(conv.user)}>
+                  <View style={styles.activeAvatarContainer}>
+                    <View style={styles.activeAvatarPlaceholder}>
+                      <Text style={styles.avatarInitial}>{conv.user.name?.[0] || conv.user.username?.[0]}</Text>
+                    </View>
+                    <View style={styles.onlineStatusIndicator} />
+                  </View>
+                  <Text style={styles.activeUserName} numberOfLines={1}>
+                    {conv.user.name?.split(' ')[0] || conv.user.username}
+                  </Text>
+                </TouchableOpacity>
+              ))}
+            </ScrollView>
+          </View>
+
+          {loading ? (
+            <ActivityIndicator size="large" color="#00C2E0" style={{ marginTop: 20 }} />
+          ) : (
             <FlatList
+              scrollEnabled={false}
               data={filteredConversations}
               renderItem={({ item, index }) => (
                 <ConversationItem 
@@ -129,13 +158,12 @@ export default function MessagesScreen() {
               ListEmptyComponent={
                 <View style={styles.emptyContainer}>
                   <Ionicons name="chatbubbles-outline" size={80} color="#e2e8f0" />
-                  <Text style={styles.emptyTitle}>No conversations found</Text>
-                  <Text style={styles.emptySub}>Try searching for another donor or orphan.</Text>
+                  <Text style={styles.emptyTitle}>No conversations</Text>
                 </View>
               }
             />
-          </View>
-        )}
+          )}
+        </ScrollView>
       </View>
     );
   }
@@ -166,7 +194,7 @@ export default function MessagesScreen() {
 
       <KeyboardAvoidingView 
         behavior={Platform.OS === 'ios' ? 'padding' : undefined}
-        keyboardVerticalOffset={Platform.OS === 'ios' ? 0 : 0}
+        keyboardVerticalOffset={Platform.OS === 'ios' ? 90 : 0}
       >
         <MessageInput onSend={handleSend} sending={sending} />
       </KeyboardAvoidingView>
@@ -176,23 +204,117 @@ export default function MessagesScreen() {
 
 const styles = StyleSheet.create({
   container: { flex: 1, backgroundColor: '#fff' },
-  listHeader: {
-    paddingTop: Platform.OS === 'ios' ? 70 : 50,
-    paddingBottom: 25,
+  header: {
+    paddingTop: Platform.OS === 'ios' ? 60 : 40,
+    paddingBottom: 15,
     paddingHorizontal: 20,
     flexDirection: 'row',
     alignItems: 'center',
     justifyContent: 'space-between',
-    borderBottomLeftRadius: 25,
-    borderBottomRightRadius: 25,
+    backgroundColor: '#fff',
   },
-  mainTitle: { fontSize: 22, fontWeight: 'bold', color: '#fff' },
-  headerIcon: { width: 40, height: 40, borderRadius: 20, backgroundColor: 'rgba(255,255,255,0.15)', justifyContent: 'center', alignItems: 'center' },
-  headerSearchInput: { flex: 1, color: '#fff', fontSize: 18, marginHorizontal: 15, paddingVertical: 5 },
-  listContent: { flex: 1 },
+  headerTitle: {
+    fontSize: 24,
+    fontWeight: '800',
+    color: '#1e293b',
+  },
+  headerRight: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: 12,
+  },
+  headerIconButton: {
+    width: 40,
+    height: 40,
+    borderRadius: 20,
+    backgroundColor: '#f1f5f9',
+    justifyContent: 'center',
+    alignItems: 'center',
+  },
+
+  // Tab Bar
+  tabBar: {
+    flexDirection: 'row',
+    paddingHorizontal: 20,
+    marginTop: 10,
+    marginBottom: 15,
+    gap: 25,
+  },
+  tabItem: {
+    paddingVertical: 8,
+    position: 'relative',
+  },
+  activeTabItem: {},
+  tabText: {
+    fontSize: 16,
+    fontWeight: '600',
+    color: '#94a3b8',
+  },
+  activeTabText: {
+    color: '#1e293b',
+    fontWeight: '700',
+  },
+  activeDot: {
+    position: 'absolute',
+    right: -8,
+    top: 8,
+    width: 5,
+    height: 5,
+    borderRadius: 2.5,
+    backgroundColor: '#00C2E0',
+  },
+
+  // Active Now
+  activeNowContainer: {
+    paddingVertical: 10,
+  },
+  activeNowScroll: {
+    paddingHorizontal: 20,
+    gap: 15,
+  },
+  activeUserItem: {
+    alignItems: 'center',
+    width: 65,
+  },
+  activeAvatarContainer: {
+    position: 'relative',
+    marginBottom: 8,
+  },
+  activeAvatarPlaceholder: {
+    width: 60,
+    height: 60,
+    borderRadius: 30,
+    backgroundColor: '#f1f5f9',
+    justifyContent: 'center',
+    alignItems: 'center',
+    borderWidth: 2,
+    borderColor: '#00C2E0',
+    padding: 2,
+  },
+  avatarInitial: {
+    fontSize: 18,
+    fontWeight: '700',
+    color: '#1e293b',
+  },
+  onlineStatusIndicator: {
+    position: 'absolute',
+    bottom: 2,
+    right: 2,
+    width: 14,
+    height: 14,
+    borderRadius: 7,
+    backgroundColor: '#22c55e',
+    borderWidth: 2,
+    borderColor: '#fff',
+  },
+  activeUserName: {
+    fontSize: 12,
+    fontWeight: '600',
+    color: '#64748b',
+    textAlign: 'center',
+  },
+
   messageList: { paddingHorizontal: 15, paddingTop: 15 },
-  centered: { flex: 1, justifyContent: 'center', alignItems: 'center' },
   emptyContainer: { alignItems: 'center', justifyContent: 'center', padding: 50, marginTop: 50 },
-  emptyTitle: { fontSize: 18, fontWeight: 'bold', color: '#1e293b', marginTop: 15 },
-  emptySub: { fontSize: 14, color: '#64748b', textAlign: 'center', marginTop: 5 }
+  emptyTitle: { fontSize: 16, fontWeight: '700', color: '#94a3b8', marginTop: 15 },
 });

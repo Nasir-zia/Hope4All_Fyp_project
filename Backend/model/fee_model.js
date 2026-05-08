@@ -18,6 +18,10 @@ const feeSchema = new mongoose.Schema({
     type: Date,
     required: true,
   },
+  paymentNumber: {
+    type: String,
+    required: false, // Optional but useful for EasyPaisa/JazzCash
+  },
   status: {
     type: String,
     enum: ["pending", "pledged", "paid"],

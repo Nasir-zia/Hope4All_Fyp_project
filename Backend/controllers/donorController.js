@@ -49,12 +49,12 @@ export const registerDonor = async (req, res) => {
     console.error('Error Name:', error.name);
     console.error('Error Message:', error.message);
     if (error.errors) console.error('Validation Errors:', error.errors);
-    console.error('---------------------------------');
-    
-    res.status(500).json({ 
-      message: 'Error registering donor', 
+    console.error('');
+
+    res.status(500).json({
+      message: 'Error registering donor',
       error: error.message,
-      type: error.name 
+      type: error.name
     });
   }
 };
@@ -91,7 +91,7 @@ export const registerDonorWithFiles = async (req, res) => {
 
     const newDonor = new Donor(donorData);
     await newDonor.save();
-    
+
     res.status(201).json({ message: 'Donor registered successfully', donor: newDonor });
   } catch (error) {
     res.status(500).json({ message: 'Error registering donor with files', error: error.message });
@@ -113,18 +113,18 @@ export const getDonorProfile = async (req, res) => {
     // Handle both userId and donorId parameters
     const { id } = req.params;
     let donor;
-    
+
     // Check if it's a userId (string) or donorId (MongoDB ObjectId)
     if (id.match(/^[0-9a-fA-F]{24}$/)) {
       // It's a valid ObjectId, try as donorId first
       donor = await Donor.findById(id);
     }
-    
+
     if (!donor) {
       // Try as userId
       donor = await Donor.findOne({ userId: id });
     }
-    
+
     if (!donor) {
       return res.status(404).json({ message: 'Donor not found' });
     }
@@ -198,12 +198,12 @@ export const makeDonation = async (req, res) => {
       if (!request) {
         return res.status(404).json({ message: 'Request not found' });
       }
-      
+
       donationData.requestId = requestId;
       donationData.recipientName = recipientName || (request.orphanId ? request.orphanId.name : 'Institutional');
       donationData.recipientId = request.orphanId ? request.orphanId._id : null;
       donationData.orphanageId = request.orphanageId; // Link to the orphanage
-      
+
       // If it's a specific orphan, ensure we have their orphanage link too
       if (request.orphanId && !donationData.orphanageId) {
         const Orphan = mongoose.model('Orphan');
@@ -214,7 +214,7 @@ export const makeDonation = async (req, res) => {
       donationData.unitType = unitType || request.unitType;
 
       await Request.findByIdAndUpdate(requestId, { status: 'pledged' });
-      
+
       // Add orphan to donor's matched orphans if not already matched
       const donor = await Donor.findById(donorId);
       if (donor && request.orphanId && !donor.matchedOrphans.includes(request.orphanId._id)) {
@@ -224,7 +224,7 @@ export const makeDonation = async (req, res) => {
     } else {
       donationData.recipientName = recipientName || 'General Donation';
     }
-    
+
     donationData.status = 'pending-delivery';
 
     const donation = new Donation(donationData);
@@ -257,18 +257,18 @@ export const getDonationHistory = async (req, res) => {
     // Handle both userId and donorId parameters
     const { id } = req.params;
     let donor;
-    
+
     // Check if it's a userId (string) or donorId (MongoDB ObjectId)
     if (id.match(/^[0-9a-fA-F]{24}$/)) {
       // It's a valid ObjectId, try as donorId first
       donor = await Donor.findById(id);
     }
-    
+
     if (!donor) {
       // Try as userId
       donor = await Donor.findOne({ userId: id });
     }
-    
+
     if (!donor) {
       return res.status(404).json({ message: 'Donor not found' });
     }
@@ -310,7 +310,7 @@ export const getDonorOrphans = async (req, res) => {
 export const updateDonation = async (req, res) => {
   try {
     const { units, status } = req.body;
-    
+
     const donation = await Donation.findById(req.params.donationId);
     if (!donation) {
       return res.status(404).json({ message: 'Donation not found' });
@@ -319,7 +319,7 @@ export const updateDonation = async (req, res) => {
     // Update donation
     if (units !== undefined) donation.units = units;
     if (status !== undefined) donation.status = status;
-    
+
     await donation.save();
 
     res.status(200).json({ message: 'Donation updated successfully', donation });
@@ -332,7 +332,7 @@ export const updateDonation = async (req, res) => {
 export const deleteDonation = async (req, res) => {
   try {
     const donation = await Donation.findByIdAndDelete(req.params.donationId);
-    
+
     if (!donation) {
       return res.status(404).json({ message: 'Donation not found' });
     }
@@ -354,18 +354,18 @@ export const getNotifications = async (req, res) => {
     // Handle both userId and donorId parameters
     const { id } = req.params;
     let donor;
-    
+
     // Check if it's a userId (string) or donorId (MongoDB ObjectId)
     if (id.match(/^[0-9a-fA-F]{24}$/)) {
       // It's a valid ObjectId, try as donorId first
       donor = await Donor.findById(id);
     }
-    
+
     if (!donor) {
       // Try as userId
       donor = await Donor.findOne({ userId: id });
     }
-    
+
     if (!donor) {
       return res.status(404).json({ message: 'Donor not found' });
     }
@@ -395,15 +395,15 @@ export const getMatchedOrphans = async (req, res) => {
     // Handle both userId and donorId parameters
     const { id } = req.params;
     let donor;
-    
+
     if (id.match(/^[0-9a-fA-F]{24}$/)) {
       donor = await Donor.findById(id);
     }
-    
+
     if (!donor) {
       donor = await Donor.findOne({ userId: id });
     }
-    
+
     if (!donor) {
       return res.status(404).json({ message: 'Donor not found' });
     }
@@ -475,7 +475,7 @@ export const deleteDonor = async (req, res) => {
 export const getOrphanAid = async (req, res) => {
   try {
     const { id } = req.params;
-    
+
     // First find the orphan profile using the provided ID (could be userId or profile _id)
     let orphan = await Orphan.findById(id).catch(() => null);
     if (!orphan) {
@@ -485,8 +485,8 @@ export const getOrphanAid = async (req, res) => {
     if (!orphan) {
       return res.status(404).json({ message: 'Orphan not found' });
     }
-    
-    const donations = await Donation.find({ 
+
+    const donations = await Donation.find({
       $or: [
         { recipientId: orphan._id },
         { recipientId: null, status: { $ne: 'completed' } } // Show general available donations
@@ -505,16 +505,16 @@ export const getOrphanAid = async (req, res) => {
 export const uploadDonationPhoto = async (req, res) => {
   try {
     const { donationId } = req.params;
-    
+
     if (!req.file) {
       return res.status(400).json({ message: 'No photo provided' });
     }
 
     const donation = await Donation.findByIdAndUpdate(
       donationId,
-      { 
+      {
         donationPhoto: req.file.path,
-        status: 'under-review' 
+        status: 'under-review'
       },
       { new: true }
     );

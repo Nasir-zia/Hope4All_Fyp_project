@@ -2,10 +2,10 @@ import { apiClient } from '../../utils/apiClient';
 
 export const fetchOrphanProfile = async (userId: string) => {
   try {
-    const data = await apiClient(`/orphans/profile/${userId}`);
+    const data = await apiClient(`/orphans/profile/${userId}`, { silent: true });
     return data.orphan;
   } catch (error: any) {
-    if (error.message.includes('404') || error.message.includes('Orphan not found')) return null;
+    if (error.status === 404 || error.message.includes('404') || error.message.includes('Orphan not found')) return null;
     throw error;
   }
 };

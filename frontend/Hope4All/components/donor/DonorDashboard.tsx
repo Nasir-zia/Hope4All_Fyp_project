@@ -104,6 +104,8 @@ export default function DonorDashboard() {
             handleApproveRequest={() => { }}
             handleRejectRequest={() => { }}
             onOpenPreferences={handleOpenPreferenceModal}
+            onMessage={handleMessage}
+            onViewOrphan={handleViewOrphanProfile}
           />
 
           <FeeSection
@@ -111,6 +113,7 @@ export default function DonorDashboard() {
             pledgingFee={pledgingFee}
             handlePledgeFee={handlePledgeFee}
             onViewOrphan={handleViewOrphanProfile}
+            onMessage={handleMessage}
           />
 
           <DonationHistorySection

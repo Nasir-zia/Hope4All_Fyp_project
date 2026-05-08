@@ -49,7 +49,14 @@ export const submitRequest = async (req, res) => {
 
     res.status(201).json({ message: 'Request submitted successfully', request: newRequest });
   } catch (error) {
-    res.status(500).json({ message: 'Error submitting request', error: error.message });
+    console.error('--- REQUEST SUBMISSION ERROR ---');
+    console.error(error);
+    console.error('--------------------------------');
+    res.status(500).json({ 
+      message: 'Error submitting request', 
+      error: error.message,
+      details: error.errors // This will show Mongoose validation errors if any
+    });
   }
 };
 

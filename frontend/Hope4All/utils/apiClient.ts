@@ -1,6 +1,6 @@
 import { API_BASE_URL } from '../config/config';
 
-type HttpMethod = 'GET' | 'POST' | 'PUT' | 'DELETE';
+type HttpMethod = 'GET' | 'POST' | 'PUT' | 'DELETE' | 'PATCH';
 
 interface RequestOptions {
   method?: HttpMethod;
@@ -8,10 +8,11 @@ interface RequestOptions {
   body?: any;
   token?: string;
   isFormData?: boolean;
+  silent?: boolean;
 }
 
 export const apiClient = async <T = any>(endpoint: string, options: RequestOptions = {}): Promise<T> => {
-  const { method = 'GET', headers = {}, body, token, isFormData = false } = options;
+  const { method = 'GET', headers = {}, body, token, isFormData = false, silent = false } = options;
 
   const url = `${API_BASE_URL}${endpoint}`;
 
@@ -49,12 +50,16 @@ export const apiClient = async <T = any>(endpoint: string, options: RequestOptio
     }
 
     if (!response.ok) {
-      throw new Error(data?.message || `HTTP error! status: ${response.status}`);
+      const error = new Error(data?.message || `HTTP error! status: ${response.status}`);
+      (error as any).status = response.status;
+      throw error;
     }
 
     return data;
-  } catch (error) {
-    console.error(`API Call Error [${method} ${endpoint}]:`, error);
+  } catch (error: any) {
+    if (!silent) {
+      console.error(`API Call Error [${method} ${endpoint}]:`, error);
+    }
     throw error;
   }
 };

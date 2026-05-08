@@ -14,11 +14,13 @@ interface DonationSectionProps {
   handleApproveRequest: (id: string) => void;
   handleRejectRequest: (id: string) => void;
   onOpenPreferences: () => void;
+  onMessage: (orphan: any) => void;
+  onViewOrphan: (orphan: any) => void;
 }
 
 export const DonationSection: React.FC<DonationSectionProps> = ({
   requests, selectedRequest, setSelectedRequest, units, setUnits, requestPhoto, onPickPhoto,
-  handleDonate, handleApproveRequest, handleRejectRequest, onOpenPreferences
+  handleDonate, handleApproveRequest, handleRejectRequest, onOpenPreferences, onMessage, onViewOrphan
 }) => {
   return (
     <View style={styles.container}>
@@ -72,9 +74,24 @@ export const DonationSection: React.FC<DonationSectionProps> = ({
 
       {selectedRequest && (
         <View style={styles.actionCard}>
-           <Text style={styles.actionLabel}>
-             Donate to {selectedRequest.isInstitutional ? selectedRequest.orphanageId?.name : selectedRequest.orphanId?.name}
-           </Text>
+           <View style={styles.actionHeader}>
+              <TouchableOpacity 
+                style={styles.childInfoBtn}
+                onPress={() => onViewOrphan(selectedRequest.isInstitutional ? selectedRequest.orphanageId : selectedRequest.orphanId)}
+              >
+                <Text style={styles.actionLabel}>
+                  Donate to {selectedRequest.isInstitutional ? selectedRequest.orphanageId?.name : selectedRequest.orphanId?.name}
+                </Text>
+                <Ionicons name="chevron-forward" size={14} color="#64748b" />
+              </TouchableOpacity>
+              
+              <TouchableOpacity 
+                style={styles.actionChatBtn}
+                onPress={() => onMessage(selectedRequest.isInstitutional ? selectedRequest.orphanageId : selectedRequest.orphanId)}
+              >
+                <Ionicons name="chatbubble-ellipses-outline" size={20} color="#0077cc" />
+              </TouchableOpacity>
+            </View>
            
            {selectedRequest.isUrgent && (
              <View style={{ marginBottom: 15 }}>
@@ -144,7 +161,10 @@ const styles = StyleSheet.create({
   schoolText: { fontSize: 12, color: '#64748b', marginBottom: 8 },
   descText: { fontSize: 12, color: '#94a3b8', lineHeight: 18 },
   actionCard: { backgroundColor: '#fff', borderRadius: 24, padding: 20, marginTop: 10, elevation: 4, shadowColor: '#000', shadowOpacity: 0.1, shadowRadius: 15 },
-  actionLabel: { fontSize: 14, fontWeight: '700', color: '#1e293b', marginBottom: 15 },
+  actionHeader: { flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center', marginBottom: 15 },
+  childInfoBtn: { flex: 1, flexDirection: 'row', alignItems: 'center', gap: 5 },
+  actionChatBtn: { width: 40, height: 40, borderRadius: 12, backgroundColor: '#f0f9ff', justifyContent: 'center', alignItems: 'center' },
+  actionLabel: { fontSize: 14, fontWeight: '800', color: '#1e293b' },
   inputRow: { flexDirection: 'row', gap: 10 },
   inputBox: { flex: 1, backgroundColor: '#f8fafc', borderRadius: 14, borderWidth: 1, borderColor: '#e2e8f0', paddingHorizontal: 15 },
   input: { height: 48, fontSize: 16, color: '#1e293b', fontWeight: '600' },

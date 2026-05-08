@@ -6,9 +6,10 @@ import { adminStyles as styles } from './AdminStyles';
 interface DonationsTabProps {
   donations: any[];
   onForward: (donationId: string) => void;
+  onComplete: (donationId: string) => void;
 }
 
-export const DonationsTab: React.FC<DonationsTabProps> = ({ donations, onForward }) => {
+export const DonationsTab: React.FC<DonationsTabProps> = ({ donations, onForward, onComplete }) => {
   return (
     <View style={styles.tabContent}>
       <Text style={styles.sectionTitle}>Audit Log: Aid Distribution</Text>
@@ -24,6 +25,7 @@ export const DonationsTab: React.FC<DonationsTabProps> = ({ donations, onForward
               <Text style={styles.donationAmt}>{d.units || 0} {d.requestId?.unitType || 'Units'}</Text>
               <Text style={styles.donationDate}>{new Date(d.createdAt).toLocaleDateString()}</Text>
             </View>
+            
             <View style={styles.donationUsers}>
               <View style={styles.userBox}>
                 <Text style={styles.userLabel}>DONOR</Text>
@@ -35,30 +37,50 @@ export const DonationsTab: React.FC<DonationsTabProps> = ({ donations, onForward
                 <Text style={styles.userNameSmall}>{d.recipientId?.name || d.recipientName || 'Unknown'}</Text>
               </View>
             </View>
+
+            {d.donationPhoto && (
+              <View style={{ marginTop: 12, borderRadius: 12, overflow: 'hidden', backgroundColor: '#f8fafc', borderWidth: 1, borderColor: '#e2e8f0' }}>
+                <Image 
+                  source={{ uri: d.donationPhoto }} 
+                  style={{ width: '100%', height: 200, resizeMode: 'cover' }} 
+                />
+                <TouchableOpacity 
+                  style={{ position: 'absolute', top: 10, right: 10, backgroundColor: 'rgba(0,0,0,0.5)', padding: 6, borderRadius: 20 }}
+                  onPress={() => Linking.openURL(d.donationPhoto)}
+                >
+                  <Ionicons name="expand" size={16} color="#fff" />
+                </TouchableOpacity>
+              </View>
+            )}
             
-            <View style={{ flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center', marginTop: 10 }}>
+            <View style={{ flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center', marginTop: 15 }}>
               <View style={{ flexDirection: 'row', alignItems: 'center', gap: 8 }}>
-                <View style={{ backgroundColor: getStatusColor(d.status).bg, paddingHorizontal: 8, paddingVertical: 4, borderRadius: 6 }}>
-                  <Text style={{ fontSize: 10, fontWeight: '800', color: getStatusColor(d.status).text }}>
+                <View style={{ backgroundColor: getStatusColor(d.status).bg, paddingHorizontal: 10, paddingVertical: 5, borderRadius: 8 }}>
+                  <Text style={{ fontSize: 11, fontWeight: '800', color: getStatusColor(d.status).text }}>
                     {d.status?.toUpperCase() || 'PENDING'}
                   </Text>
                 </View>
-                {(d.status === 'under-review' || d.status === 'pending-delivery') && (
+                
+                {d.status === 'under-review' && (
                   <TouchableOpacity 
-                    style={{ backgroundColor: '#0077cc', paddingHorizontal: 10, paddingVertical: 4, borderRadius: 6, flexDirection: 'row', alignItems: 'center', gap: 4 }}
+                    style={{ backgroundColor: '#0ea5e9', paddingHorizontal: 12, paddingVertical: 6, borderRadius: 8, flexDirection: 'row', alignItems: 'center', gap: 6 }}
                     onPress={() => onForward(d._id)}
                   >
-                    <Ionicons name="send" size={10} color="#fff" />
-                    <Text style={{ color: '#fff', fontSize: 10, fontWeight: '700' }}>Verify & Forward</Text>
+                    <Ionicons name="send" size={12} color="#fff" />
+                    <Text style={{ color: '#fff', fontSize: 11, fontWeight: '700' }}>Verify & Forward</Text>
+                  </TouchableOpacity>
+                )}
+
+                {d.status === 'sent' && (
+                  <TouchableOpacity 
+                    style={{ backgroundColor: '#10b981', paddingHorizontal: 12, paddingVertical: 6, borderRadius: 8, flexDirection: 'row', alignItems: 'center', gap: 6 }}
+                    onPress={() => onComplete(d._id)}
+                  >
+                    <Ionicons name="checkmark-circle" size={12} color="#fff" />
+                    <Text style={{ color: '#fff', fontSize: 11, fontWeight: '700' }}>Mark as Complete</Text>
                   </TouchableOpacity>
                 )}
               </View>
-              
-              {d.donationPhoto && (
-                <TouchableOpacity onPress={() => Linking.openURL(d.donationPhoto)}>
-                  <Image source={{ uri: d.donationPhoto }} style={{ width: 40, height: 40, borderRadius: 8, backgroundColor: '#f1f5f9' }} />
-                </TouchableOpacity>
-              )}
             </View>
           </View>
         ))

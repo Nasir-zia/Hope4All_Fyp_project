@@ -467,6 +467,36 @@ export const forwardDonation = async (req, res) => {
   }
 };
 
+// Mark donation as completed
+export const completeDonation = async (req, res) => {
+  try {
+    const { donationId } = req.params;
+    const donation = await Donation.findByIdAndUpdate(
+      donationId,
+      { status: 'completed', deliveredAt: new Date() },
+      { new: true }
+    );
+
+    if (!donation) {
+      return res.status(404).json({ message: 'Donation not found' });
+    }
+
+    // Create notification for donor
+    const notification = new Notification({
+      donorId: donation.donorId,
+      type: 'delivery',
+      title: 'Donation Completed',
+      message: `Your donation of ${donation.units} ${donation.unitType} has been successfully delivered and completed. Thank you!`,
+    });
+
+    await notification.save();
+
+    res.status(200).json({ message: 'Donation marked as completed', donation });
+  } catch (error) {
+    res.status(500).json({ message: 'Error completing donation', error: error.message });
+  }
+};
+
 export const deleteUser = async (req, res) => {
   try {
     const { userId } = req.params;

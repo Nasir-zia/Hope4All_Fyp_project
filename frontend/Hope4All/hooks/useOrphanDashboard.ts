@@ -9,6 +9,7 @@ import {
   fetchOrphanRequests,
   fetchOrphanProgress,
   submitMaterialRequest,
+  deleteOrphanFee,
   fetchOrphanProfile,
   registerOrphanProfile,
   updateOrphanProfile,
@@ -28,6 +29,7 @@ export const useOrphanDashboard = () => {
   const [feeTitle, setFeeTitle] = useState('');
   const [feeAmount, setFeeAmount] = useState('');
   const [feeDate, setFeeDate] = useState('');
+  const [feePaymentNumber, setFeePaymentNumber] = useState('');
   const [loadingFees, setLoadingFees] = useState(false);
   const [submittingFee, setSubmittingFee] = useState(false);
 
@@ -38,6 +40,7 @@ export const useOrphanDashboard = () => {
   const [availableCourses, setAvailableCourses] = useState<any[]>([]);
   const [loadingExtras, setLoadingExtras] = useState(false);
   const [showRequestModal, setShowRequestModal] = useState(false);
+  const [submittingMaterial, setSubmittingMaterial] = useState(false);
 
   // Material Request Form State
   const [reqType, setReqType] = useState<'stationery' | 'uniforms' | 'books' | 'other'>('stationery');
@@ -148,7 +151,7 @@ export const useOrphanDashboard = () => {
         {
           text: "Report",
           style: "destructive",
-          onPress: async (reason) => {
+          onPress: async (reason?: string) => {
             try {
               await reportDonationIssueApi(donationId, reason || "Not received", user!.token);
               Alert.alert("Reported", "The issue has been reported to the admin and donor.");
@@ -188,12 +191,14 @@ export const useOrphanDashboard = () => {
         orphanId: orphanProfile._id,
         title: feeTitle,
         amount: Number(feeAmount),
-        dueDate: feeDate
+        dueDate: feeDate,
+        paymentNumber: feePaymentNumber
       });
       Alert.alert("Success", "Fee request added successfully!");
       setFeeTitle('');
       setFeeAmount('');
       setFeeDate('');
+      setFeePaymentNumber('');
       loadFees();
     } catch (err: any) {
       Alert.alert("Error", err.message || "Could not add fee");
@@ -202,12 +207,23 @@ export const useOrphanDashboard = () => {
     }
   };
 
+  const handleDeleteFee = async (feeId: string) => {
+    try {
+      await deleteOrphanFee(feeId);
+      Alert.alert("Success", "Fee request deleted!");
+      loadFees();
+    } catch (err: any) {
+      Alert.alert("Error", err.message || "Could not delete fee");
+    }
+  };
+
   const handleAddMaterialRequest = async () => {
+    if (submittingMaterial) return; // Prevent double clicks
     if (!reqDesc || !reqSchool || !reqUnits) {
       Alert.alert("Missing Fields", "Please enter description, school, and units.");
       return;
     }
-    setSubmittingFee(true);
+    setSubmittingMaterial(true);
     try {
       await submitMaterialRequest({
         orphanId: orphanProfile._id,
@@ -228,7 +244,7 @@ export const useOrphanDashboard = () => {
     } catch (err: any) {
       Alert.alert("Error", err.message || "Could not submit request");
     } finally {
-      setSubmittingFee(false);
+      setSubmittingMaterial(false);
     }
   };
 
@@ -433,8 +449,8 @@ export const useOrphanDashboard = () => {
 
   return {
     user, logout, orphanProfile, isRegistering, setIsRegistering, loadingExtras,
-    fees, feeTitle, setFeeTitle, feeAmount, setFeeAmount, feeDate, setFeeDate, loadingFees, submittingFee,
-    materialRequests, progressReports, aidFeed, availableCourses, showRequestModal, setShowRequestModal,
+    fees, feeTitle, setFeeTitle, feeAmount, setFeeAmount, feeDate, setFeeDate, feePaymentNumber, setFeePaymentNumber, loadingFees, submittingFee,
+    materialRequests, progressReports, aidFeed, availableCourses, showRequestModal, setShowRequestModal, submittingMaterial,
     reqType, setReqType, reqDesc, setReqDesc, reqUnits, setReqUnits, reqSchool, setReqSchool,
     isUrgent, setIsUrgent,
     regName, setRegName, regAge, setRegAge, regGender, setRegGender, regLocation, setRegLocation, regPhone, setRegPhone,
@@ -443,7 +459,7 @@ export const useOrphanDashboard = () => {
     editPhone, setEditPhone, editGender, setEditGender, newProfilePicUri, updatingProfile,
     showProgressModal, setShowProgressModal, progTitle, setProgTitle, progCategory, setProgCategory,
     progScore, setProgScore, progRemarks, setProgRemarks, progImgUri, submittingProg, showFullProgressList, setShowFullProgressList,
-    handleAddFee, handleAddMaterialRequest, openSettings, handleUpdateProfile, handleAddProgress, handleDeleteProgress,
+    handleAddFee, handleDeleteFee, handleAddMaterialRequest, openSettings, handleUpdateProfile, handleAddProgress, handleDeleteProgress,
     pickImage, pickDocument, handleProfileSubmit, handleConfirmReceipt, handleReportIssue
   };
 };

@@ -51,6 +51,7 @@ export interface FeeData {
   title: string;
   amount: number;
   dueDate: string;
+  paymentNumber?: string;
 }
 
 export interface MaterialRequestData {

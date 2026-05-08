@@ -89,19 +89,15 @@ export default function RoleScreen() {
           password: tempData.password,
           role: selected,
         });
-        await login(response.token!, response.user!);
-        setTempData(null);
-        Alert.alert('Success', `Welcome ${selected}!`);
         
-        // Redirect to dashboard after signup
-        switch (selected) {
-          case 'orphan': router.replace('/orphan'); break;
-          case 'donor': router.replace('/donor'); break;
-          case 'volunteer': router.replace('/volunteer'); break;
-          case 'orphanage': router.replace('/orphanage'); break;
-          case 'admin': router.replace('/admin'); break;
-          default: router.replace('/role');
-        }
+        setTempData(null);
+        Alert.alert('Success', 'Account created! Welcome to Hope4All.');
+        
+        // Log in the user immediately (since they are pre-verified)
+        await login(response.token || '', response.user as any);
+
+        // Redirect to Profile Setup screen
+        router.replace('/profile-setup' as any);
       } catch (error: any) {
         Alert.alert('Error', error.message || 'Signup failed');
       } finally {

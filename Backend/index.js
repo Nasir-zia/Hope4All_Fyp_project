@@ -24,6 +24,7 @@ import Fee from "./model/fee_model.js";
 import Notification from "./model/notification_model.js";
 
 dotenv.config();
+console.log(' [System] Email Simulator Mode: Active');
 dns.setServers(['8.8.8.8', '8.8.4.4']);
 dbconnection();
 

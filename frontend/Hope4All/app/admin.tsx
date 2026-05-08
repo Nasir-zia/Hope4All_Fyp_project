@@ -29,6 +29,7 @@ import {
   addCourseApi,
   fetchOrphanageOptions,
   forwardDonationApi,
+  completeDonationApi,
   updateTaskStatusApi
 } from '@/constants/api';
 
@@ -179,6 +180,16 @@ export default function AdminDashboard() {
     }
   };
 
+  const handleCompleteDonation = async (id: string) => {
+    try {
+      await completeDonationApi(id, user?.token || '');
+      Alert.alert("Success", "Donation marked as completed!");
+      loadAllData();
+    } catch (err: any) {
+      Alert.alert("Error", err.message);
+    }
+  };
+
   const handleCompleteTask = async (taskId: string) => {
     try {
       await updateTaskStatusApi(taskId, 'completed', user?.token);
@@ -215,7 +226,7 @@ export default function AdminDashboard() {
       <ScrollView refreshControl={<RefreshControl refreshing={refreshing} onRefresh={onRefresh} />}>
         {activeTab === 'stats' && <StatsTab usersCount={usersList.length} donationsCount={donations.length} pendingRequestsCount={requests.filter(r => r.status === 'pending').length} volunteersCount={volunteers.length} stats={stats} />}
         {activeTab === 'requests' && <RequestsTab requests={requests} onApprove={handleApproveRequest} onReject={handleRejectRequest} />}
-        {activeTab === 'donations' && <DonationsTab donations={donations} onForward={handleForwardDonation} />}
+        {activeTab === 'donations' && <DonationsTab donations={donations} onForward={handleForwardDonation} onComplete={handleCompleteDonation} />}
         {activeTab === 'users' && <UsersTab users={usersList} onUpdateStatus={handleUpdateUserStatus} onDelete={handleDeleteUser} />}
         {activeTab === 'orphanages' && <OrphanagesTab orphanages={orphanagesList} onUpdateStatus={handleUpdateUserStatus} onDelete={handleDeleteUser} />}
         {activeTab === 'courses' && <CoursesTab pendingCourses={pendingCourses} onAddPress={() => setShowCourseModal(true)} onUpdateStatus={handleUpdateCourseStatus} />}

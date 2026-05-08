@@ -175,7 +175,10 @@ export default function OrphanageDashboard() {
                 <Text style={styles.label}>Certificate:</Text>
                 <TouchableOpacity 
                   style={styles.filePicker}
-                  onPress={() => Alert.alert("Document", "Opening document link...") && Linking.openURL(orphanageProfile.documents.registrationCert)}
+                  onPress={() => {
+                    Alert.alert("Document", "Opening document link...");
+                    Linking.openURL(orphanageProfile.documents.registrationCert);
+                  }}
                 >
                   <Ionicons name="document-text" size={20} color="#0077cc" />
                   <Text style={{ color: '#0077cc', fontWeight: '600' }}>View Certificate</Text>

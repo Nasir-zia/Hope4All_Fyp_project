@@ -13,7 +13,9 @@ const orphanSchema = new mongoose.Schema({
   school: { type: String, required: false },
   classLevel: { type: String, required: false },
   bio: { type: String, required: false },
+  cnicOrBForm: { type: String },
   orphanageId: { type: mongoose.Schema.Types.ObjectId, ref: "OrphanAge", required: false },
+  bFormDoc: { type: String },
   createdAt: { type: Date, default: Date.now },
 });
 

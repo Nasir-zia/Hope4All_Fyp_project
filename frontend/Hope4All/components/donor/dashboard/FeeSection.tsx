@@ -7,11 +7,14 @@ interface FeeSectionProps {
   pledgingFee: string | null;
   handlePledgeFee: (id: string) => void;
   onViewOrphan: (orphan: any) => void;
+  onMessage: (orphan: any) => void;
 }
 
 export const FeeSection: React.FC<FeeSectionProps> = ({
-  availableFees, pledgingFee, handlePledgeFee, onViewOrphan
+  availableFees, pledgingFee, handlePledgeFee, onViewOrphan, onMessage
 }) => {
+  const [showPaymentFor, setShowPaymentFor] = React.useState<string | null>(null);
+
   return (
     <View style={styles.container}>
       <View style={styles.headerRow}>
@@ -43,6 +46,39 @@ export const FeeSection: React.FC<FeeSectionProps> = ({
               <Text style={styles.feeTitle} numberOfLines={1}>{fee.title}</Text>
               <Text style={styles.dueDate}>Due: {new Date(fee.dueDate).toLocaleDateString()}</Text>
               
+              {fee.paymentNumber ? (
+                <View style={styles.actionRow}>
+                  <TouchableOpacity 
+                    style={styles.paymentInfoRow}
+                    onPress={() => setShowPaymentFor(showPaymentFor === fee._id ? null : fee._id)}
+                  >
+                    <Ionicons 
+                      name={showPaymentFor === fee._id ? "eye-off-outline" : "eye-outline"} 
+                      size={16} 
+                      color="#0077cc" 
+                    />
+                    <Text style={styles.paymentInfoText}>
+                      {showPaymentFor === fee._id ? `${fee.paymentNumber}` : "Payment No"}
+                    </Text>
+                  </TouchableOpacity>
+
+                  <TouchableOpacity 
+                    style={styles.chatIconBtn}
+                    onPress={() => onMessage(fee.orphanId)}
+                  >
+                    <Ionicons name="chatbubble-ellipses-outline" size={18} color="#0077cc" />
+                  </TouchableOpacity>
+                </View>
+              ) : (
+                <TouchableOpacity 
+                  style={[styles.actionRow, styles.chatIconBtnOnly]}
+                  onPress={() => onMessage(fee.orphanId)}
+                >
+                  <Ionicons name="chatbubble-ellipses-outline" size={18} color="#0077cc" />
+                  <Text style={styles.paymentInfoText}>Message Orphan</Text>
+                </TouchableOpacity>
+              )}
+
               <TouchableOpacity 
                 style={[styles.pledgeBtn, pledgingFee === fee._id && styles.disabledBtn]}
                 onPress={() => handlePledgeFee(fee._id)}
@@ -78,6 +114,11 @@ const styles = StyleSheet.create({
   amountText: { fontSize: 14, fontWeight: '800', color: '#16a34a' },
   feeTitle: { fontSize: 14, color: '#475569', fontWeight: '600', marginBottom: 4 },
   dueDate: { fontSize: 11, color: '#94a3b8', marginBottom: 15 },
+  actionRow: { flexDirection: 'row', alignItems: 'center', gap: 10, marginBottom: 15 },
+  paymentInfoRow: { flex: 1, flexDirection: 'row', alignItems: 'center', gap: 6, backgroundColor: '#f0f9ff', padding: 8, borderRadius: 10 },
+  chatIconBtn: { width: 36, height: 36, borderRadius: 10, backgroundColor: '#f0f9ff', justifyContent: 'center', alignItems: 'center', borderWidth: 1, borderColor: '#e0f2fe' },
+  chatIconBtnOnly: { backgroundColor: '#f0f9ff', padding: 8, borderRadius: 10, alignSelf: 'flex-start', paddingHorizontal: 12 },
+  paymentInfoText: { fontSize: 12, color: '#0077cc', fontWeight: '700' },
   pledgeBtn: { backgroundColor: '#0077cc', paddingVertical: 12, borderRadius: 14, alignItems: 'center' },
   disabledBtn: { opacity: 0.6 },
   pledgeBtnText: { color: '#fff', fontSize: 14, fontWeight: '700' },

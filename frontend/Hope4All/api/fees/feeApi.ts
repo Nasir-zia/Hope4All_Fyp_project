@@ -25,3 +25,9 @@ export const pledgeFee = async (feeId: string, donorId: string, token?: string) 
     token,
   });
 };
+
+export const deleteOrphanFee = async (feeId: string) => {
+  return apiClient(`/fees/delete/${feeId}`, {
+    method: 'DELETE',
+  });
+};

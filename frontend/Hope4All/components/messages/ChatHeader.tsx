@@ -10,24 +10,31 @@ interface ChatHeaderProps {
 }
 
 export const ChatHeader: React.FC<ChatHeaderProps> = ({ user, onBack, isConnected }) => {
+  const displayName = user.name || user.username;
+  
   return (
-    <LinearGradient colors={['#fff', '#f8fafc']} style={styles.chatHeader}>
+    <View style={styles.chatHeader}>
       <TouchableOpacity onPress={onBack} style={styles.backBtn}>
-        <Ionicons name="chevron-back" size={28} color="#0077cc" />
+        <Ionicons name="arrow-back" size={26} color="#1e293b" />
       </TouchableOpacity>
+      
       <View style={styles.headerUser}>
-        <LinearGradient colors={['#4da6ff', '#0077cc']} style={styles.headerAvatar}>
-          <Text style={styles.headerAvatarText}>{user.username?.charAt(0).toUpperCase()}</Text>
-        </LinearGradient>
+        <View style={styles.headerAvatar}>
+          <Text style={styles.headerAvatarText}>{displayName?.charAt(0).toUpperCase()}</Text>
+          {isConnected && <View style={styles.onlineStatusIndicator} />}
+        </View>
         <View>
-          <Text style={styles.headerName}>{user.username}</Text>
-          <View style={styles.statusRow}>
-            <View style={[styles.statusDot, { backgroundColor: isConnected ? '#22c55e' : '#94a3b8' }]} />
-            <Text style={styles.statusText}>{isConnected ? 'Active now' : 'Offline'}</Text>
-          </View>
+          <Text style={styles.headerName}>{displayName}</Text>
+          <Text style={styles.statusText}>{isConnected ? 'Active now' : 'Offline'}</Text>
         </View>
       </View>
-    </LinearGradient>
+
+      <View style={styles.headerActions}>
+        <TouchableOpacity style={styles.headerActionBtn}>
+          <Ionicons name="information-circle-outline" size={26} color="#00C2E0" />
+        </TouchableOpacity>
+      </View>
+    </View>
   );
 };
 
@@ -35,18 +42,39 @@ const styles = StyleSheet.create({
   chatHeader: { 
     flexDirection: 'row', 
     alignItems: 'center', 
-    paddingTop: Platform.OS === 'ios' ? 60 : 50, 
+    paddingTop: Platform.OS === 'ios' ? 60 : 40, 
     paddingBottom: 12, 
-    paddingHorizontal: 15, 
+    paddingHorizontal: 20, 
+    backgroundColor: '#fff',
     borderBottomWidth: 1, 
     borderBottomColor: '#f1f5f9' 
   },
-  backBtn: { padding: 5, marginRight: 5 },
+  backBtn: { marginRight: 15 },
   headerUser: { flex: 1, flexDirection: 'row', alignItems: 'center' },
-  headerAvatar: { width: 40, height: 40, borderRadius: 20, justifyContent: 'center', alignItems: 'center', marginRight: 12 },
-  headerAvatarText: { color: '#fff', fontSize: 16, fontWeight: 'bold' },
-  headerName: { fontSize: 17, fontWeight: '700', color: '#1e293b' },
-  statusRow: { flexDirection: 'row', alignItems: 'center' },
-  statusDot: { width: 8, height: 8, borderRadius: 4, marginRight: 6 },
-  statusText: { fontSize: 12, color: '#64748b' },
+  headerAvatar: { 
+    width: 44, 
+    height: 44, 
+    borderRadius: 22, 
+    backgroundColor: '#f1f5f9',
+    justifyContent: 'center', 
+    alignItems: 'center', 
+    marginRight: 12,
+    position: 'relative'
+  },
+  headerAvatarText: { color: '#1e293b', fontSize: 18, fontWeight: '700' },
+  onlineStatusIndicator: {
+    position: 'absolute',
+    bottom: 0,
+    right: 0,
+    width: 12,
+    height: 12,
+    borderRadius: 6,
+    backgroundColor: '#22c55e',
+    borderWidth: 2,
+    borderColor: '#fff',
+  },
+  headerName: { fontSize: 18, fontWeight: '700', color: '#1e293b' },
+  statusText: { fontSize: 12, color: '#94a3b8', fontWeight: '500' },
+  headerActions: { flexDirection: 'row', alignItems: 'center' },
+  headerActionBtn: { padding: 5 },
 });

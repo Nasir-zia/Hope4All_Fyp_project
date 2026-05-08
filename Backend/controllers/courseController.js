@@ -51,7 +51,7 @@ export const getPendingCourses = async (req, res) => {
 export const updateCourseStatus = async (req, res) => {
   try {
     const { id } = req.params;
-    const { status } = req.body; // 'approved' or 'rejected'
+    const { status } = req.body;
 
     const course = await Course.findByIdAndUpdate(id, { status }, { new: true });
     if (!course) {

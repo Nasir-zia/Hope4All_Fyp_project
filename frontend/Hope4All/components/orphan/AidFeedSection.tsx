@@ -90,11 +90,11 @@ export const AidFeedSection: React.FC<AidFeedSectionProps> = ({ aidItems, onThan
                       <Text style={styles.confirmBtnText}>Received</Text>
                     </TouchableOpacity>
                     <TouchableOpacity 
-                      style={[styles.confirmBtn, { backgroundColor: '#ef4444' }]}
+                      style={styles.reportBtn}
                       onPress={() => onReport(aid._id)}
                     >
-                      <Ionicons name="close-circle-outline" size={14} color="#fff" />
-                      <Text style={styles.confirmBtnText}>Not Received</Text>
+                      <Ionicons name="close-circle-outline" size={16} color="#ef4444" />
+                      <Text style={styles.reportBtnText}>Not Received</Text>
                     </TouchableOpacity>
                   </View>
                 )}
@@ -124,21 +124,36 @@ const styles = StyleSheet.create({
   scroller: { paddingVertical: 5 },
   emptyCard: { width: 300, padding: 25, justifyContent: 'center', alignItems: 'center', backgroundColor: '#f8fafc', borderRadius: 28, borderStyle: 'dashed', borderWidth: 1, borderColor: '#cbd5e1' },
   emptyText: { color: '#94a3b8', fontStyle: 'italic', textAlign: 'center', lineHeight: 20 },
-  aidCard: { width: 220, backgroundColor: '#fff', borderRadius: 28, marginRight: 15, padding: 20, elevation: 3, shadowColor: '#000', shadowOpacity: 0.05, shadowRadius: 10, borderWidth: 1, borderColor: '#f1f5f9' },
-  donorHeader: { flexDirection: 'row', alignItems: 'center', gap: 10 },
-  donorAvatar: { width: 40, height: 40, borderRadius: 12, backgroundColor: '#e0f2fe', justifyContent: 'center', alignItems: 'center' },
-  donorInitial: { fontSize: 16, fontWeight: '800', color: '#0077cc' },
-  donorName: { fontSize: 14, fontWeight: '700', color: '#1e293b' },
-  aidTime: { fontSize: 10, color: '#94a3b8', marginTop: 2 },
-  divider: { height: 1, backgroundColor: '#f1f5f9', marginVertical: 15 },
-  aidDetail: { marginBottom: 15 },
-  aidType: { fontSize: 10, fontWeight: '800', color: '#0077cc', marginBottom: 4 },
-  aidQty: { fontSize: 13, fontWeight: '600', color: '#475569' },
-  statusBadge: { alignSelf: 'flex-start', paddingHorizontal: 6, paddingVertical: 2, borderRadius: 4, marginTop: 6 },
-  statusText: { fontSize: 8, fontWeight: '800' },
-  btnRow: { flexDirection: 'row', gap: 8 },
-  thanksBtn: { flexDirection: 'row', alignItems: 'center', justifyContent: 'center', gap: 6, backgroundColor: '#f0f9ff', paddingVertical: 10, borderRadius: 12 },
-  thanksBtnText: { fontSize: 12, fontWeight: '700', color: '#0077cc' },
-  confirmBtn: { flex: 1.5, flexDirection: 'row', alignItems: 'center', justifyContent: 'center', gap: 4, backgroundColor: '#10b981', paddingVertical: 10, borderRadius: 12 },
-  confirmBtnText: { fontSize: 12, fontWeight: '700', color: '#fff' },
+  aidCard: { 
+    width: 260, 
+    backgroundColor: '#fff', 
+    borderRadius: 30, 
+    marginRight: 18, 
+    padding: 22, 
+    elevation: 5, 
+    shadowColor: '#000', 
+    shadowOffset: { width: 0, height: 4 },
+    shadowOpacity: 0.08, 
+    shadowRadius: 15, 
+    borderWidth: 1, 
+    borderColor: '#f1f5f9' 
+  },
+  donorHeader: { flexDirection: 'row', alignItems: 'center', gap: 12 },
+  donorAvatar: { width: 45, height: 45, borderRadius: 15, backgroundColor: '#e0f2fe', justifyContent: 'center', alignItems: 'center' },
+  donorInitial: { fontSize: 18, fontWeight: '800', color: '#0077cc' },
+  donorName: { fontSize: 15, fontWeight: '700', color: '#1e293b' },
+  aidTime: { fontSize: 11, color: '#94a3b8', marginTop: 2 },
+  divider: { height: 1, backgroundColor: '#f1f5f9', marginVertical: 18 },
+  aidDetail: { marginBottom: 18 },
+  aidType: { fontSize: 11, fontWeight: '800', color: '#0077cc', marginBottom: 6, letterSpacing: 0.5 },
+  aidQty: { fontSize: 14, fontWeight: '600', color: '#475569' },
+  statusBadge: { alignSelf: 'flex-start', paddingHorizontal: 10, paddingVertical: 4, borderRadius: 8, marginTop: 10 },
+  statusText: { fontSize: 9, fontWeight: '800', letterSpacing: 0.5 },
+  btnRow: { flexDirection: 'column', gap: 10 },
+  thanksBtn: { flexDirection: 'row', alignItems: 'center', justifyContent: 'center', gap: 8, backgroundColor: '#f0f9ff', paddingVertical: 12, borderRadius: 16, borderWidth: 1, borderColor: '#e0f2fe' },
+  thanksBtnText: { fontSize: 13, fontWeight: '700', color: '#0077cc' },
+  confirmBtn: { flexDirection: 'row', alignItems: 'center', justifyContent: 'center', gap: 8, backgroundColor: '#10b981', paddingVertical: 12, borderRadius: 16, shadowColor: '#10b981', shadowOpacity: 0.2, shadowRadius: 8, elevation: 3 },
+  confirmBtnText: { fontSize: 13, fontWeight: '700', color: '#fff' },
+  reportBtn: { flexDirection: 'row', alignItems: 'center', justifyContent: 'center', gap: 8, backgroundColor: '#fff', paddingVertical: 12, borderRadius: 16, borderWidth: 1, borderColor: '#fecaca' },
+  reportBtnText: { fontSize: 13, fontWeight: '700', color: '#ef4444' },
 });

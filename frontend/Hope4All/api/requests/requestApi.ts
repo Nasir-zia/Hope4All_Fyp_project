@@ -2,9 +2,15 @@ import { apiClient } from '../../utils/apiClient';
 import { MaterialRequestData } from '../../types/apiTypes';
 
 export const submitMaterialRequest = async (data: MaterialRequestData) => {
+  const formData = new FormData();
+  Object.entries(data).forEach(([key, value]) => {
+    formData.append(key, String(value));
+  });
+
   return apiClient('/requests/submit', {
     method: 'POST',
-    body: data,
+    body: formData,
+    isFormData: true,
   });
 };
 
@@ -14,9 +20,16 @@ export const fetchOrphanageRequests = async (orphanageId: string) => {
 };
 
 export const submitRequirement = async (data: any) => {
+  const formData = new FormData();
+  Object.entries(data).forEach(([key, value]) => {
+    formData.append(key, String(value));
+  });
+  formData.append('isInstitutional', 'true');
+
   return apiClient('/requests/submit', {
     method: 'POST',
-    body: { ...data, isInstitutional: true },
+    body: formData,
+    isFormData: true,
   });
 };
 

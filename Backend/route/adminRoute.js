@@ -20,6 +20,7 @@ import {
   suspendUser,
   unsuspendUser,
   forwardDonation,
+  completeDonation,
   deleteUser
 } from "../controllers/adminController.js";
 
@@ -81,6 +82,9 @@ router.put("/users/:userId/unsuspend", unsuspendUser);
 
 // Forward donation to orphan
 router.put("/donations/:donationId/forward", forwardDonation);
+
+// Mark donation as completed
+router.put("/donations/:donationId/complete", completeDonation);
 
 // Delete user
 router.delete("/users/:userId", deleteUser);

@@ -16,6 +16,11 @@ const userSchema = new mongoose.Schema({
     default: "pending",
   },
   suspensionReason: { type: String, default: '' },
+  isEmailVerified: { type: Boolean, default: true },
+  verificationOTP: { type: String },
+  verificationOTPExpiry: { type: Date },
+  resetToken: { type: String },
+  resetTokenExpiry: { type: Date },
   createdAt: { type: Date, default: Date.now },
 });
 

@@ -1,5 +1,5 @@
 import React from 'react';
-import { View, Text, StyleSheet, TextInput, TouchableOpacity, ScrollView, Modal, KeyboardAvoidingView, Platform } from 'react-native';
+import { View, Text, StyleSheet, TextInput, TouchableOpacity, ScrollView, Modal, KeyboardAvoidingView, Platform, ActivityIndicator } from 'react-native';
 import { Ionicons } from '@expo/vector-icons';
 
 interface MaterialRequestSectionProps {
@@ -17,11 +17,12 @@ interface MaterialRequestSectionProps {
   setShowModal: (val: boolean) => void;
   isUrgent: boolean;
   setIsUrgent: (val: boolean) => void;
+  isSubmitting?: boolean;
 }
 
 export const MaterialRequestSection: React.FC<MaterialRequestSectionProps> = ({
   requests, reqType, setReqType, reqDesc, setReqDesc, reqUnits, setReqUnits, reqSchool, setReqSchool,
-  onAddRequest, showModal, setShowModal, isUrgent, setIsUrgent
+  onAddRequest, showModal, setShowModal, isUrgent, setIsUrgent, isSubmitting = false
 }) => {
   return (
     <View style={styles.container}>
@@ -155,8 +156,16 @@ export const MaterialRequestSection: React.FC<MaterialRequestSectionProps> = ({
               </TouchableOpacity>
             </View>
 
-            <TouchableOpacity style={styles.submitBtn} onPress={onAddRequest}>
-              <Text style={styles.submitBtnText}>Submit Request</Text>
+            <TouchableOpacity 
+              style={[styles.submitBtn, isSubmitting && styles.submitBtnDisabled]} 
+              onPress={onAddRequest}
+              disabled={isSubmitting}
+            >
+              {isSubmitting ? (
+                <ActivityIndicator color="#fff" />
+              ) : (
+                <Text style={styles.submitBtnText}>Submit Request</Text>
+              )}
             </TouchableOpacity>
           </View>
         </KeyboardAvoidingView>
@@ -189,71 +198,72 @@ const styles = StyleSheet.create({
   titleGroup: { flex: 1 },
   title: { fontSize: 20, fontWeight: '800', color: '#1e293b' },
   subtitle: { fontSize: 13, color: '#64748b', marginTop: 2 },
-  addBtn: { width: 44, height: 44, borderRadius: 15, backgroundColor: '#0077cc', justifyContent: 'center', alignItems: 'center', elevation: 4 },
-  historyScroller: { paddingVertical: 5 },
+  addBtn: { width: 44, height: 44, borderRadius: 15, backgroundColor: '#FF6B35', justifyContent: 'center', alignItems: 'center', elevation: 6, shadowColor: '#FF6B35', shadowOpacity: 0.3, shadowRadius: 10 },
+  historyScroller: { paddingVertical: 10 },
   emptyCard: {
-    width: 280, height: 120, justifyContent: 'center', alignItems: 'center',
-    backgroundColor: '#f8fafc', borderRadius: 24, borderStyle: 'dashed',
-    borderWidth: 1, borderColor: '#cbd5e1', gap: 8,
+    width: 300, height: 140, justifyContent: 'center', alignItems: 'center',
+    backgroundColor: '#f8fafc', borderRadius: 28, borderStyle: 'dashed',
+    borderWidth: 1, borderColor: '#cbd5e1', gap: 10,
   },
-  emptyText: { color: '#94a3b8', fontStyle: 'italic', fontSize: 13 },
+  emptyText: { color: '#94a3b8', fontStyle: 'italic', fontSize: 14 },
   reqCard: {
-    width: 165, backgroundColor: '#fff', padding: 16, borderRadius: 24,
-    marginRight: 15, borderWidth: 1, borderColor: '#f1f5f9', elevation: 3,
-    shadowColor: '#000', shadowOpacity: 0.05, shadowRadius: 10,
+    width: 180, backgroundColor: '#fff', padding: 20, borderRadius: 32,
+    marginRight: 18, borderWidth: 1, borderColor: '#f1f5f9', elevation: 6,
+    shadowColor: '#000', shadowOffset: { width: 0, height: 4 }, shadowOpacity: 0.08, shadowRadius: 15,
   },
-  reqHeader: { flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center', marginBottom: 15 },
-  typeIcon: { width: 36, height: 36, borderRadius: 12, justifyContent: 'center', alignItems: 'center' },
-  statusBadge: { paddingHorizontal: 7, paddingVertical: 3, borderRadius: 8 },
+  reqHeader: { flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center', marginBottom: 18 },
+  typeIcon: { width: 40, height: 40, borderRadius: 14, justifyContent: 'center', alignItems: 'center' },
+  statusBadge: { paddingHorizontal: 10, paddingVertical: 4, borderRadius: 8 },
   statusPending: { backgroundColor: '#fff7ed' },
   statusApproved: { backgroundColor: '#f0fdf4' },
   statusPledged: { backgroundColor: '#eff6ff' },
-  statusText: { fontSize: 8, fontWeight: '800', color: '#64748b' },
-  reqTitle: { fontSize: 15, fontWeight: '700', color: '#1e293b' },
-  reqUnits: { fontSize: 13, color: '#64748b', marginTop: 4 },
-  reqDate: { fontSize: 11, color: '#94a3b8', marginTop: 8 },
+  statusText: { fontSize: 8, fontWeight: '900', color: '#64748b', letterSpacing: 0.5 },
+  reqTitle: { fontSize: 16, fontWeight: '800', color: '#1e293b' },
+  reqUnits: { fontSize: 14, color: '#64748b', marginTop: 4, fontWeight: '600' },
+  reqDate: { fontSize: 11, color: '#94a3b8', marginTop: 12 },
 
-  // Modal styles (no overlay issues)
+  // Modal styles
   modalOverlay: {
     flex: 1,
-    backgroundColor: 'rgba(0,0,0,0.5)',
+    backgroundColor: 'rgba(15, 23, 42, 0.6)',
     justifyContent: 'flex-end',
   },
   modalSheet: {
     backgroundColor: '#fff',
-    borderTopLeftRadius: 36,
-    borderTopRightRadius: 36,
-    padding: 28,
-    paddingBottom: 40,
-    elevation: 20,
+    borderTopLeftRadius: 40,
+    borderTopRightRadius: 40,
+    padding: 30,
+    paddingBottom: Platform.OS === 'ios' ? 50 : 40,
+    elevation: 25,
     shadowColor: '#000',
-    shadowOpacity: 0.15,
-    shadowRadius: 20,
+    shadowOpacity: 0.2,
+    shadowRadius: 30,
   },
-  formHeader: { flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center', marginBottom: 24 },
-  formTitle: { fontSize: 20, fontWeight: '800', color: '#1e293b' },
-  closeBtn: { width: 36, height: 36, borderRadius: 18, backgroundColor: '#f1f5f9', justifyContent: 'center', alignItems: 'center' },
-  label: { fontSize: 13, fontWeight: '700', color: '#475569', marginBottom: 12 },
-  typeSelector: { flexDirection: 'row', flexWrap: 'wrap', gap: 10, marginBottom: 22 },
+  formHeader: { flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center', marginBottom: 30 },
+  formTitle: { fontSize: 22, fontWeight: '900', color: '#1e293b', letterSpacing: 0.5 },
+  closeBtn: { width: 40, height: 40, borderRadius: 20, backgroundColor: '#f1f5f9', justifyContent: 'center', alignItems: 'center' },
+  label: { fontSize: 14, fontWeight: '800', color: '#475569', marginBottom: 15 },
+  typeSelector: { flexDirection: 'row', flexWrap: 'wrap', gap: 12, marginBottom: 25 },
   typeChip: {
-    flexDirection: 'row', alignItems: 'center', gap: 6,
-    paddingHorizontal: 14, paddingVertical: 9, borderRadius: 14,
-    backgroundColor: '#f1f5f9', borderWidth: 1, borderColor: '#e2e8f0',
+    flexDirection: 'row', alignItems: 'center', gap: 8,
+    paddingHorizontal: 16, paddingVertical: 10, borderRadius: 16,
+    backgroundColor: '#f8fafc', borderWidth: 1, borderColor: '#e2e8f0',
   },
-  typeChipActive: { backgroundColor: '#0077cc', borderColor: '#0077cc' },
-  typeChipText: { fontSize: 13, color: '#475569', fontWeight: '600' },
+  typeChipActive: { backgroundColor: '#FF6B35', borderColor: '#FF6B35' },
+  typeChipText: { fontSize: 13, color: '#475569', fontWeight: '700' },
   typeChipTextActive: { color: '#fff' },
-  inputGroup: { marginBottom: 16 },
-  inputLabel: { fontSize: 12, fontWeight: '700', color: '#64748b', marginBottom: 8, marginLeft: 4 },
+  inputGroup: { marginBottom: 20 },
+  inputLabel: { fontSize: 13, fontWeight: '800', color: '#64748b', marginBottom: 10, marginLeft: 4 },
   input: {
-    backgroundColor: '#f8fafc', borderRadius: 16, padding: 16,
-    borderWidth: 1, borderColor: '#e2e8f0', color: '#1e293b', fontSize: 15,
+    backgroundColor: '#f8fafc', borderRadius: 18, padding: 16,
+    borderWidth: 1, borderColor: '#e2e8f0', color: '#1e293b', fontSize: 15, fontWeight: '600',
   },
-  submitBtn: { backgroundColor: '#0077cc', padding: 18, borderRadius: 20, alignItems: 'center', marginTop: 8 },
-  submitBtnText: { color: '#fff', fontSize: 16, fontWeight: '800' },
+  submitBtn: { backgroundColor: '#FF6B35', padding: 20, borderRadius: 22, alignItems: 'center', marginTop: 10, elevation: 6, shadowColor: '#FF6B35', shadowOpacity: 0.3, shadowRadius: 15, minHeight: 60, justifyContent: 'center' },
+  submitBtnDisabled: { backgroundColor: '#cbd5e1', shadowOpacity: 0 },
+  submitBtnText: { color: '#fff', fontSize: 16, fontWeight: '900', letterSpacing: 1 },
   urgentToggle: {
     flexDirection: 'row', alignItems: 'center', gap: 10,
-    padding: 14, borderRadius: 16, backgroundColor: '#f8fafc',
+    padding: 16, borderRadius: 18, backgroundColor: '#f8fafc',
     borderWidth: 1, borderColor: '#e2e8f0',
   },
   urgentToggleActive: {
@@ -261,7 +271,7 @@ const styles = StyleSheet.create({
     borderColor: '#ef4444',
   },
   urgentToggleText: {
-    fontSize: 14, fontWeight: '700', color: '#64748b',
+    fontSize: 14, fontWeight: '800', color: '#64748b',
   },
   urgentToggleTextActive: {
     color: '#fff',

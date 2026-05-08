@@ -69,15 +69,15 @@ export const AidHistoryCard: React.FC<AidHistoryCardProps> = ({ aid, onThanks, o
               style={styles.confirmBtn}
               onPress={() => onConfirm(aid._id)}
             >
-              <Ionicons name="checkmark-circle" size={16} color="#fff" />
+              <Ionicons name="checkmark-circle-outline" size={18} color="#fff" />
               <Text style={styles.confirmBtnText}>Receive</Text>
             </TouchableOpacity>
             <TouchableOpacity
-              style={[styles.confirmBtn, { backgroundColor: '#ef4444' }]}
+              style={styles.reportBtn}
               onPress={() => onReport(aid._id)}
             >
-              <Ionicons name="close-circle" size={16} color="#fff" />
-              <Text style={styles.confirmBtnText}>Not Received</Text>
+              <Ionicons name="close-circle-outline" size={18} color="#ef4444" />
+              <Text style={styles.reportBtnText}>Not Received</Text>
             </TouchableOpacity>
           </View>
         )}
@@ -97,95 +97,120 @@ export const AidHistoryCard: React.FC<AidHistoryCardProps> = ({ aid, onThanks, o
 const styles = StyleSheet.create({
   aidCard: {
     backgroundColor: '#fff',
-    padding: 15,
-    borderRadius: 20,
-    marginRight: 15,
-    width: 220,
-    elevation: 3,
+    padding: 20,
+    borderRadius: 30,
+    marginRight: 18,
+    width: 260,
+    elevation: 5,
     shadowColor: '#000',
-    shadowOffset: { width: 0, height: 2 },
-    shadowOpacity: 0.1,
-    shadowRadius: 5,
-    borderLeftWidth: 5,
-    borderLeftColor: '#33cc99',
+    shadowOffset: { width: 0, height: 4 },
+    shadowOpacity: 0.08,
+    shadowRadius: 15,
+    borderLeftWidth: 6,
   },
   donorHeader: {
     flexDirection: 'row',
     alignItems: 'center',
-    marginBottom: 12,
+    marginBottom: 15,
+    gap: 12,
   },
   donorAvatar: {
-    width: 40,
-    height: 40,
-    borderRadius: 20,
+    width: 44,
+    height: 44,
+    borderRadius: 15,
     backgroundColor: '#f1f5f9',
     justifyContent: 'center',
     alignItems: 'center',
-    marginRight: 10,
+    borderWidth: 1,
+    borderColor: '#e2e8f0',
   },
   donorInitial: {
     fontSize: 18,
-    fontWeight: 'bold',
+    fontWeight: '900',
     color: '#0077cc',
   },
   donorName: {
-    fontSize: 14,
-    fontWeight: 'bold',
-    color: '#333',
+    fontSize: 15,
+    fontWeight: '800',
+    color: '#1e293b',
   },
   aidTime: {
     fontSize: 11,
-    color: '#999',
+    color: '#94a3b8',
+    marginTop: 2,
   },
   aidDetail: {
-    backgroundColor: '#f0fdf4',
-    padding: 10,
-    borderRadius: 12,
-    marginBottom: 12,
+    backgroundColor: '#f8fafc',
+    padding: 15,
+    borderRadius: 20,
+    marginBottom: 15,
+    borderWidth: 1,
+    borderColor: '#f1f5f9',
   },
   aidType: {
     fontSize: 10,
-    fontWeight: '800',
-    color: '#16a34a',
-    letterSpacing: 0.5,
+    fontWeight: '900',
+    color: '#FF6B35',
+    letterSpacing: 1,
+    marginBottom: 4,
   },
   aidQty: {
-    fontSize: 15,
-    fontWeight: 'bold',
-    color: '#333',
-    marginTop: 2,
+    fontSize: 16,
+    fontWeight: '900',
+    color: '#1e293b',
   },
   thanksBtn: {
     flexDirection: 'row',
     alignItems: 'center',
     justifyContent: 'center',
-    paddingVertical: 10,
-    borderRadius: 12,
+    paddingVertical: 12,
+    borderRadius: 16,
     backgroundColor: '#f0f9ff',
+    borderWidth: 1,
+    borderColor: '#e0f2fe',
   },
   thanksBtnText: {
     fontSize: 13,
-    fontWeight: '700',
+    fontWeight: '800',
     color: '#0077cc',
-    marginLeft: 6,
+    marginLeft: 8,
   },
-  avatarImage: { width: '100%', height: '100%', borderRadius: 20 },
+  avatarImage: { width: '100%', height: '100%', borderRadius: 15 },
   confirmBtn: {
-    flex: 1.2,
     flexDirection: 'row',
     alignItems: 'center',
     justifyContent: 'center',
-    paddingVertical: 10,
-    borderRadius: 12,
+    paddingVertical: 12,
+    borderRadius: 16,
     backgroundColor: '#10b981',
+    shadowColor: '#10b981',
+    shadowOpacity: 0.2,
+    shadowRadius: 10,
+    elevation: 3,
   },
   confirmBtnText: {
     fontSize: 13,
-    fontWeight: '700',
+    fontWeight: '800',
     color: '#fff',
-    marginLeft: 6,
+    marginLeft: 8,
   },
-  btnRow: { flexDirection: 'row', gap: 8 },
-  statusBadge: { alignSelf: 'flex-start', paddingHorizontal: 8, paddingVertical: 4, borderRadius: 6, marginTop: 8 },
-  statusText: { fontSize: 9, fontWeight: '800' },
+  reportBtn: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    justifyContent: 'center',
+    paddingVertical: 12,
+    borderRadius: 16,
+    backgroundColor: '#fff',
+    borderWidth: 1,
+    borderColor: '#fecaca',
+  },
+  reportBtnText: {
+    fontSize: 13,
+    fontWeight: '800',
+    color: '#ef4444',
+    marginLeft: 8,
+  },
+  btnRow: { flexDirection: 'column', gap: 10 },
+  statusBadge: { alignSelf: 'flex-start', paddingHorizontal: 10, paddingVertical: 4, borderRadius: 8, marginTop: 10 },
+  statusText: { fontSize: 9, fontWeight: '900', letterSpacing: 0.5 },
 });

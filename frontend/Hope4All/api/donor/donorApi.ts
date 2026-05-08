@@ -3,10 +3,10 @@ import { DonorData, DonationData } from '../../types/apiTypes';
 
 export const fetchDonorProfile = async (userId: string) => {
   try {
-    const data = await apiClient(`/donors/profile/${userId}`);
+    const data = await apiClient(`/donors/profile/${userId}`, { silent: true });
     return data.donor;
   } catch (error: any) {
-    if (error.message.includes('404') || error.message.includes('Donor not found')) return null;
+    if (error.status === 404 || error.message.includes('404') || error.message.includes('Donor not found')) return null;
     throw error;
   }
 };

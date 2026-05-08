@@ -3,6 +3,7 @@ import { Stack, router, useSegments } from 'expo-router';
 import { AuthProvider, useAuth } from '../hooks/useAuth';
 import { TempSignupProvider } from '../contexts/TempSignupContext';
 import { View, ActivityIndicator, Text } from 'react-native';
+import SplashScreen from '../components/common/SplashScreen';
 
 function RootLayoutNav() {
   return (
@@ -20,6 +21,10 @@ function RootLayoutNav() {
       <Stack.Screen name="volunteer" options={{ headerShown: false }} />
       <Stack.Screen name="orphanage" options={{ headerShown: false }} />
       <Stack.Screen name="admin" options={{ headerShown: false }} />
+      <Stack.Screen name="profile-setup" options={{ headerShown: false }} />
+      <Stack.Screen name="forgot-password" options={{ headerShown: false }} />
+      <Stack.Screen name="verify-email" options={{ headerShown: false }} />
+      <Stack.Screen name="messages" options={{ headerShown: false }} />
     </Stack>
   );
 }
@@ -53,18 +58,32 @@ function AuthRedirector({ children }: { children: React.ReactNode }) {
     };
   }, [socket, user?.token, token]);
 
+  const [isSplashDone, setIsSplashDone] = React.useState(false);
+
   React.useEffect(() => {
-    console.log('[AuthRedirector] State:', { hasUser: !!user, loading, segments });
-    if (loading) return;
+    const timer = setTimeout(() => {
+      setIsSplashDone(true);
+    }, 2500); // 2.5 seconds minimum splash screen
+    return () => clearTimeout(timer);
+  }, []);
+
+  const isActuallyLoading = loading || !isSplashDone;
+
+  React.useEffect(() => {
+    console.log('[AuthRedirector] State:', { hasUser: !!user, loading, isActuallyLoading, segments });
+    if (isActuallyLoading) return;
 
     const segment = segments[0] as string | undefined;
-    const isAuthPage = segment === 'login' || segment === 'signup';
+    const isAuthPage = segment === 'login' || segment === 'signup' || segment === 'role';
     const isIndexPage = !segment || segment === 'index';
+    const isProfileSetup = segment === 'profile-setup';
     const isDashboardPage = ['orphan', 'donor', 'volunteer', 'admin', 'orphanage'].includes(segment || '');
 
+    // Redirect Logged-in users away from Auth/Index pages
     if (user && (isAuthPage || isIndexPage)) {
       console.log('[AuthRedirector] Logged in, redirecting to dashboard...');
-      let redirectPath = '/role';
+      let redirectPath = '/login'; // Fallback
+      
       if (user.role === 'orphan') redirectPath = '/orphan';
       else if (user.role === 'donor') redirectPath = '/donor';
       else if (user.role === 'volunteer') redirectPath = '/volunteer';
@@ -72,18 +91,18 @@ function AuthRedirector({ children }: { children: React.ReactNode }) {
       else if (user.role === 'admin') redirectPath = '/admin';
 
       router.replace(redirectPath as any);
-    } else if (!user && isDashboardPage) {
+      return;
+    } 
+
+    // Redirect Logged-out users away from protected pages
+    if (!user && (isDashboardPage || isProfileSetup)) {
       console.log('[AuthRedirector] Logged out, redirecting to login...');
       router.replace('/login');
     }
   }, [user, loading, segments]);
 
-  if (loading) {
-    return (
-      <View style={{ flex: 1, justifyContent: 'center', alignItems: 'center' }}>
-        <ActivityIndicator size="large" />
-      </View>
-    );
+  if (isActuallyLoading) {
+    return <SplashScreen />;
   }
 
   return <>{children}</>;

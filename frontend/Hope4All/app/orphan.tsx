@@ -23,8 +23,8 @@ import BackButton from '@/components/BackButton';
 export default function OrphanDashboard() {
   const {
     user, logout, orphanProfile, isRegistering, loadingExtras,
-    fees, feeTitle, setFeeTitle, feeAmount, setFeeAmount, feeDate, setFeeDate, loadingFees, submittingFee,
-    materialRequests, progressReports, aidFeed, availableCourses, showRequestModal, setShowRequestModal,
+    fees, feeTitle, setFeeTitle, feeAmount, setFeeAmount, feeDate, setFeeDate, feePaymentNumber, setFeePaymentNumber, loadingFees, submittingFee,
+    materialRequests, progressReports, aidFeed, availableCourses, showRequestModal, setShowRequestModal, submittingMaterial,
     reqType, setReqType, reqDesc, setReqDesc, reqUnits, setReqUnits, reqSchool, setReqSchool,
     isUrgent, setIsUrgent,
     regName, setRegName, regAge, setRegAge, regGender, setRegGender, regLocation, setRegLocation, regPhone, setRegPhone,
@@ -33,7 +33,7 @@ export default function OrphanDashboard() {
     editPhone, setEditPhone, editGender, setEditGender, newProfilePicUri, updatingProfile,
     showProgressModal, setShowProgressModal, progTitle, setProgTitle, progCategory, setProgCategory,
     progScore, setProgScore, progRemarks, setProgRemarks, progImgUri, submittingProg,
-    handleAddFee, handleAddMaterialRequest, openSettings, handleUpdateProfile, handleAddProgress, handleDeleteProgress,
+    handleAddFee, handleDeleteFee, handleAddMaterialRequest, openSettings, handleUpdateProfile, handleAddProgress, handleDeleteProgress,
     pickImage, pickDocument, handleProfileSubmit, handleConfirmReceipt, handleReportIssue
   } = useOrphanDashboard();
 
@@ -96,6 +96,7 @@ export default function OrphanDashboard() {
 
         <StatsCard
           coursesCount={availableCourses.length}
+          aidCount={aidFeed.length}
         />
 
         <AidFeedSection
@@ -139,7 +140,9 @@ export default function OrphanDashboard() {
           feeTitle={feeTitle} setFeeTitle={setFeeTitle}
           feeAmount={feeAmount} setFeeAmount={setFeeAmount}
           feeDate={feeDate} setFeeDate={setFeeDate}
+          feePaymentNumber={feePaymentNumber} setFeePaymentNumber={setFeePaymentNumber}
           onAddFee={handleAddFee}
+          onDeleteFee={handleDeleteFee}
           loading={loadingFees}
           submitting={submittingFee}
         />
@@ -155,6 +158,7 @@ export default function OrphanDashboard() {
           setShowModal={setShowRequestModal}
           isUrgent={isUrgent}
           setIsUrgent={setIsUrgent}
+          isSubmitting={submittingMaterial}
         />
 
         {/* Supporting Documents Section */}
@@ -232,7 +236,7 @@ export default function OrphanDashboard() {
 const styles = StyleSheet.create({
   container: {
     flex: 1,
-    backgroundColor: '#f8fafc',
+    backgroundColor: '#ffffff',
   },
   scrollContent: {
     paddingBottom: 50,
