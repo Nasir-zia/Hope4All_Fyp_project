@@ -1,7 +1,7 @@
 import express from "express";
 import multer from "multer";
 import pkg from "multer-storage-cloudinary";
-const CloudinaryStorage = pkg; // v2 style, no destructuring
+const CloudinaryStorage = pkg;
 import cloudinary from "../Files/cloudinary.js";
 import { registerOrphan, getOrphanProfile, updateOrphanProfile, confirmDonationReceipt, reportDonationIssue } from "../controllers/orphanController.js";
 
@@ -15,6 +15,7 @@ const storage = new CloudinaryStorage({
     resource_type: "auto",
   },
 });
+
 
 const upload = multer({ storage });
 

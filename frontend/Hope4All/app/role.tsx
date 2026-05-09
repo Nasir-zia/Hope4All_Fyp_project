@@ -96,8 +96,15 @@ export default function RoleScreen() {
         // Log in the user immediately (since they are pre-verified)
         await login(response.token || '', response.user as any);
 
-        // Redirect to Profile Setup screen
-        router.replace('/profile-setup' as any);
+        // Redirect to the appropriate dashboard instead of profile-setup
+        switch (selected) {
+          case 'orphan': router.replace('/orphan' as any); break;
+          case 'donor': router.replace('/donor' as any); break;
+          case 'volunteer': router.replace('/volunteer' as any); break;
+          case 'orphanage': router.replace('/orphanage' as any); break;
+          case 'admin': router.replace('/admin' as any); break;
+          default: router.replace('/login' as any);
+        }
       } catch (error: any) {
         Alert.alert('Error', error.message || 'Signup failed');
       } finally {

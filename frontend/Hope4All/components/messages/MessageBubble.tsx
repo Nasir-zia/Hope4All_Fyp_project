@@ -1,5 +1,8 @@
 import React from 'react';
-import { View, Text, StyleSheet, Image, TouchableOpacity, Linking } from 'react-native';
+import { View, Text, StyleSheet, Image, TouchableOpacity, Linking, Alert } from 'react-native';
+
+import { getDownloadableUrl } from '../../utils/cloudinaryUtils';
+
 import Animated, { FadeInRight, FadeInLeft } from 'react-native-reanimated';
 import { LinearGradient } from 'expo-linear-gradient';
 import { Ionicons } from '@expo/vector-icons';
@@ -19,14 +22,29 @@ export const MessageBubble: React.FC<MessageBubbleProps> = ({ item, isMine }) =>
         style={[styles.msgBubble, isMine ? styles.bubbleMine : styles.bubbleTheirs]}
       >
         {item.type === 'image' && item.fileUrl && (
-          <TouchableOpacity onPress={() => Linking.openURL(item.fileUrl)}>
+          <TouchableOpacity 
+            onPress={async () => {
+              try {
+                if (item.fileUrl) await Linking.openURL(getDownloadableUrl(item.fileUrl));
+              } catch (e) {
+                Alert.alert('Error', 'Could not open image.');
+              }
+            }}
+          >
             <Image source={{ uri: item.fileUrl }} style={styles.msgImage} resizeMode="cover" />
           </TouchableOpacity>
         )}
+
         {item.type === 'file' && item.fileUrl && (
           <TouchableOpacity 
             style={[styles.fileContainer, isMine ? styles.fileMine : styles.fileTheirs]} 
-            onPress={() => Linking.openURL(item.fileUrl)}
+            onPress={async () => {
+              try {
+                if (item.fileUrl) await Linking.openURL(getDownloadableUrl(item.fileUrl));
+              } catch (e) {
+                Alert.alert('Error', 'Could not open file.');
+              }
+            }}
           >
             <Ionicons name="document-attach" size={24} color={isMine ? "#fff" : "#00C2E0"} />
             <View style={{ flex: 1 }}>

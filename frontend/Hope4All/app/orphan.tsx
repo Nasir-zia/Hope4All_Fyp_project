@@ -3,6 +3,8 @@ import { View, Text, Image, Linking, TouchableOpacity, ScrollView, StyleSheet, A
 import { Ionicons } from '@expo/vector-icons';
 import { router } from 'expo-router';
 import { useOrphanDashboard } from '@/hooks/useOrphanDashboard';
+import { getDownloadableUrl } from '../utils/cloudinaryUtils';
+
 
 // Modular Components
 import { OrphanHeader } from '@/components/orphan/OrphanHeader';
@@ -34,7 +36,8 @@ export default function OrphanDashboard() {
     showProgressModal, setShowProgressModal, progTitle, setProgTitle, progCategory, setProgCategory,
     progScore, setProgScore, progRemarks, setProgRemarks, progImgUri, submittingProg,
     handleAddFee, handleDeleteFee, handleAddMaterialRequest, openSettings, handleUpdateProfile, handleAddProgress, handleDeleteProgress,
-    pickImage, pickDocument, handleProfileSubmit, handleConfirmReceipt, handleReportIssue
+    pickImage, pickDocument, pickBForm, handleProfileSubmit, handleConfirmReceipt, handleReportIssue,
+    bFormUri, bFormName
   } = useOrphanDashboard();
 
   if (user?.status === 'suspended') {
@@ -51,6 +54,7 @@ export default function OrphanDashboard() {
         gender={regGender} setGender={setRegGender}
         profilePicUri={profilePicUri} onPickImage={() => pickImage()}
         docUri={docUri} docName={docName} onPickDocument={pickDocument}
+        bFormUri={bFormUri} bFormName={bFormName} onPickBForm={pickBForm}
         onSubmit={handleProfileSubmit}
         onLogout={logout}
         submitting={submittingProfile}
@@ -179,23 +183,59 @@ export default function OrphanDashboard() {
                 </View>
               )}
               
-              <TouchableOpacity 
-                style={{ 
-                  flexDirection: 'row', 
-                  alignItems: 'center', 
-                  justifyContent: 'center',
-                  gap: 8, 
-                  backgroundColor: '#f0f9ff', 
-                  padding: 16, 
-                  borderRadius: 16,
-                  borderWidth: 1,
-                  borderColor: '#bae6fd'
-                }}
-                onPress={() => Linking.openURL(orphanProfile.supportingDocs)}
-              >
-                <Ionicons name="eye-outline" size={20} color="#0077cc" />
-                <Text style={{ color: '#0077cc', fontWeight: '700' }}>View Document</Text>
-              </TouchableOpacity>
+              <View style={{ flexDirection: 'row', gap: 10 }}>
+                <TouchableOpacity 
+                  style={{ 
+                    flex: 1,
+                    flexDirection: 'row', 
+                    alignItems: 'center', 
+                    justifyContent: 'center',
+                    gap: 8, 
+                    backgroundColor: '#f0f9ff', 
+                    padding: 16, 
+                    borderRadius: 16,
+                    borderWidth: 1,
+                    borderColor: '#bae6fd'
+                  }}
+                  onPress={async () => {
+                    try {
+                      if (orphanProfile.supportingDocs) await Linking.openURL(orphanProfile.supportingDocs);
+                    } catch (e) {
+                      Alert.alert('Error', 'Could not open document viewer.');
+                    }
+                  }}
+                >
+                  <Ionicons name="eye-outline" size={20} color="#0077cc" />
+                  <Text style={{ color: '#0077cc', fontWeight: '700' }}>View</Text>
+                </TouchableOpacity>
+                <TouchableOpacity 
+                  style={{ 
+                    flex: 1,
+                    flexDirection: 'row', 
+                    alignItems: 'center', 
+                    justifyContent: 'center',
+                    gap: 8, 
+                    backgroundColor: '#f0fdf4', 
+                    padding: 16, 
+                    borderRadius: 16,
+                    borderWidth: 1,
+                    borderColor: '#bbf7d0'
+                  }}
+                  onPress={async () => {
+                    try {
+                      const url = getDownloadableUrl(orphanProfile.supportingDocs);
+                      if (url) await Linking.openURL(url);
+                    } catch (e) {
+                      Alert.alert('Error', 'Could not download document.');
+                    }
+                  }}
+                >
+                  <Ionicons name="download-outline" size={20} color="#16a34a" />
+                  <Text style={{ color: '#16a34a', fontWeight: '700' }}>Download</Text>
+                </TouchableOpacity>
+              </View>
+
+
             </View>
           </View>
         )}

@@ -62,6 +62,8 @@ export const useOrphanDashboard = () => {
   const [profilePicUri, setProfilePicUri] = useState<string | null>(null);
   const [docUri, setDocUri] = useState<string | null>(null);
   const [docName, setDocName] = useState('');
+  const [bFormUri, setBFormUri] = useState<string | null>(null);
+  const [bFormName, setBFormName] = useState('');
   const [submittingProfile, setSubmittingProfile] = useState(false);
 
   // Edit Profile States
@@ -373,15 +375,39 @@ export const useOrphanDashboard = () => {
 
   const pickDocument = async () => {
     try {
-      const result = await DocumentPicker.getDocumentAsync({ type: '*/*', copyToCacheDirectory: true });
+      let result = await ImagePicker.launchImageLibraryAsync({
+        mediaTypes: ['images'],
+        allowsEditing: false,
+        quality: 0.8,
+      });
       if (!result.canceled) {
         setDocUri(result.assets[0].uri);
-        setDocName(result.assets[0].name);
+        const name = result.assets[0].uri.split('/').pop() || 'document.jpg';
+        setDocName(name);
       }
     } catch (err) {
       console.log('Error picking document:', err);
     }
   };
+
+
+  const pickBForm = async () => {
+    try {
+      let result = await ImagePicker.launchImageLibraryAsync({
+        mediaTypes: ['images'],
+        allowsEditing: false,
+        quality: 0.8,
+      });
+      if (!result.canceled) {
+        setBFormUri(result.assets[0].uri);
+        const name = result.assets[0].uri.split('/').pop() || 'bform.jpg';
+        setBFormName(name);
+      }
+    } catch (err) {
+      console.log('Error picking B-Form:', err);
+    }
+  };
+
 
   const handleProfileSubmit = async () => {
     if (!regName || !regAge || !regLocation || !regPhone || !profilePicUri || !docUri) {
@@ -420,7 +446,8 @@ export const useOrphanDashboard = () => {
         } as any);
       }
 
-      const documentName = docUri.split('/').pop() || 'document.pdf';
+      const documentName = docName || docUri.split('/').pop() || 'document.jpg';
+      
       if (Platform.OS === 'web') {
         const docBlob = await uriToBlob(docUri);
         formData.append('supportingDocs', docBlob, documentName);
@@ -428,9 +455,26 @@ export const useOrphanDashboard = () => {
         formData.append('supportingDocs', {
           uri: formatFileUri(docUri),
           name: documentName,
-          type: 'application/pdf',
+          type: 'image/jpeg',
         } as any);
       }
+
+      if (bFormUri) {
+        const bfName = bFormName || bFormUri.split('/').pop() || 'bform.jpg';
+        
+        if (Platform.OS === 'web') {
+          const bfBlob = await uriToBlob(bFormUri);
+          formData.append('bFormDoc', bfBlob, bfName);
+        } else {
+          formData.append('bFormDoc', {
+            uri: formatFileUri(bFormUri),
+            name: bfName,
+            type: 'image/jpeg',
+          } as any);
+        }
+      }
+
+
 
       await registerOrphanProfile(formData);
       
@@ -454,12 +498,12 @@ export const useOrphanDashboard = () => {
     reqType, setReqType, reqDesc, setReqDesc, reqUnits, setReqUnits, reqSchool, setReqSchool,
     isUrgent, setIsUrgent,
     regName, setRegName, regAge, setRegAge, regGender, setRegGender, regLocation, setRegLocation, regPhone, setRegPhone,
-    profilePicUri, docUri, docName, submittingProfile,
+    profilePicUri, docUri, docName, bFormUri, bFormName, submittingProfile,
     showEditModal, setShowEditModal, editName, setEditName, editAge, setEditAge, editLocation, setEditLocation,
     editPhone, setEditPhone, editGender, setEditGender, newProfilePicUri, updatingProfile,
     showProgressModal, setShowProgressModal, progTitle, setProgTitle, progCategory, setProgCategory,
     progScore, setProgScore, progRemarks, setProgRemarks, progImgUri, submittingProg, showFullProgressList, setShowFullProgressList,
     handleAddFee, handleDeleteFee, handleAddMaterialRequest, openSettings, handleUpdateProfile, handleAddProgress, handleDeleteProgress,
-    pickImage, pickDocument, handleProfileSubmit, handleConfirmReceipt, handleReportIssue
+    pickImage, pickDocument, pickBForm, handleProfileSubmit, handleConfirmReceipt, handleReportIssue
   };
 };

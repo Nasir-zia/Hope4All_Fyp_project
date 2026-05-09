@@ -1,5 +1,7 @@
 import React from 'react';
 import { View, Text, Image, Linking, TouchableOpacity } from 'react-native';
+import { getDownloadableUrl } from '../../utils/cloudinaryUtils';
+
 import { Ionicons } from '@expo/vector-icons';
 import { adminStyles as styles } from './AdminStyles';
 
@@ -46,10 +48,11 @@ export const DonationsTab: React.FC<DonationsTabProps> = ({ donations, onForward
                 />
                 <TouchableOpacity 
                   style={{ position: 'absolute', top: 10, right: 10, backgroundColor: 'rgba(0,0,0,0.5)', padding: 6, borderRadius: 20 }}
-                  onPress={() => Linking.openURL(d.donationPhoto)}
+                  onPress={() => Linking.openURL(getDownloadableUrl(d.donationPhoto))}
                 >
-                  <Ionicons name="expand" size={16} color="#fff" />
+                  <Ionicons name="download-outline" size={16} color="#fff" />
                 </TouchableOpacity>
+
               </View>
             )}
             

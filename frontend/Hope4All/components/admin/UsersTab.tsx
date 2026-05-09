@@ -1,7 +1,9 @@
 import React from 'react';
-import { View, Text, TouchableOpacity, Image, Linking, Alert, Platform, TextInput } from 'react-native';
+import { View, Text, TouchableOpacity, Image, Linking, Alert, Platform, TextInput, ScrollView } from 'react-native';
 import { Ionicons } from '@expo/vector-icons';
 import { adminStyles as styles } from './AdminStyles';
+import { getDownloadableUrl } from '../../utils/cloudinaryUtils';
+
 
 interface UsersTabProps {
   users: any[];
@@ -10,7 +12,7 @@ interface UsersTabProps {
 }
 
 export const UsersTab: React.FC<UsersTabProps> = ({ users, onUpdateStatus, onDelete }) => {
-  const [reasons, setReasons] = React.useState<{[key: string]: string}>({});
+  const [reasons, setReasons] = React.useState<{ [key: string]: string }>({});
 
   const handleReasonChange = (id: string, text: string) => {
     setReasons(prev => ({ ...prev, [id]: text }));
@@ -87,12 +89,12 @@ export const UsersTab: React.FC<UsersTabProps> = ({ users, onUpdateStatus, onDel
             {u.status === 'verified' && (
               <View style={{ marginTop: 10, paddingHorizontal: 5 }}>
                 <TextInput
-                  style={{ 
-                    backgroundColor: '#f8fafc', 
-                    borderWidth: 1, 
-                    borderColor: '#e2e8f0', 
-                    borderRadius: 10, 
-                    padding: 8, 
+                  style={{
+                    backgroundColor: '#f8fafc',
+                    borderWidth: 1,
+                    borderColor: '#e2e8f0',
+                    borderRadius: 10,
+                    padding: 8,
                     fontSize: 12,
                     color: '#475569'
                   }}
@@ -112,8 +114,8 @@ export const UsersTab: React.FC<UsersTabProps> = ({ users, onUpdateStatus, onDel
                 <View style={styles.detailRow}>
                   <Ionicons name="location-outline" size={14} color="#64748b" />
                   <Text style={styles.detailText}>
-                    {typeof u.location === 'object' 
-                      ? `${u.location.address || ''}, ${u.location.city || ''}` 
+                    {typeof u.location === 'object'
+                      ? `${u.location.address || ''}, ${u.location.city || ''}`
                       : u.location}
                   </Text>
                 </View>
@@ -128,77 +130,105 @@ export const UsersTab: React.FC<UsersTabProps> = ({ users, onUpdateStatus, onDel
                     <Text style={{ fontSize: 12, color: '#64748b', fontStyle: 'italic', marginBottom: 12 }}>"{u.bio}"</Text>
                   )}
                   {u.supportingDocs ? (
-                    <View style={{ gap: 8 }}>
+                    <View style={{ gap: 8, marginTop: 10 }}>
+                      <Text style={{ fontSize: 13, fontWeight: '700', color: '#1e293b' }}>Supporting Documents</Text>
                       {u.supportingDocs.match(/\\.(jpg|jpeg|png|webp|gif)$|cloudinary/i) && !u.supportingDocs.toLowerCase().endsWith('.pdf') ? (
-                        <Image 
-                          source={{ uri: u.supportingDocs }} 
-                          style={{ width: '100%', height: 120, borderRadius: 12, backgroundColor: '#f1f5f9', borderWidth: 1, borderColor: '#e2e8f0' }} 
+                        <Image
+                          source={{ uri: u.supportingDocs }}
+                          style={{ width: '100%', height: 120, borderRadius: 12, backgroundColor: '#f1f5f9', borderWidth: 1, borderColor: '#e2e8f0' }}
                           resizeMode="cover"
                         />
                       ) : (
                         <View style={{ width: '100%', height: 80, borderRadius: 12, backgroundColor: '#f8fafc', justifyContent: 'center', alignItems: 'center', borderWidth: 1, borderColor: '#e2e8f0', borderStyle: 'dashed' }}>
                           <Ionicons name="document-text-outline" size={32} color="#0077cc" />
-                          <Text style={{ fontSize: 12, color: '#64748b', marginTop: 4 }}>PDF / Verification Document</Text>
+                          <Text style={{ fontSize: 12, color: '#64748b', marginTop: 4 }}>Father Death Certificate</Text>
                         </View>
                       )}
-                      
-                      <View style={{ flexDirection: 'row', gap: 10 }}>
-                        <TouchableOpacity 
-                          style={{ 
-                            flex: 1,
-                            flexDirection: 'row', 
-                            alignItems: 'center', 
-                            justifyContent: 'center',
-                            gap: 6, 
-                            backgroundColor: '#f0f9ff', 
-                            padding: 12, 
-                            borderRadius: 12,
-                            borderWidth: 1,
-                            borderColor: '#bae6fd'
-                          }}
-                          onPress={() => {
-                            if (Platform.OS === 'web') {
-                              window.open(u.supportingDocs, '_blank');
-                            } else {
-                              Linking.openURL(u.supportingDocs).catch(() => {
-                                Alert.alert("Error", "Could not open document link.");
-                              });
-                            }
-                          }}
-                        >
-                          <Ionicons name="eye-outline" size={18} color="#0077cc" />
-                          <Text style={{ fontSize: 13, color: '#0077cc', fontWeight: '700' }}>View</Text>
-                        </TouchableOpacity>
 
-                        <TouchableOpacity 
-                          style={{ 
-                            flex: 1,
-                            flexDirection: 'row', 
-                            alignItems: 'center', 
-                            justifyContent: 'center',
-                            gap: 6, 
-                            backgroundColor: '#f0fdf4', 
-                            padding: 12, 
-                            borderRadius: 12,
-                            borderWidth: 1,
-                            borderColor: '#bbf7d0'
-                          }}
-                          onPress={() => {
-                            // Cloudinary download transformation: insert fl_attachment
-                            const downloadUrl = u.supportingDocs.replace('/upload/', '/upload/fl_attachment/');
-                            if (Platform.OS === 'web') {
-                              window.open(downloadUrl, '_blank');
-                            } else {
-                              Linking.openURL(downloadUrl).catch(() => {
-                                Alert.alert("Error", "Could not trigger download.");
-                              });
-                            }
-                          }}
-                        >
-                          <Ionicons name="download-outline" size={18} color="#16a34a" />
-                          <Text style={{ fontSize: 13, color: '#16a34a', fontWeight: '700' }}>Download</Text>
-                        </TouchableOpacity>
-                      </View>
+                        <View style={{ flexDirection: 'row', gap: 10 }}>
+                          <TouchableOpacity
+                            style={styles.adminDocActionBtn}
+                            onPress={async () => {
+                              try {
+                                if (u.supportingDocs) await Linking.openURL(u.supportingDocs);
+                              } catch (e) {
+                                console.error('Error opening URL:', e);
+                                Alert.alert('Error', 'Could not open document viewer.');
+                              }
+                            }}
+                          >
+                            <Ionicons name="eye-outline" size={18} color="#0077cc" />
+                            <Text style={styles.adminDocActionText}>View</Text>
+                          </TouchableOpacity>
+                          <TouchableOpacity
+                            style={[styles.adminDocActionBtn, { backgroundColor: '#f0fdf4', borderColor: '#bbf7d0' }]}
+                            onPress={async () => {
+                              try {
+                                const url = getDownloadableUrl(u.supportingDocs);
+                                if (url) await Linking.openURL(url);
+                              } catch (e) {
+                                console.error('Error downloading:', e);
+                                Alert.alert('Error', 'Could not initiate download.');
+                              }
+                            }}
+                          >
+                            <Ionicons name="download-outline" size={18} color="#16a34a" />
+                            <Text style={[styles.adminDocActionText, { color: '#16a34a' }]}>Download</Text>
+                          </TouchableOpacity>
+
+                        </View>
+
+
+                      {u.bFormDoc ? (
+                        <View style={{ marginTop: 10, gap: 8 }}>
+                          <Text style={{ fontSize: 13, fontWeight: '700', color: '#1e293b' }}>B-Form / ID Card</Text>
+                          {u.bFormDoc.match(/\\.(jpg|jpeg|png|webp|gif)$|cloudinary/i) && !u.bFormDoc.toLowerCase().endsWith('.pdf') ? (
+                            <Image
+                              source={{ uri: u.bFormDoc }}
+                              style={{ width: '100%', height: 120, borderRadius: 12, backgroundColor: '#f1f5f9', borderWidth: 1, borderColor: '#e2e8f0' }}
+                              resizeMode="cover"
+                            />
+                          ) : (
+                            <View style={{ width: '100%', height: 80, borderRadius: 12, backgroundColor: '#f8fafc', justifyContent: 'center', alignItems: 'center', borderWidth: 1, borderColor: '#e2e8f0', borderStyle: 'dashed' }}>
+                              <Ionicons name="id-card-outline" size={32} color="#0077cc" />
+                              <Text style={{ fontSize: 12, color: '#64748b', marginTop: 4 }}>B-Form / Birth Certificate</Text>
+                            </View>
+                          )}
+                          <View style={{ flexDirection: 'row', gap: 10 }}>
+                            <TouchableOpacity
+                              style={styles.adminDocActionBtn}
+                              onPress={async () => {
+                                try {
+                                  if (u.bFormDoc) await Linking.openURL(u.bFormDoc);
+                                } catch (e) {
+                                  Alert.alert('Error', 'Could not open document.');
+                                }
+                              }}
+                            >
+                              <Ionicons name="eye-outline" size={18} color="#0077cc" />
+                              <Text style={styles.adminDocActionText}>View</Text>
+                            </TouchableOpacity>
+                            <TouchableOpacity
+                              style={[styles.adminDocActionBtn, { backgroundColor: '#f0fdf4', borderColor: '#bbf7d0' }]}
+                              onPress={async () => {
+                                try {
+                                  const url = getDownloadableUrl(u.bFormDoc);
+                                  if (url) await Linking.openURL(url);
+                                } catch (e) {
+                                  Alert.alert('Error', 'Could not download document.');
+                                }
+                              }}
+                            >
+                              <Ionicons name="download-outline" size={18} color="#16a34a" />
+                              <Text style={[styles.adminDocActionText, { color: '#16a34a' }]}>Download</Text>
+                            </TouchableOpacity>
+
+                          </View>
+
+                        </View>
+                      ) : (
+                        <Text style={{ fontSize: 12, color: '#94a3b8', marginTop: 5 }}>B-Form not uploaded.</Text>
+                      )}
                     </View>
                   ) : (
                     <Text style={{ fontSize: 12, color: '#94a3b8' }}>No supporting documents uploaded.</Text>
@@ -209,11 +239,11 @@ export const UsersTab: React.FC<UsersTabProps> = ({ users, onUpdateStatus, onDel
               {u.role === 'orphanage' && u.documents && (
                 <View style={{ marginTop: 12, borderTopWidth: 1, borderTopColor: '#f1f5f9', paddingTop: 12 }}>
                   <Text style={{ fontSize: 13, fontWeight: '700', color: '#1e293b', marginBottom: 8 }}>Orphanage Documents</Text>
-                  
+
                   {u.documents.registrationCert && (
                     <View style={{ marginBottom: 12 }}>
                       <Text style={{ fontSize: 12, color: '#64748b', marginBottom: 4 }}>Registration Certificate:</Text>
-                      <TouchableOpacity 
+                      <TouchableOpacity
                         style={{ flexDirection: 'row', alignItems: 'center', gap: 8, backgroundColor: '#f8fafc', padding: 10, borderRadius: 10, borderWidth: 1, borderColor: '#e2e8f0' }}
                         onPress={() => Linking.openURL(u.documents.registrationCert)}
                       >

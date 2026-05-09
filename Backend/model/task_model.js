@@ -4,7 +4,7 @@ const taskSchema = new mongoose.Schema({
   volunteerId: { type: mongoose.Schema.Types.ObjectId, ref: 'User', required: true },
   title: { type: String, required: true },
   description: { type: String, required: true },
-  type: { type: String, default: 'other', enum: ['teaching', 'distribution', 'visit', 'organization', 'other'] },
+  type: { type: String, default: 'other' },
   school: { type: String, default: 'N/A' },
   orphanageId: { type: mongoose.Schema.Types.ObjectId, ref: 'OrphanAge', required: false },
   date: { type: Date, default: Date.now },

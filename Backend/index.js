@@ -22,6 +22,7 @@ import initSocket from "./socketHandler.js";
 import cron from "node-cron";
 import Fee from "./model/fee_model.js";
 import Notification from "./model/notification_model.js";
+import { errorMiddleware } from "./middleware/errorMiddleware.js";
 
 dotenv.config();
 console.log(' [System] Email Simulator Mode: Active');
@@ -33,8 +34,7 @@ const server = createServer(app);
 const io = new Server(server, {
   cors: {
     origin: '*',
-    methods: ['GET', 'POST', 'PUT', 'DELETE', 'OPTIONS'],
-    credentials: true
+    methods: ['GET', 'POST', 'PUT', 'DELETE', 'OPTIONS']
   }
 });
 
@@ -137,6 +137,9 @@ cron.schedule('* * * * *', async () => {
     console.error("[Cron] Error processing fee reminders: ", err);
   }
 });
+
+// Global Error Handling Middleware
+app.use(errorMiddleware);
 
 const PORT = process.env.PORT || 5001;
 const runningServer = server.listen(PORT, () => console.log(` Server + Socket.io running on port ${PORT}`));

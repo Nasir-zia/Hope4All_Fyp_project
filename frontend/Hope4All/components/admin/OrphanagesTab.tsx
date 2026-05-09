@@ -1,7 +1,10 @@
 import React from 'react';
-import { View, Text, TouchableOpacity, ScrollView, Image, Linking, TextInput } from 'react-native';
+import { View, Text, TouchableOpacity, ScrollView, Image, Linking, TextInput, Alert } from 'react-native';
+
 import { Ionicons } from '@expo/vector-icons';
 import { adminStyles as styles } from './AdminStyles';
+import { getDownloadableUrl } from '../../utils/cloudinaryUtils';
+
 
 interface OrphanagesTabProps {
   orphanages: any[];
@@ -84,22 +87,37 @@ export const OrphanagesTab: React.FC<OrphanagesTabProps> = ({ orphanages, onUpda
                           resizeMode="cover"
                         />
                       ) : (
-                        <TouchableOpacity 
-                          style={{ 
-                            flexDirection: 'row', 
-                            alignItems: 'center', 
-                            backgroundColor: '#f8fafc', 
-                            padding: 12, 
-                            borderRadius: 12, 
-                            borderWidth: 1, 
-                            borderColor: '#e2e8f0',
-                            gap: 10 
-                          }}
-                          onPress={() => Linking.openURL(o.documents.registrationCert)}
-                        >
-                          <Ionicons name="document-text" size={24} color="#0077cc" />
-                          <Text style={{ color: '#0077cc', fontWeight: '600' }}>View PDF Certificate</Text>
-                        </TouchableOpacity>
+                        <View style={{ flexDirection: 'row', gap: 10 }}>
+                          <TouchableOpacity
+                            style={styles.adminDocActionBtn}
+                            onPress={async () => {
+                              try {
+                                if (o.documents.registrationCert) await Linking.openURL(o.documents.registrationCert);
+                              } catch (e) {
+                                Alert.alert('Error', 'Could not open document.');
+                              }
+                            }}
+                          >
+                            <Ionicons name="eye-outline" size={18} color="#0077cc" />
+                            <Text style={styles.adminDocActionText}>View</Text>
+                          </TouchableOpacity>
+                          <TouchableOpacity
+                            style={[styles.adminDocActionBtn, { backgroundColor: '#f0fdf4', borderColor: '#bbf7d0' }]}
+                            onPress={async () => {
+                              try {
+                                const url = getDownloadableUrl(o.documents.registrationCert);
+                                if (url) await Linking.openURL(url);
+                              } catch (e) {
+                                Alert.alert('Error', 'Could not download document.');
+                              }
+                            }}
+                          >
+                            <Ionicons name="download-outline" size={18} color="#16a34a" />
+                            <Text style={[styles.adminDocActionText, { color: '#16a34a' }]}>Download</Text>
+                          </TouchableOpacity>
+                        </View>
+
+
                       )}
                     </View>
                   )}

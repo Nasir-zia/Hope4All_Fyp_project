@@ -3,12 +3,11 @@ import { Alert, Platform } from 'react-native';
 import * as DocumentPicker from 'expo-document-picker';
 import * as ImagePicker from 'expo-image-picker';
 import { useAuth } from './useAuth';
-import { 
-  fetchOrphanageProfile, 
-  fetchOrphanageOptions, 
+import {
+  fetchOrphanageProfile,
   registerOrphanageApi,
   fetchOrphanageRequests,
-  submitRequirement
+
 } from '../constants/api';
 
 export const useOrphanageDashboard = () => {
@@ -29,7 +28,7 @@ export const useOrphanageDashboard = () => {
   const [zipCode, setZipCode] = useState('');
   const [capacity, setCapacity] = useState('');
   const [submitting, setSubmitting] = useState(false);
-  
+
   // File states
   const [regCert, setRegCert] = useState<any>(null);
   const [buildingImages, setBuildingImages] = useState<any[]>([]);
@@ -60,6 +59,22 @@ export const useOrphanageDashboard = () => {
     } catch (err) {
       console.error('Error picking images:', err);
     }
+  };
+
+  const uriToBlob = async (uri: string) => {
+    if (uri.startsWith('data:')) {
+      const arr = uri.split(',');
+      const mime = arr[0].match(/:(.*?);/)?.[1];
+      const bstr = atob(arr[1]);
+      let n = bstr.length;
+      const u8arr = new Uint8Array(n);
+      while (n--) {
+        u8arr[n] = bstr.charCodeAt(n);
+      }
+      return new Blob([u8arr], { type: mime });
+    }
+    const response = await fetch(uri);
+    return await response.blob();
   };
 
   useEffect(() => {
@@ -109,25 +124,42 @@ export const useOrphanageDashboard = () => {
       formData.append('capacity[max]', capacity);
 
       if (regCert) {
-        formData.append('registrationCert', {
-          uri: regCert.uri,
-          name: regCert.name,
-          type: regCert.mimeType || 'application/pdf',
-        } as any);
+        console.log('[OrphanageRegistration] Appending regCert...');
+        const isPdf = regCert.name ? regCert.name.toLowerCase().endsWith('.pdf') : false;
+        if (Platform.OS === 'web') {
+          const certBlob = await uriToBlob(regCert.uri);
+          const typedBlob = isPdf ? new Blob([certBlob], { type: 'application/pdf' }) : certBlob;
+          formData.append('registrationCert', typedBlob, regCert.name || 'cert.jpg');
+        } else {
+          formData.append('registrationCert', {
+            uri: regCert.uri,
+            name: regCert.name || 'cert.jpg',
+            type: isPdf ? 'application/pdf' : (regCert.mimeType || 'image/jpeg'),
+          } as any);
+        }
       }
 
       if (buildingImages.length > 0) {
-        buildingImages.forEach((img, index) => {
-          formData.append('buildingImages', {
-            uri: img.uri,
-            name: `building_${index}.jpg`,
-            type: 'image/jpeg',
-          } as any);
-        });
+        console.log(`[OrphanageRegistration] Appending ${buildingImages.length} building images...`);
+        for (let i = 0; i < buildingImages.length; i++) {
+          const img = buildingImages[i];
+          const imgName = img.fileName || `building_${i}.jpg`;
+          if (Platform.OS === 'web') {
+            const imgBlob = await uriToBlob(img.uri);
+            formData.append('buildingImages', imgBlob, imgName);
+          } else {
+            formData.append('buildingImages', {
+              uri: img.uri,
+              name: imgName,
+              type: 'image/jpeg',
+            } as any);
+          }
+        }
       }
 
+
       await registerOrphanageApi(formData);
-      
+
       // Update local auth status to pending
       await updateUser({ status: 'pending' });
 

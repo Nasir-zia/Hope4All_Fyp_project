@@ -1,6 +1,8 @@
 import React from 'react';
 import { View, Text, StyleSheet, ScrollView, ActivityIndicator, Alert, TouchableOpacity, TextInput, Image, Linking } from 'react-native';
 import { Ionicons } from '@expo/vector-icons';
+import { getDownloadableUrl } from '../utils/cloudinaryUtils';
+
 import { useOrphanageDashboard } from '@/hooks/useOrphanageDashboard';
 import { SuspendedScreen } from '@/components/SuspendedScreen';
 import { PendingVerification } from '@/components/orphan/PendingVerification';
@@ -173,16 +175,38 @@ export default function OrphanageDashboard() {
             {orphanageProfile.documents.registrationCert && (
               <View style={{ marginBottom: 15 }}>
                 <Text style={styles.label}>Certificate:</Text>
-                <TouchableOpacity 
-                  style={styles.filePicker}
-                  onPress={() => {
-                    Alert.alert("Document", "Opening document link...");
-                    Linking.openURL(orphanageProfile.documents.registrationCert);
-                  }}
-                >
-                  <Ionicons name="document-text" size={20} color="#0077cc" />
-                  <Text style={{ color: '#0077cc', fontWeight: '600' }}>View Certificate</Text>
-                </TouchableOpacity>
+                <View style={{ flexDirection: 'row', gap: 10, marginTop: 10 }}>
+                  <TouchableOpacity
+                    style={[styles.primaryBtn, { flex: 1, flexDirection: 'row', gap: 8 }]}
+                    onPress={async () => {
+                      try {
+                        if (orphanageProfile.documents.registrationCert) {
+                          await Linking.openURL(orphanageProfile.documents.registrationCert);
+                        }
+                      } catch (e) {
+                        Alert.alert('Error', 'Could not open document.');
+                      }
+                    }}
+                  >
+                    <Ionicons name="eye-outline" size={20} color="#fff" />
+                    <Text style={styles.primaryBtnText}>View Cert</Text>
+                  </TouchableOpacity>
+                  <TouchableOpacity
+                    style={[styles.secondaryBtn, { flex: 1, flexDirection: 'row', gap: 8, borderColor: '#16a34a', backgroundColor: '#f0fdf4' }]}
+                    onPress={async () => {
+                      try {
+                        const url = getDownloadableUrl(orphanageProfile.documents.registrationCert);
+                        if (url) await Linking.openURL(url);
+                      } catch (e) {
+                        Alert.alert('Error', 'Could not download document.');
+                      }
+                    }}
+                  >
+                    <Ionicons name="download-outline" size={20} color="#16a34a" />
+                    <Text style={[styles.secondaryBtnText, { color: '#16a34a' }]}>Download</Text>
+                  </TouchableOpacity>
+
+                </View>
               </View>
             )}
 
@@ -191,13 +215,20 @@ export default function OrphanageDashboard() {
                 <Text style={styles.label}>Building Images:</Text>
                 <ScrollView horizontal showsHorizontalScrollIndicator={false} contentContainerStyle={{ gap: 10, paddingBottom: 5 }}>
                   {orphanageProfile.documents.buildingImages.map((img: string, idx: number) => (
-                    <TouchableOpacity key={idx} onPress={() => Linking.openURL(img)}>
+                    <TouchableOpacity key={idx} onPress={async () => {
+                      try {
+                        await Linking.openURL(getDownloadableUrl(img));
+                      } catch (e) {
+                        Alert.alert('Error', 'Could not open image.');
+                      }
+                    }}>
                       <Image 
                         source={{ uri: img }} 
                         style={{ width: 120, height: 90, borderRadius: 12, backgroundColor: '#f1f5f9' }} 
                         resizeMode="cover"
                       />
                     </TouchableOpacity>
+
                   ))}
                 </ScrollView>
               </View>
@@ -263,5 +294,32 @@ const styles = StyleSheet.create({
   filePickerText: {
     fontSize: 14,
     color: '#64748b'
-  }
+  },
+  primaryBtn: {
+    backgroundColor: '#0077cc',
+    padding: 12,
+    borderRadius: 15,
+    alignItems: 'center',
+    justifyContent: 'center',
+  },
+  primaryBtnText: {
+    color: '#fff',
+    fontWeight: '700',
+    fontSize: 14,
+  },
+  secondaryBtn: {
+    backgroundColor: '#fff',
+    padding: 12,
+    borderRadius: 15,
+    borderWidth: 1,
+    borderColor: '#0077cc',
+    alignItems: 'center',
+    justifyContent: 'center',
+  },
+  secondaryBtnText: {
+    color: '#0077cc',
+    fontWeight: '700',
+    fontSize: 14,
+  },
 });
+

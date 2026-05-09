@@ -91,7 +91,8 @@ export default function VerifyEmailPage() {
             text: 'Continue', 
             onPress: async () => {
               await login(res.token, res.user);
-              router.replace('/profile-setup' as any);
+              const targetPath = res.user?.role ? `/${res.user.role}` : '/login';
+              router.replace(targetPath as any);
             } 
           }
         ]);
@@ -99,7 +100,8 @@ export default function VerifyEmailPage() {
         Haptics.notificationAsync(Haptics.NotificationFeedbackType.Error);
         Alert.alert('Error', res.message || 'Verification failed');
         // Force redirect for testing
-        router.replace('/profile-setup' as any);
+        const targetPath = res.user?.role ? `/${res.user.role}` : '/login';
+        router.replace(targetPath as any);
       }
     } catch (error: any) {
       Alert.alert('Error', error.message || 'Something went wrong');

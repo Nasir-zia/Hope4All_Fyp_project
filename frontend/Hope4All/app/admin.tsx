@@ -192,7 +192,7 @@ export default function AdminDashboard() {
 
   const handleCompleteTask = async (taskId: string) => {
     try {
-      await updateTaskStatusApi(taskId, 'completed', user?.token);
+      await updateTaskStatusApi(taskId, { status: 'completed' }, user?.token);
       Alert.alert("Success", "Task marked as completed!");
       loadAllData();
     } catch (err: any) {

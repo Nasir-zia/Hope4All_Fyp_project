@@ -1,9 +1,10 @@
 import Task from '../model/task_model.js';
 import User from '../model/user_model.js';
 import Notification from '../model/notification_model.js';
+import AppError from '../utils/AppError.js';
+import asyncHandler from '../utils/asyncHandler.js';
 
-export const createTask = async (req, res) => {
-  try {
+export const createTask = asyncHandler(async (req, res, next) => {
     const { volunteerId, title, description, type, school, orphanageId, date, priority, notes, assignedBy } = req.body;
 
     if (volunteerId === 'all') {
@@ -61,25 +62,17 @@ export const createTask = async (req, res) => {
     await notification.save();
 
     res.status(201).json({ message: 'Task created successfully', task: newTask });
-  } catch (error) {
-    res.status(500).json({ message: 'Error creating task', error: error.message });
-  }
-};
+});
 
-export const getTasksByVolunteer = async (req, res) => {
-  try {
+export const getTasksByVolunteer = asyncHandler(async (req, res, next) => {
     const tasks = await Task.find({ volunteerId: req.params.volunteerId })
       .populate('orphanageId', 'name')
       .sort({ date: 1 });
 
     res.status(200).json({ tasks });
-  } catch (error) {
-    res.status(500).json({ message: 'Error fetching tasks', error: error.message });
-  }
-};
+});
 
-export const getAllTasks = async (req, res) => {
-  try {
+export const getAllTasks = asyncHandler(async (req, res, next) => {
     const { status, type } = req.query;
     let filter = {};
 
@@ -92,13 +85,9 @@ export const getAllTasks = async (req, res) => {
       .sort({ date: 1 });
 
     res.status(200).json({ tasks });
-  } catch (error) {
-    res.status(500).json({ message: 'Error fetching tasks', error: error.message });
-  }
-};
+});
 
-export const updateTaskStatus = async (req, res) => {
-  try {
+export const updateTaskStatus = asyncHandler(async (req, res, next) => {
     const { status, notes } = req.body;
     let updateData = { status, notes, updatedAt: Date.now() };
 
@@ -113,7 +102,7 @@ export const updateTaskStatus = async (req, res) => {
     ).populate('volunteerId', 'username');
 
     if (!updatedTask) {
-      return res.status(404).json({ message: 'Task not found' });
+      return next(new AppError('Task not found', 404));
     }
 
     // Create notification
@@ -126,13 +115,9 @@ export const updateTaskStatus = async (req, res) => {
     await notification.save();
 
     res.status(200).json({ message: 'Task status updated', task: updatedTask });
-  } catch (error) {
-    res.status(500).json({ message: 'Error updating task status', error: error.message });
-  }
-};
+});
 
-export const getVolunteerStats = async (req, res) => {
-  try {
+export const getVolunteerStats = asyncHandler(async (req, res, next) => {
     const volunteerId = req.params.volunteerId;
 
     const totalTasks = await Task.countDocuments({ volunteerId });
@@ -156,7 +141,4 @@ export const getVolunteerStats = async (req, res) => {
       },
       recentTasks
     });
-  } catch (error) {
-    res.status(500).json({ message: 'Error fetching volunteer stats', error: error.message });
-  }
-};
+});

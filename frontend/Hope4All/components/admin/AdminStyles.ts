@@ -142,4 +142,22 @@ export const adminStyles = StyleSheet.create({
   submitBtn: { backgroundColor: '#0f172a', padding: 18, borderRadius: 18, alignItems: 'center' },
   btnTextLarge: { color: '#fff', fontSize: 16, fontWeight: 'bold' },
   btnDisabled: { opacity: 0.6 },
+  adminDocActionBtn: {
+    flex: 1,
+    flexDirection: 'row',
+    alignItems: 'center',
+    justifyContent: 'center',
+    gap: 6,
+    backgroundColor: '#f0f9ff',
+    padding: 12,
+    borderRadius: 14,
+    borderWidth: 1,
+    borderColor: '#bae6fd',
+    marginTop: 8,
+  },
+  adminDocActionText: {
+    fontSize: 13,
+    color: '#0077cc',
+    fontWeight: '700',
+  },
 });

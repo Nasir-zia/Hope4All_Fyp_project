@@ -18,6 +18,9 @@ interface RegistrationFormProps {
   docUri: string | null;
   docName: string;
   onPickDocument: () => void;
+  bFormUri: string | null;
+  bFormName: string;
+  onPickBForm: () => void;
   onSubmit: () => void;
   onLogout: () => void;
   submitting: boolean;
@@ -25,7 +28,8 @@ interface RegistrationFormProps {
 
 export const RegistrationForm: React.FC<RegistrationFormProps> = ({
   name, setName, age, setAge, location, setLocation, phone, setPhone, gender, setGender,
-  profilePicUri, onPickImage, docUri, docName, onPickDocument, onSubmit, onLogout, submitting
+  profilePicUri, onPickImage, docUri, docName, onPickDocument, 
+  bFormUri, bFormName, onPickBForm, onSubmit, onLogout, submitting
 }) => {
   return (
     <View style={styles.container}>
@@ -77,12 +81,21 @@ export const RegistrationForm: React.FC<RegistrationFormProps> = ({
           </TouchableOpacity>
 
           <TouchableOpacity style={[styles.picker, docUri && styles.pickerActive]} onPress={onPickDocument}>
-            <Ionicons name="document-attach" size={20} color={docUri ? "#fff" : "#0077cc"} />
+            <Ionicons name="image" size={20} color={docUri ? "#fff" : "#0077cc"} />
             <Text style={[styles.pickerText, docUri && styles.pickerTextActive]} numberOfLines={1}>
-              {docName ? docName : "Birth Certificate / ID"}
+              {docUri ? "Death Certificate Photo Uploaded" : "Upload Death Certificate Photo"}
             </Text>
             {docUri && <Ionicons name="checkmark-circle" size={18} color="#fff" style={{marginLeft: 'auto'}} />}
           </TouchableOpacity>
+
+          <TouchableOpacity style={[styles.picker, bFormUri && styles.pickerActive]} onPress={onPickBForm}>
+            <Ionicons name="image" size={20} color={bFormUri ? "#fff" : "#0077cc"} />
+            <Text style={[styles.pickerText, bFormUri && styles.pickerTextActive]} numberOfLines={1}>
+              {bFormUri ? "B-Form Photo Uploaded" : "Upload B-Form / ID Card Photo"}
+            </Text>
+            {bFormUri && <Ionicons name="checkmark-circle" size={18} color="#fff" style={{marginLeft: 'auto'}} />}
+          </TouchableOpacity>
+
         </View>
 
         <TouchableOpacity 

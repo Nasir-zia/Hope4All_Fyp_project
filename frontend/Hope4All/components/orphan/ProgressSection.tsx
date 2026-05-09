@@ -1,5 +1,8 @@
 import React from 'react';
-import { View, Text, StyleSheet, TouchableOpacity, ScrollView, Image } from 'react-native';
+import { View, Text, StyleSheet, TouchableOpacity, ScrollView, Image, Linking, Alert } from 'react-native';
+
+import { getDownloadableUrl } from '../../utils/cloudinaryUtils';
+
 import { Ionicons } from '@expo/vector-icons';
 
 interface ProgressSectionProps {
@@ -43,18 +46,41 @@ export const ProgressSection: React.FC<ProgressSectionProps> = ({
                   <View style={styles.categoryBadge}>
                     <Text style={styles.categoryText}>{prog.category}</Text>
                   </View>
+                  {prog.achievementImage && (
+                    <TouchableOpacity 
+                      style={{ position: 'absolute', bottom: 15, right: 15, backgroundColor: 'rgba(255,255,255,0.8)', borderRadius: 10, padding: 8 }}
+                      onPress={async () => {
+                        try {
+                          const url = getDownloadableUrl(prog.achievementImage);
+                          const supported = await Linking.canOpenURL(url);
+                          if (supported) {
+                            await Linking.openURL(url);
+                          } else {
+                            Alert.alert('Error', 'Unable to open link');
+                          }
+                        } catch (e) {
+                          Alert.alert('Error', 'Could not open image.');
+                        }
+                      }}
+                    >
+                      <Ionicons name="download-outline" size={20} color="#16a34a" />
+                    </TouchableOpacity>
+                  )}
                </View>
                <View style={styles.progContent}>
                   <View style={styles.progTopRow}>
                     <Text style={styles.progTitle}>{prog.title}</Text>
-                    <TouchableOpacity onPress={() => onDeleteProgress(prog._id)}>
-                      <Ionicons name="trash-outline" size={18} color="#ef4444" />
-                    </TouchableOpacity>
+                    <View style={{ flexDirection: 'row', gap: 15 }}>
+                      <TouchableOpacity onPress={() => onDeleteProgress(prog._id)}>
+                        <Ionicons name="trash-outline" size={18} color="#ef4444" />
+                      </TouchableOpacity>
+                    </View>
                   </View>
                   <Text style={styles.progScore}>Score: {prog.score}</Text>
                   <Text style={styles.progRemarks} numberOfLines={2}>{prog.remarks}</Text>
                   <Text style={styles.progDate}>{new Date(prog.createdAt).toLocaleDateString()}</Text>
                </View>
+
             </View>
           ))
         )}
