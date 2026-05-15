@@ -15,7 +15,7 @@ export const AidHistoryCard: React.FC<AidHistoryCardProps> = ({ aid, onThanks, o
   const profilePic = aid.donorId?.profilePic;
 
   return (
-    <View style={[styles.aidCard, { borderLeftColor: aid.status === 'completed' ? '#10b981' : '#f59e0b' }]}>
+    <View style={[styles.aidCard, { borderLeftColor: aid.status === 'received' ? '#10b981' : '#f59e0b' }]}>
       <View style={styles.donorHeader}>
         <View style={styles.donorAvatar}>
           {profilePic && !isGeneral ? (
@@ -31,31 +31,43 @@ export const AidHistoryCard: React.FC<AidHistoryCardProps> = ({ aid, onThanks, o
       </View>
 
       <View style={styles.aidDetail}>
-        <Text style={styles.aidType}>{aid.type?.toUpperCase()}</Text>
+        <Text style={styles.aidType}>{aid.itemName || aid.type?.toUpperCase()}</Text>
         <Text style={styles.aidQty}>{aid.units} {aid.unitType || 'Units'}</Text>
         <View style={[styles.statusBadge, { 
           backgroundColor: 
-            aid.status === 'completed' ? '#ecfdf5' : 
-            aid.status === 'sent' ? '#f0f9ff' : 
-            aid.status === 'under-review' ? '#fffbeb' : 
-            '#fef2f2' // pending-delivery
+            aid.status === 'received' ? '#ecfdf5' :
+            aid.status === 'in-transit' ? '#f0f9ff' : 
+            aid.status === 'approved' ? '#f5f3ff' : 
+            '#fffbeb' // pending-approval
         }]}>
           <Text style={[styles.statusText, { 
             color: 
-              aid.status === 'completed' ? '#10b981' : 
-              aid.status === 'sent' ? '#0077cc' : 
-              aid.status === 'under-review' ? '#f59e0b' : 
-              '#ef4444' // pending-delivery
+              aid.status === 'received' ? '#10b981' :
+              aid.status === 'in-transit' ? '#0077cc' : 
+              aid.status === 'approved' ? '#8b5cf6' : 
+              '#f59e0b' // pending-approval
           }]}>
-            {aid.status?.toUpperCase() || 'PENDING-DELIVERY'}
+            {aid.status?.replace('-', ' ').toUpperCase() || 'PENDING'}
           </Text>
         </View>
 
-        {aid.donationPhoto && (
+        {(aid.donorImage || aid.donationPhoto) && (
           <View style={{ marginTop: 10 }}>
+            <Text style={{ fontSize: 8, fontWeight: '700', color: '#64748b', marginBottom: 2 }}>DONOR PROOF</Text>
             <Image 
-              source={{ uri: aid.donationPhoto }} 
-              style={{ width: '100%', height: 100, borderRadius: 12, backgroundColor: '#f1f5f9' }} 
+              source={{ uri: aid.donorImage || aid.donationPhoto }} 
+              style={{ width: '100%', height: 80, borderRadius: 12, backgroundColor: '#f1f5f9' }} 
+              resizeMode="cover"
+            />
+          </View>
+        )}
+
+        {aid.receivedImage && (
+          <View style={{ marginTop: 10 }}>
+            <Text style={{ fontSize: 8, fontWeight: '700', color: '#16a34a', marginBottom: 2 }}>RECEIPT PROOF</Text>
+            <Image 
+              source={{ uri: aid.receivedImage }} 
+              style={{ width: '100%', height: 80, borderRadius: 12, backgroundColor: '#f0fdf4' }} 
               resizeMode="cover"
             />
           </View>
@@ -63,7 +75,7 @@ export const AidHistoryCard: React.FC<AidHistoryCardProps> = ({ aid, onThanks, o
       </View>
 
       <View style={styles.btnRow}>
-        {aid.status === 'sent' && onConfirm && onReport && (
+        {aid.status === 'in-transit' && onConfirm && onReport && (
           <View style={{ gap: 8, flex: 1.5 }}>
             <TouchableOpacity
               style={styles.confirmBtn}

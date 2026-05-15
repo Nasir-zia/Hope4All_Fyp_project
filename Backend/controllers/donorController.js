@@ -1,8 +1,10 @@
+import mongoose from 'mongoose';
 import Donor from '../model/donor_model.js';
 import Donation from '../model/donation_model.js';
 import Notification from '../model/notification_model.js';
 import Request from '../model/request_model.js';
 import Orphan from '../model/orphan_model.js';
+import { convertPdfToImageUrl } from '../utils/fileUtils.js';
 
 
 export const registerDonor = async (req, res) => {
@@ -82,7 +84,7 @@ export const registerDonorWithFiles = async (req, res) => {
     if (req.files && req.files.documents) {
       const documents = req.files.documents.map(file => ({
         name: file.originalname,
-        url: file.path,
+        url: convertPdfToImageUrl(file.path),
         type: file.mimetype,
         uploadedAt: new Date()
       }));
@@ -138,6 +140,14 @@ export const updateDonorProfile = async (req, res) => {
   try {
     const { name, email, phone, city, preferences, notificationSettings } = req.body;
 
+    const supportedCategories = ['books', 'stationery', 'uniforms', 'school_fees', 'other'];
+    if (preferences?.causeType) {
+      const invalid = preferences.causeType.filter((c) => !supportedCategories.includes(c.toLowerCase()));
+      if (invalid.length > 0) {
+        return res.status(400).json({ message: `Invalid categories: ${invalid.join(', ')}` });
+      }
+    }
+
     const updateData = { name, email, phone, city, preferences, notificationSettings };
 
     // Handle profile picture upload
@@ -149,7 +159,7 @@ export const updateDonorProfile = async (req, res) => {
     if (req.files && req.files.documents) {
       const documents = req.files.documents.map(file => ({
         name: file.originalname,
-        url: file.path,
+        url: convertPdfToImageUrl(file.path),
         type: file.mimetype,
         uploadedAt: new Date()
       }));
@@ -182,14 +192,16 @@ export const updateDonorProfile = async (req, res) => {
 export const makeDonation = async (req, res) => {
   try {
     console.log('Incoming Donation Request:', req.body);
-    const { donorId, requestId, units, recipientName, type, description, unitType } = req.body;
+    const { donorId, requestId, units, recipientName, type, description, unitType, itemName, city } = req.body;
 
     let donationData = {
       donorId,
       units,
       type: type || 'Other',
       description: description || '',
-      unitType: unitType || 'Units'
+      unitType: unitType || 'Units',
+      itemName: itemName || description,
+      city: city || ''
     };
 
     if (requestId) {
@@ -207,9 +219,15 @@ export const makeDonation = async (req, res) => {
       // If it's a specific orphan, ensure we have their orphanage link too
       if (request.orphanId && !donationData.orphanageId) {
         const Orphan = mongoose.model('Orphan');
-        const orphanDoc = await Orphan.findById(request.orphanId);
+        const orphanDoc = await Orphan.findById(request.orphanId._id || request.orphanId);
         if (orphanDoc) donationData.orphanageId = orphanDoc.orphanageId;
       }
+
+      if (type && request.type && type.toLowerCase() !== request.type.toLowerCase()) {
+        console.log('[Donation] Type mismatch:', { sent: type, required: request.type });
+        return res.status(400).json({ message: `Mismatch: This request is for ${request.type}, but you are donating ${type}.` });
+      }
+
       donationData.type = type || request.type;
       donationData.unitType = unitType || request.unitType;
 
@@ -217,22 +235,28 @@ export const makeDonation = async (req, res) => {
 
       // Add orphan to donor's matched orphans if not already matched
       const donor = await Donor.findById(donorId);
-      if (donor && request.orphanId && !donor.matchedOrphans.includes(request.orphanId._id)) {
-        donor.matchedOrphans.push(request.orphanId._id);
-        await donor.save();
+      if (donor && request.orphanId) {
+        const orphanIdStr = (request.orphanId._id || request.orphanId).toString();
+        const alreadyMatched = donor.matchedOrphans.some(id => id.toString() === orphanIdStr);
+        
+        if (!alreadyMatched) {
+          donor.matchedOrphans.push(request.orphanId._id || request.orphanId);
+          await donor.save();
+        }
       }
     } else {
       donationData.recipientName = recipientName || 'General Donation';
     }
 
-    donationData.status = 'pending-delivery';
+    donationData.status = 'pending-approval';
 
     const donation = new Donation(donationData);
     await donation.save();
 
     // Update donor stats
+    const unitsNum = Number(units) || 0;
     await Donor.findByIdAndUpdate(donorId, {
-      $inc: { totalDonated: units, childrenHelped: requestId ? 1 : 0 }
+      $inc: { totalDonated: unitsNum, childrenHelped: requestId ? 1 : 0 }
     });
 
     // Create notification
@@ -408,10 +432,19 @@ export const getMatchedOrphans = async (req, res) => {
       return res.status(404).json({ message: 'Donor not found' });
     }
 
-    // Return all orphans to the donor as requested
-    const orphans = await Orphan.find().populate('orphanageId').sort({ createdAt: -1 });
-    res.status(200).json({ orphans });
+    const donorCity = donor.city?.toLowerCase();
+    const preferredAreas = (donor.preferences?.area || []).map(a => a.toLowerCase());
 
+    // Build filter for orphans
+    let orphanFilter = {};
+    
+    // If donor has location preferences, filter orphans by city
+    if (donorCity || preferredAreas.length > 0) {
+      const locations = [donorCity, ...preferredAreas].filter(l => l);
+      orphanFilter.location = { $in: locations.map(l => new RegExp(`^${l}$`, 'i')) };
+    }
+
+    const orphans = await Orphan.find(orphanFilter).populate('orphanageId').sort({ createdAt: -1 });
     res.status(200).json({ orphans });
   } catch (error) {
     res.status(500).json({ message: 'Error fetching matched orphans', error: error.message });
@@ -486,12 +519,7 @@ export const getOrphanAid = async (req, res) => {
       return res.status(404).json({ message: 'Orphan not found' });
     }
 
-    const donations = await Donation.find({
-      $or: [
-        { recipientId: orphan._id },
-        { recipientId: null, status: { $ne: 'completed' } } // Show general available donations
-      ]
-    })
+    const donations = await Donation.find({ recipientId: orphan._id })
       .populate('donorId')
       .populate('requestId', 'type units unitType description school')
       .sort({ createdAt: -1 });
@@ -513,8 +541,8 @@ export const uploadDonationPhoto = async (req, res) => {
     const donation = await Donation.findByIdAndUpdate(
       donationId,
       {
-        donationPhoto: req.file.path,
-        status: 'under-review'
+        donorImage: req.file.path,
+        status: 'pending-approval'
       },
       { new: true }
     );

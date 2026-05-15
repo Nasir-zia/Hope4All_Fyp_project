@@ -47,8 +47,8 @@ router.put("/:requestId/reject", authenticateToken, rejectRequest);
 router.get("/approved", async (req, res) => {
   try {
     const requests = await Request.find({ status: { $in: ['approved', 'pending'] } })
-      .populate('orphanId', 'name age gender')
-      .populate('orphanageId', 'name')
+      .populate('orphanId', 'name age gender location')
+      .populate('orphanageId', 'name location')
       .sort({ isUrgent: -1, createdAt: -1 });
 
     res.status(200).json({ requests });

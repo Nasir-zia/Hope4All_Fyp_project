@@ -44,6 +44,8 @@ export interface DonationData {
   type?: string;
   description?: string;
   unitType?: string;
+  city?: string;
+  itemName?: string;
 }
 
 export interface FeeData {

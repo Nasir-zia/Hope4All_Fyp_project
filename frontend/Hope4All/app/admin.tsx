@@ -30,6 +30,7 @@ import {
   fetchOrphanageOptions,
   forwardDonationApi,
   completeDonationApi,
+  updateDonationStatusApi,
   updateTaskStatusApi
 } from '@/constants/api';
 
@@ -180,6 +181,16 @@ export default function AdminDashboard() {
     }
   };
 
+  const handleUpdateDonationStatus = async (id: string, status: string) => {
+    try {
+      await updateDonationStatusApi(id, status, user?.token || '');
+      Alert.alert("Success", `Donation status updated to ${status}!`);
+      loadAllData();
+    } catch (err: any) {
+      Alert.alert("Error", err.message);
+    }
+  };
+
   const handleCompleteDonation = async (id: string) => {
     try {
       await completeDonationApi(id, user?.token || '');
@@ -226,7 +237,7 @@ export default function AdminDashboard() {
       <ScrollView refreshControl={<RefreshControl refreshing={refreshing} onRefresh={onRefresh} />}>
         {activeTab === 'stats' && <StatsTab usersCount={usersList.length} donationsCount={donations.length} pendingRequestsCount={requests.filter(r => r.status === 'pending').length} volunteersCount={volunteers.length} stats={stats} />}
         {activeTab === 'requests' && <RequestsTab requests={requests} onApprove={handleApproveRequest} onReject={handleRejectRequest} />}
-        {activeTab === 'donations' && <DonationsTab donations={donations} onForward={handleForwardDonation} onComplete={handleCompleteDonation} />}
+        {activeTab === 'donations' && <DonationsTab donations={donations} onUpdateStatus={handleUpdateDonationStatus} onForward={handleForwardDonation} onComplete={handleCompleteDonation} />}
         {activeTab === 'users' && <UsersTab users={usersList} onUpdateStatus={handleUpdateUserStatus} onDelete={handleDeleteUser} />}
         {activeTab === 'orphanages' && <OrphanagesTab orphanages={orphanagesList} onUpdateStatus={handleUpdateUserStatus} onDelete={handleDeleteUser} />}
         {activeTab === 'courses' && <CoursesTab pendingCourses={pendingCourses} onAddPress={() => setShowCourseModal(true)} onUpdateStatus={handleUpdateCourseStatus} />}

@@ -19,6 +19,11 @@ const donationSchema = new mongoose.Schema({
     default: 'Other'
   },
 
+  itemName: {
+    type: String,
+    required: false
+  },
+
   description: {
     type: String
   },
@@ -42,18 +47,29 @@ const donationSchema = new mongoose.Schema({
     type: mongoose.Schema.Types.ObjectId,
     ref: 'Orphan'
   },
+
   orphanageId: {
     type: mongoose.Schema.Types.ObjectId,
     ref: 'OrphanAge'
   },
 
+  city: {
+    type: String,
+    required: false
+  },
+
   status: {
     type: String,
-    enum: ['pending-delivery', 'under-review', 'sent', 'received', 'not-received', 'completed'],
-    default: 'pending-delivery'
+    enum: ['pending-approval', 'approved', 'in-transit', 'received', 'rejected'],
+    default: 'pending-approval'
   },
   
-  donationPhoto: {
+  donorImage: {
+    type: String,
+    required: false
+  },
+
+  receivedImage: {
     type: String,
     required: false
   },

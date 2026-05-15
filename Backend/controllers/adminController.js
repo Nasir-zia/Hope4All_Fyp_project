@@ -71,6 +71,7 @@ export const getUsers = async (req, res) => {
             location: orphan.location,
             profilePic: orphan.profilePic,
             supportingDocs: orphan.supportingDocs,
+            bFormDoc: orphan.bFormDoc,
             bio: orphan.bio,
             phone: orphan.phone,
           };
@@ -437,13 +438,13 @@ export const unsuspendUser = async (req, res) => {
     res.status(500).json({ message: 'Error unsuspending user', error: error.message });
   }
 };
-// Forward donation to orphan (from under-review to sent)
+// Forward donation to orphan (from approved to in-transit)
 export const forwardDonation = async (req, res) => {
   try {
     const { donationId } = req.params;
     const donation = await Donation.findByIdAndUpdate(
       donationId,
-      { status: 'sent' },
+      { status: 'in-transit' },
       { new: true }
     );
 
@@ -456,14 +457,35 @@ export const forwardDonation = async (req, res) => {
       recipientId: donation.recipientId,
       type: 'delivery',
       title: 'Donation En Route',
-      message: `A donation of ${donation.units} ${donation.unitType} has been verified and is being sent to you.`,
+      message: `A donation of ${donation.units} ${donation.unitType} is now in transit to you.`,
     });
 
     await notification.save();
 
-    res.status(200).json({ message: 'Donation forwarded to orphan', donation });
+    res.status(200).json({ message: 'Donation status updated to in-transit', donation });
   } catch (error) {
-    res.status(500).json({ message: 'Error forwarding donation', error: error.message });
+    res.status(500).json({ message: 'Error updating donation status', error: error.message });
+  }
+};
+
+export const updateDonationStatus = async (req, res) => {
+  try {
+    const { donationId } = req.params;
+    const { status } = req.body;
+
+    const donation = await Donation.findByIdAndUpdate(
+      donationId,
+      { status },
+      { new: true }
+    );
+
+    if (!donation) {
+      return res.status(404).json({ message: 'Donation not found' });
+    }
+
+    res.status(200).json({ message: `Donation status updated to ${status}`, donation });
+  } catch (error) {
+    res.status(500).json({ message: 'Error updating donation status', error: error.message });
   }
 };
 

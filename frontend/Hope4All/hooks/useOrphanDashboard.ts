@@ -39,6 +39,8 @@ export const useOrphanDashboard = () => {
   const [aidFeed, setAidFeed] = useState<any[]>([]);
   const [availableCourses, setAvailableCourses] = useState<any[]>([]);
   const [loadingExtras, setLoadingExtras] = useState(false);
+  const [receiptPhoto, setReceiptPhoto] = useState<string | null>(null);
+  const [confirmingReceipt, setConfirmingReceipt] = useState<string | null>(null);
   const [showRequestModal, setShowRequestModal] = useState(false);
   const [submittingMaterial, setSubmittingMaterial] = useState(false);
 
@@ -134,13 +136,39 @@ export const useOrphanDashboard = () => {
     }
   };
 
-  const handleConfirmReceipt = async (donationId: string) => {
+  const handlePickReceiptPhoto = async () => {
     try {
-      await confirmDonationReceiptApi(donationId, user!.token);
-      Alert.alert("Success", "Donation confirmed! Status updated to 'Delivered'.");
+      const result = await ImagePicker.launchImageLibraryAsync({
+        mediaTypes: ['images'],
+        allowsEditing: true,
+        quality: 0.7,
+      });
+      if (!result.canceled) setReceiptPhoto(result.assets[0].uri);
+    } catch (err) {
+      Alert.alert("Error", "Could not pick image");
+    }
+  };
+
+  const handleConfirmReceipt = async (donationId: string) => {
+    setConfirmingReceipt(donationId);
+    try {
+      const formData = new FormData();
+      if (receiptPhoto) {
+        formData.append('receivedImage', {
+          uri: receiptPhoto,
+          name: `receipt_${donationId}.jpg`,
+          type: 'image/jpeg',
+        } as any);
+      }
+
+      await confirmDonationReceiptApi(donationId, formData, user!.token);
+      Alert.alert("Success", "Donation confirmed! Status updated to 'Received'.");
+      setReceiptPhoto(null);
       loadExtras();
     } catch (err: any) {
       Alert.alert("Error", err.message || "Could not confirm receipt");
+    } finally {
+      setConfirmingReceipt(null);
     }
   };
 
@@ -504,6 +532,7 @@ export const useOrphanDashboard = () => {
     showProgressModal, setShowProgressModal, progTitle, setProgTitle, progCategory, setProgCategory,
     progScore, setProgScore, progRemarks, setProgRemarks, progImgUri, submittingProg, showFullProgressList, setShowFullProgressList,
     handleAddFee, handleDeleteFee, handleAddMaterialRequest, openSettings, handleUpdateProfile, handleAddProgress, handleDeleteProgress,
-    pickImage, pickDocument, pickBForm, handleProfileSubmit, handleConfirmReceipt, handleReportIssue
+    pickImage, pickDocument, pickBForm, handleProfileSubmit, handleConfirmReceipt, handleReportIssue,
+    receiptPhoto, setReceiptPhoto, handlePickReceiptPhoto, confirmingReceipt
   };
 };

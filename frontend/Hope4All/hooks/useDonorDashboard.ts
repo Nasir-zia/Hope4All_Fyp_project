@@ -184,7 +184,9 @@ export const useDonorDashboard = () => {
         donorId: donorProfile._id,
         requestId: selectedRequest._id,
         units: unitsNum,
-        recipientName: selectedRequest.orphanId?.name || (selectedRequest.isInstitutional ? selectedRequest.orphanageId?.name : 'Child')
+        recipientName: selectedRequest.orphanId?.name || (selectedRequest.isInstitutional ? selectedRequest.orphanageId?.name : 'Child'),
+        city: donorProfile.city || '',
+        itemName: selectedRequest.description || selectedRequest.type
       }, user?.token);
 
       const donationId = res.donation?._id;
@@ -360,6 +362,8 @@ export const useDonorDashboard = () => {
         units: Number(manualUnits),
         type: manualType,
         description: manualDesc,
+        itemName: manualDesc || manualType,
+        city: donorProfile.city || '',
         unitType: manualType === 'Cash' ? 'PKR' : 'Units'
       }, user?.token);
 
@@ -490,9 +494,41 @@ export const useDonorDashboard = () => {
       const matchCause = !donorProfile?.preferences?.causeType?.length ||
         donorProfile.preferences.causeType.some((pref: string) => req.type.toLowerCase() === pref.toLowerCase());
       const matchUrgent = !donorProfile?.preferences?.urgentOnly || req.isUrgent;
-      return matchCause && matchUrgent;
+      
+      // Location matching (City and Area)
+      const donorCity = donorProfile?.city?.toLowerCase();
+      const preferredAreas = (donorProfile?.preferences?.area || []).map((a: string) => a.toLowerCase());
+      
+      const orphanCity = req.orphanId?.location?.toLowerCase();
+      const orphanageCity = req.orphanageId?.location?.city?.toLowerCase();
+      
+      const hasLocationFilter = donorCity || preferredAreas.length > 0;
+      let matchCity = true;
+      
+      if (hasLocationFilter) {
+        matchCity = false;
+        if (donorCity && (orphanCity === donorCity || orphanageCity === donorCity)) {
+          matchCity = true;
+        }
+        if (!matchCity && preferredAreas.length > 0) {
+          if (preferredAreas.includes(orphanCity) || preferredAreas.includes(orphanageCity)) {
+            matchCity = true;
+          }
+        }
+      }
+
+      return matchCause && matchUrgent && matchCity;
     }),
-    filteredOrphans: orphans, // Show all orphans now as requested
+    filteredOrphans: orphans.filter(orphan => {
+      const donorCity = donorProfile?.city?.toLowerCase();
+      const preferredAreas = (donorProfile?.preferences?.area || []).map((a: string) => a.toLowerCase());
+      const orphanCity = orphan.location?.toLowerCase();
+      
+      if (!donorCity && preferredAreas.length === 0) return true;
+      if (donorCity && orphanCity === donorCity) return true;
+      if (preferredAreas.includes(orphanCity)) return true;
+      return false;
+    }),
     selectedOrphanForProfile, handleViewOrphanProfile,
     orphanProgress, loadingOrphanData,
     selectedOrphanage, setSelectedOrphanage,

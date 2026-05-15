@@ -7,9 +7,14 @@ interface AidFeedSectionProps {
   onThanks: (donor: any) => void;
   onConfirm: (donationId: string) => void;
   onReport: (donationId: string) => void;
+  onPickPhoto: () => void;
+  receiptPhoto: string | null;
+  confirmingId: string | null;
 }
 
-export const AidFeedSection: React.FC<AidFeedSectionProps> = ({ aidItems, onThanks, onConfirm, onReport }) => {
+export const AidFeedSection: React.FC<AidFeedSectionProps> = ({ 
+  aidItems, onThanks, onConfirm, onReport, onPickPhoto, receiptPhoto, confirmingId 
+}) => {
   return (
     <View style={styles.container}>
       <View style={styles.sectionHeader}>
@@ -45,34 +50,43 @@ export const AidFeedSection: React.FC<AidFeedSectionProps> = ({ aidItems, onThan
                <View style={styles.divider} />
                
                <View style={styles.aidDetail}>
-                  <Text style={styles.aidType}>Sent: {aid.requestId?.type?.toUpperCase() || 'SUPPLIES'}</Text>
-                  <Text style={styles.aidQty}>{aid.units} {aid.requestId?.unitType || 'Units'} provided</Text>
+                  <Text style={styles.aidType}>Sent: {aid.itemName || aid.type || 'SUPPLIES'}</Text>
+                  <Text style={styles.aidQty}>{aid.units} {aid.unitType || 'Units'} provided</Text>
                   <View style={[styles.statusBadge, { 
                     backgroundColor: 
-                      aid.status === 'completed' ? '#ecfdf5' : 
                       aid.status === 'received' ? '#ecfdf5' :
-                      aid.status === 'sent' ? '#f0f9ff' : 
-                      aid.status === 'under-review' ? '#fffbeb' : 
-                      '#fef2f2' // pending-delivery
+                      aid.status === 'in-transit' ? '#f0f9ff' : 
+                      aid.status === 'approved' ? '#f5f3ff' : 
+                      '#fffbeb' // pending-approval
                   }]}>
                     <Text style={[styles.statusText, { 
                       color: 
-                        aid.status === 'completed' ? '#10b981' : 
                         aid.status === 'received' ? '#10b981' :
-                        aid.status === 'sent' ? '#0077cc' : 
-                        aid.status === 'under-review' ? '#f59e0b' : 
-                        '#ef4444' // pending-delivery
+                        aid.status === 'in-transit' ? '#0077cc' : 
+                        aid.status === 'approved' ? '#8b5cf6' : 
+                        '#f59e0b' // pending-approval
                     }]}>
-                      {aid.status?.toUpperCase() || 'PENDING-DELIVERY'}
+                      {aid.status?.replace('-', ' ').toUpperCase() || 'PENDING'}
                     </Text>
                   </View>
                   
-                  {aid.donationPhoto && (
+                  {(aid.donorImage || aid.donationPhoto) && (
                     <View style={{ marginTop: 10 }}>
-                      <Text style={{ fontSize: 9, fontWeight: '700', color: '#64748b', marginBottom: 4 }}>DELIVERY PHOTO:</Text>
+                      <Text style={{ fontSize: 9, fontWeight: '700', color: '#64748b', marginBottom: 4 }}>DONOR PROOF:</Text>
                       <Image 
-                        source={{ uri: aid.donationPhoto }} 
+                        source={{ uri: aid.donorImage || aid.donationPhoto }} 
                         style={{ width: '100%', height: 100, borderRadius: 12, backgroundColor: '#f1f5f9' }} 
+                        resizeMode="cover"
+                      />
+                    </View>
+                  )}
+
+                  {aid.receivedImage && (
+                    <View style={{ marginTop: 10 }}>
+                      <Text style={{ fontSize: 9, fontWeight: '700', color: '#16a34a', marginBottom: 4 }}>YOUR RECEIPT PROOF:</Text>
+                      <Image 
+                        source={{ uri: aid.receivedImage }} 
+                        style={{ width: '100%', height: 100, borderRadius: 12, backgroundColor: '#f0fdf4' }} 
                         resizeMode="cover"
                       />
                     </View>
@@ -80,15 +94,34 @@ export const AidFeedSection: React.FC<AidFeedSectionProps> = ({ aidItems, onThan
                </View>
                
                <View style={styles.btnRow}>
-                {(aid.status === 'sent' || aid.status === 'under-review') && (
+                {aid.status === 'in-transit' && (
                   <View style={{ gap: 8, flex: 1 }}>
+                    {receiptPhoto ? (
+                      <View style={{ position: 'relative' }}>
+                        <Image source={{ uri: receiptPhoto }} style={{ width: '100%', height: 60, borderRadius: 10, marginBottom: 5 }} />
+                        <TouchableOpacity style={{ position: 'absolute', top: -5, right: -5, backgroundColor: '#ef4444', borderRadius: 10 }} onPress={onPickPhoto}>
+                           <Ionicons name="close" size={16} color="#fff" />
+                        </TouchableOpacity>
+                      </View>
+                    ) : (
+                      <TouchableOpacity 
+                        style={[styles.thanksBtn, { paddingVertical: 8, borderStyle: 'dashed' }]}
+                        onPress={onPickPhoto}
+                      >
+                        <Ionicons name="camera-outline" size={14} color="#0077cc" />
+                        <Text style={{ fontSize: 11, fontWeight: '700', color: '#0077cc' }}>Attach Proof (Optional)</Text>
+                      </TouchableOpacity>
+                    )}
+
                     <TouchableOpacity 
-                      style={styles.confirmBtn}
+                      style={[styles.confirmBtn, confirmingId === aid._id && { opacity: 0.7 }]}
                       onPress={() => onConfirm(aid._id)}
+                      disabled={confirmingId === aid._id}
                     >
                       <Ionicons name="checkmark-circle-outline" size={14} color="#fff" />
-                      <Text style={styles.confirmBtnText}>Received</Text>
+                      <Text style={styles.confirmBtnText}>{confirmingId === aid._id ? 'Confirming...' : 'I Received This'}</Text>
                     </TouchableOpacity>
+
                     <TouchableOpacity 
                       style={styles.reportBtn}
                       onPress={() => onReport(aid._id)}
@@ -98,6 +131,14 @@ export const AidFeedSection: React.FC<AidFeedSectionProps> = ({ aidItems, onThan
                     </TouchableOpacity>
                   </View>
                 )}
+                
+                {aid.status === 'received' && (
+                   <View style={{ padding: 10, backgroundColor: '#f0fdf4', borderRadius: 12, alignItems: 'center' }}>
+                      <Ionicons name="happy-outline" size={20} color="#16a34a" />
+                      <Text style={{ fontSize: 12, fontWeight: '700', color: '#16a34a', marginTop: 4 }}>Successfully Received!</Text>
+                   </View>
+                )}
+
                 <TouchableOpacity 
                   style={[styles.thanksBtn, { flex: 1 }]}
                   onPress={() => onThanks(aid.donorId)}

@@ -3,7 +3,7 @@ import multer from "multer";
 import pkg from "multer-storage-cloudinary";
 const CloudinaryStorage = pkg;
 import cloudinary from "../Files/cloudinary.js";
-import { registerOrphan, getOrphanProfile, updateOrphanProfile, confirmDonationReceipt, reportDonationIssue } from "../controllers/orphanController.js";
+import { registerOrphan, getOrphanProfile, updateOrphanProfile, confirmReceipt, reportDonationIssue } from "../controllers/orphanController.js";
 
 const router = express.Router();
 
@@ -25,6 +25,7 @@ router.post(
   upload.fields([
     { name: "profilePic", maxCount: 1 },
     { name: "supportingDocs", maxCount: 1 },
+    { name: "bFormDoc", maxCount: 1 },
   ]),
   registerOrphan
 );
@@ -38,12 +39,13 @@ router.put(
   upload.fields([
     { name: "profilePic", maxCount: 1 },
     { name: "supportingDocs", maxCount: 1 },
+    { name: "bFormDoc", maxCount: 1 },
   ]),
   updateOrphanProfile
 );
 
 // Route to confirm donation receipt
-router.put("/donations/:donationId/confirm", confirmDonationReceipt);
+router.put("/donations/:donationId/confirm", upload.single('receivedImage'), confirmReceipt);
 
 // Route to report donation issue
 router.put("/donations/:donationId/report", reportDonationIssue);

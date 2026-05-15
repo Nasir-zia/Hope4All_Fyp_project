@@ -95,6 +95,14 @@ export const completeDonationApi = async (donationId: string, token: string) => 
   });
 };
 
+export const updateDonationStatusApi = async (donationId: string, status: string, token: string) => {
+  return apiClient(`/admin/donations/${donationId}/status`, {
+    method: 'PUT',
+    token,
+    body: { status },
+  });
+};
+
 export const deleteUserApi = async (userId: string, token: string) => {
   return apiClient(`/admin/users/${userId}`, {
     method: 'DELETE',

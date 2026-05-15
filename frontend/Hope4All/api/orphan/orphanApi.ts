@@ -28,10 +28,12 @@ export const updateOrphanProfile = async (userId: string, formData: FormData) =>
   return result.orphan;
 };
 
-export const confirmDonationReceiptApi = async (donationId: string, token: string) => {
+export const confirmDonationReceiptApi = async (donationId: string, formData: FormData, token: string) => {
   return apiClient(`/orphans/donations/${donationId}/confirm`, {
     method: 'PUT',
     token,
+    body: formData,
+    isFormData: true,
   });
 };
 

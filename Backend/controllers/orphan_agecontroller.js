@@ -1,5 +1,6 @@
 import OrphanAge from "../model/orphan_age.js";
 import User from "../model/user_model.js";
+import { convertPdfToImageUrl } from "../utils/fileUtils.js";
 
 export const createOrphanAge = async (req, res) => {
   try {
@@ -7,9 +8,9 @@ export const createOrphanAge = async (req, res) => {
     const registrationCertFile = req.files ? req.files.find(file => file.fieldname === "registrationCert") : null;
     const buildingImagesFiles = req.files ? req.files.filter(file => file.fieldname === "buildingImages") : [];
 
-    const registrationCert = registrationCertFile 
+    const registrationCert = convertPdfToImageUrl(registrationCertFile 
       ? (registrationCertFile.path || registrationCertFile.url || registrationCertFile.secure_url) 
-      : null;
+      : null);
     const buildingImages = buildingImagesFiles.map(file => 
       (file.path || file.url || file.secure_url)
     );

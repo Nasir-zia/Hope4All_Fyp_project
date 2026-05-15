@@ -21,6 +21,7 @@ import {
   unsuspendUser,
   forwardDonation,
   completeDonation,
+  updateDonationStatus,
   deleteUser
 } from "../controllers/adminController.js";
 
@@ -85,6 +86,9 @@ router.put("/donations/:donationId/forward", forwardDonation);
 
 // Mark donation as completed
 router.put("/donations/:donationId/complete", completeDonation);
+
+// Update donation status (general)
+router.put("/donations/:donationId/status", updateDonationStatus);
 
 // Delete user
 router.delete("/users/:userId", deleteUser);

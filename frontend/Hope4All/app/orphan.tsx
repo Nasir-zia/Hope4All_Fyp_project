@@ -37,6 +37,7 @@ export default function OrphanDashboard() {
     progScore, setProgScore, progRemarks, setProgRemarks, progImgUri, submittingProg,
     handleAddFee, handleDeleteFee, handleAddMaterialRequest, openSettings, handleUpdateProfile, handleAddProgress, handleDeleteProgress,
     pickImage, pickDocument, pickBForm, handleProfileSubmit, handleConfirmReceipt, handleReportIssue,
+    receiptPhoto, handlePickReceiptPhoto, confirmingReceipt,
     bFormUri, bFormName
   } = useOrphanDashboard();
 
@@ -115,6 +116,9 @@ export default function OrphanDashboard() {
           }}
           onConfirm={handleConfirmReceipt}
           onReport={handleReportIssue}
+          onPickPhoto={handlePickReceiptPhoto}
+          receiptPhoto={receiptPhoto}
+          confirmingId={confirmingReceipt}
         />
 
         <AidHistorySection 

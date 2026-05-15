@@ -2,6 +2,7 @@ import mongoose from 'mongoose';
 import Orphan from '../model/orphan_model.js';
 import Donation from '../model/donation_model.js';
 import User from '../model/user_model.js';
+import { convertPdfToImageUrl } from '../utils/fileUtils.js';
 
 export const registerOrphan = async (req, res) => {
   try {
@@ -23,13 +24,13 @@ export const registerOrphan = async (req, res) => {
       ? (req.files.profilePic[0].path || req.files.profilePic[0].url || req.files.profilePic[0].secure_url) 
       : '';
       
-    const supportingDocs = req.files?.supportingDocs?.[0]
+    const supportingDocs = convertPdfToImageUrl(req.files?.supportingDocs?.[0]
       ? (req.files.supportingDocs[0].path || req.files.supportingDocs[0].url || req.files.supportingDocs[0].secure_url)
-      : '';
-
-    const bFormDoc = req.files?.bFormDoc?.[0]
+      : '');
+  
+    const bFormDoc = convertPdfToImageUrl(req.files?.bFormDoc?.[0]
       ? (req.files.bFormDoc[0].path || req.files.bFormDoc[0].url || req.files.bFormDoc[0].secure_url)
-      : '';
+      : '');
 
     console.log('[RegisterOrphan] Detetcted Paths:', { profilePic, supportingDocs });
 
@@ -90,7 +91,10 @@ export const updateOrphanProfile = async (req, res) => {
         updateData.profilePic = req.files.profilePic[0].path || req.files.profilePic[0].url || req.files.profilePic[0].secure_url;
       }
       if (req.files.supportingDocs) {
-        updateData.supportingDocs = req.files.supportingDocs[0].path || req.files.supportingDocs[0].url || req.files.supportingDocs[0].secure_url;
+        updateData.supportingDocs = convertPdfToImageUrl(req.files.supportingDocs[0].path || req.files.supportingDocs[0].url || req.files.supportingDocs[0].secure_url);
+      }
+      if (req.files.bFormDoc) {
+        updateData.bFormDoc = convertPdfToImageUrl(req.files.bFormDoc[0].path || req.files.bFormDoc[0].url || req.files.bFormDoc[0].secure_url);
       }
     }
 
@@ -112,44 +116,6 @@ export const updateOrphanProfile = async (req, res) => {
   }
 };
 
-export const confirmDonationReceipt = async (req, res) => {
-  try {
-    const { donationId } = req.params;
-    
-    const donation = await Donation.findById(donationId);
-    if (!donation) {
-      return res.status(404).json({ message: 'Donation not found' });
-    }
-
-    donation.status = 'completed';
-    donation.deliveredAt = new Date();
-    await donation.save();
-
-    // If there's an associated request, mark it as fulfilled
-    if (donation.requestId) {
-      const Request = mongoose.model('Request'); // Dynamic import to avoid circular dependency if any
-      await Request.findByIdAndUpdate(donation.requestId, { status: 'fulfilled' });
-    }
-
-    if (!donation) {
-      return res.status(404).json({ message: 'Donation not found' });
-    }
-
-    res.status(200).json({ message: 'Donation confirmed as received', donation });
-
-    // Notify the donor
-    const Notification = mongoose.model('Notification');
-    const donorNotification = new Notification({
-      donorId: donation.donorId,
-      type: 'delivery',
-      title: 'Donation Received!',
-      message: `The recipient has confirmed they received your donation of ${donation.units} ${donation.unitType}. Thank you!`,
-    });
-    await donorNotification.save();
-  } catch (error) {
-    res.status(500).json({ message: 'Error confirming receipt', error: error.message });
-  }
-};
 
 export const reportDonationIssue = async (req, res) => {
   try {
@@ -177,5 +143,49 @@ export const reportDonationIssue = async (req, res) => {
     res.status(200).json({ message: 'Issue reported successfully', donation });
   } catch (error) {
     res.status(500).json({ message: 'Error reporting issue', error: error.message });
+  }
+};
+export const confirmReceipt = async (req, res) => {
+  try {
+    const { donationId } = req.params;
+    const receivedImage = req.file ? req.file.path : null;
+
+    const donation = await Donation.findByIdAndUpdate(
+      donationId,
+      { 
+        status: 'received', 
+        receivedImage,
+        deliveredAt: new Date()
+      },
+      { new: true }
+    );
+
+    if (!donation) {
+      return res.status(404).json({ message: 'Donation not found' });
+    }
+
+    // Create notifications
+    const Notification = mongoose.model('Notification');
+    
+    // Notification for donor
+    const donorNotif = new Notification({
+      donorId: donation.donorId,
+      type: 'delivery',
+      title: 'Donation Received!',
+      message: `Your donation has been successfully received by the recipient. Thank you for your support!`,
+    });
+    await donorNotif.save();
+
+    // Notification for admin
+    const adminNotif = new Notification({
+      type: 'request',
+      title: 'Donation Delivery Confirmed',
+      message: `Donation ${donationId} has been marked as received by the orphan.`,
+    });
+    await adminNotif.save();
+
+    res.status(200).json({ message: 'Donation marked as received', donation });
+  } catch (error) {
+    res.status(500).json({ message: 'Error confirming receipt', error: error.message });
   }
 };
