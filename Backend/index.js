@@ -25,7 +25,6 @@ import Notification from "./model/notification_model.js";
 import { errorMiddleware } from "./middleware/errorMiddleware.js";
 
 dotenv.config();
-console.log(' [System] Email Simulator Mode: Active');
 dns.setServers(['8.8.8.8', '8.8.4.4']);
 dbconnection();
 
@@ -41,10 +40,7 @@ const io = new Server(server, {
 initSocket(io);
 
 app.use(cors({
-  origin: true, // Reflect request origin, essential for credentials: true
-  credentials: true,
-  methods: ['GET', 'POST', 'PUT', 'DELETE', 'OPTIONS'],
-  allowedHeaders: ['Content-Type', 'Authorization', 'X-Requested-With'],
+  origin: "*"
 }));
 
 // Middleware
