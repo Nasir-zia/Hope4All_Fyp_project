@@ -68,6 +68,10 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
       const userData = await storage.getItem('user');
 
       if (token && userData) {
+        const parsedUser = JSON.parse(userData);
+        // Ensure token is stored in user object for downstream usage
+        setUser({ ...parsedUser, token });
+      } else if (userData) {
         setUser(JSON.parse(userData));
       }
     } catch (error) {

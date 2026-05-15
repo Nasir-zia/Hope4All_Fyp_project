@@ -138,11 +138,16 @@ export const MessageInput: React.FC<MessageInputProps> = ({ onSend, sending }) =
 
 const styles = StyleSheet.create({
   inputAreaWrapper: {
+    position: 'absolute',
+    bottom: 0,
+    left: 0,
+    right: 0,
     paddingHorizontal: 15,
     paddingVertical: 12,
     backgroundColor: '#fff',
     borderTopWidth: 1,
-    borderTopColor: '#f1f5f9'
+    borderTopColor: '#f1f5f9',
+    zIndex: 10,
   },
   inputArea: {
     flexDirection: 'row',

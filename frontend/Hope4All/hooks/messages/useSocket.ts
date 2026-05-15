@@ -11,9 +11,10 @@ export const useSocket = (userId: string | undefined, token: string | undefined)
 
     console.log(`[Socket] Connecting for user: ${userId}`);
     const socket = io(SOCKET_URL, {
-
+      transports: ['websocket'],
       reconnectionAttempts: 5,
-      auth: { token } 
+      auth: { token },
+      query: { token }
     });
 
     socketRef.current = socket;
