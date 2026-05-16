@@ -1,7 +1,8 @@
 import { StyleSheet, Platform } from 'react-native';
 
 export const adminStyles = StyleSheet.create({
-  container: { flex: 1, backgroundColor: '#f8fafc' },
+  safeContainer: { flex: 1, backgroundColor: '#f8fafc' },
+  container: { flex: 1 },
   centered: { flex: 1, justifyContent: 'center', alignItems: 'center', backgroundColor: '#f8fafc' },
   loadingText: { marginTop: 15, color: '#64748b', fontWeight: '500' },
 

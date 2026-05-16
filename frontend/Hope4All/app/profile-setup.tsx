@@ -10,6 +10,7 @@ import {
   ActivityIndicator,
   Image,
 } from 'react-native';
+import { SafeAreaView } from 'react-native-safe-area-context';
 import { Ionicons } from '@expo/vector-icons';
 import { router } from 'expo-router';
 import * as ImagePicker from 'expo-image-picker';
@@ -158,7 +159,8 @@ export default function ProfileSetupPage() {
   };
 
   return (
-    <ScrollView contentContainerStyle={styles.container}>
+    <SafeAreaView style={styles.safeContainer}>
+      <ScrollView contentContainerStyle={styles.container}>
       <Text style={styles.title}>Complete Your Profile</Text>
 
       <TouchableOpacity onPress={() => pickImage('profile')}>
@@ -187,11 +189,16 @@ export default function ProfileSetupPage() {
       <TouchableOpacity onPress={handleSubmit} style={styles.btn}>
         {loading ? <ActivityIndicator color="#fff" /> : <Text style={{ color: '#fff' }}>Submit</Text>}
       </TouchableOpacity>
-    </ScrollView>
+      </ScrollView>
+    </SafeAreaView>
   );
 }
 
 const styles = StyleSheet.create({
+  safeContainer: {
+    flex: 1,
+    backgroundColor: '#fff',
+  },
   container: { padding: 20 },
   input: { backgroundColor: '#f2f2f2', marginVertical: 8, padding: 12, borderRadius: 10 },
   btn: { backgroundColor: '#0d8ddb', padding: 15, borderRadius: 10, alignItems: 'center', marginTop: 20 },

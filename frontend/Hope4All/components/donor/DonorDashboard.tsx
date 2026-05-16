@@ -1,5 +1,6 @@
 import React from 'react';
 import { View, Text, StyleSheet, ScrollView, ActivityIndicator, Alert, TouchableOpacity, Platform } from 'react-native';
+import { SafeAreaView } from 'react-native-safe-area-context';
 import { Ionicons } from '@expo/vector-icons';
 import { router } from 'expo-router';
 
@@ -63,7 +64,8 @@ export default function DonorDashboard() {
 
   if (donorProfile) {
     return (
-      <View style={styles.container}>
+      <SafeAreaView style={styles.safeContainer}>
+        <View style={styles.container}>
         <DonorHeader
           name={donorProfile.name}
           points={donorProfile.totalDonated || 0}
@@ -197,6 +199,7 @@ export default function DonorDashboard() {
           loading={submittingCourse}
         />
       </View>
+    </SafeAreaView>
     );
   }
 
@@ -213,9 +216,12 @@ export default function DonorDashboard() {
 }
 
 const styles = StyleSheet.create({
-  container: {
+  safeContainer: {
     flex: 1,
     backgroundColor: '#f8fafc',
+  },
+  container: {
+    flex: 1,
   },
   centerContainer: {
     flex: 1,

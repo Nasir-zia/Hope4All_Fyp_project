@@ -9,6 +9,7 @@ import {
   TouchableOpacity,
   Alert,
 } from "react-native";
+import { SafeAreaView, useSafeAreaInsets } from "react-native-safe-area-context";
 import { Ionicons, FontAwesome5 } from "@expo/vector-icons";
 import { router } from "expo-router";
 import * as Haptics from 'expo-haptics';
@@ -17,6 +18,7 @@ import BackButton from "@/components/BackButton";
 export default function RoleScreen() {
   const { user, login, logout } = useAuth();
   const { tempData, setTempData } = useTempSignup();
+  const insets = useSafeAreaInsets();
   const [selected, setSelected] = useState("orphan");
   const [loading, setLoading] = useState(false);
 
@@ -135,9 +137,10 @@ export default function RoleScreen() {
   };
 
   return (
-    <View style={styles.container}>
-      <TouchableOpacity 
-        style={styles.logoutButton} 
+    <SafeAreaView style={styles.safeContainer}>
+      <View style={styles.container}>
+        <TouchableOpacity 
+          style={[styles.logoutButton, { top: Math.max(insets.top, 20) }]} 
         onPress={() => {
           Alert.alert('Logout', 'Are you sure you want to log out?', [
             { text: 'Cancel', style: 'cancel' },
@@ -147,8 +150,8 @@ export default function RoleScreen() {
       >
         <Ionicons name="log-out-outline" size={24} color="#333" />
       </TouchableOpacity>
-      <BackButton />
-      <Text style={styles.heading}>Choose Your Role</Text>
+        <BackButton />
+        <Text style={[styles.heading, { marginTop: Math.max(insets.top + 20, 60) }]}>Choose Your Role</Text>
       <Text style={styles.sub}>
         Select how you would like to Help in Hope4All
       </Text>
@@ -185,31 +188,36 @@ export default function RoleScreen() {
         icon={<Ionicons name="business-outline" size={24} color="#9333ea" />}
       />
 
-      {/* Continue Button */}
-      <TouchableOpacity 
-        style={[
-          styles.continueBtn,
-          { backgroundColor: 
-              selected === 'orphan' ? '#4da6ff' : 
-              selected === 'donor' ? '#ff66b2' : 
-              selected === 'volunteer' ? '#33cc99' : '#9333ea' 
-          },
-          loading && { opacity: 0.6 }
-        ]}
-        onPress={handleContinue}
-        disabled={loading}
-      >
-        <Text style={styles.continueText}>{loading ? 'Loading...' : `Continue as ${selected.charAt(0).toUpperCase() + selected.slice(1)}`}</Text>
-      </TouchableOpacity>
-    </View>
+        {/* Continue Button */}
+        <TouchableOpacity 
+          style={[
+            styles.continueBtn,
+            { bottom: Math.max(insets.bottom, 20),
+              backgroundColor: 
+                selected === 'orphan' ? '#4da6ff' : 
+                selected === 'donor' ? '#ff66b2' : 
+                selected === 'volunteer' ? '#33cc99' : '#9333ea' 
+            },
+            loading && { opacity: 0.6 }
+          ]}
+          onPress={handleContinue}
+          disabled={loading}
+        >
+          <Text style={styles.continueText}>{loading ? 'Loading...' : `Continue as ${selected.charAt(0).toUpperCase() + selected.slice(1)}`}</Text>
+        </TouchableOpacity>
+      </View>
+    </SafeAreaView>
   );
 }
 
 const styles = StyleSheet.create({
+  safeContainer: {
+    flex: 1,
+    backgroundColor: "#f5f7fa",
+  },
   container: {
     flex: 1,
     padding: 20,
-    backgroundColor: "#f5f7fa",
   },
   logoutButton: {
     position: 'absolute',

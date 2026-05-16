@@ -42,7 +42,6 @@ const styles = StyleSheet.create({
   chatHeader: { 
     flexDirection: 'row', 
     alignItems: 'center', 
-    paddingTop: Platform.OS === 'ios' ? 60 : 40, 
     paddingBottom: 12, 
     paddingHorizontal: 20, 
     backgroundColor: '#fff',

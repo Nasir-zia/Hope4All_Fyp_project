@@ -1,5 +1,6 @@
 import React from 'react';
 import { View, Text, StyleSheet, TouchableOpacity, ScrollView } from 'react-native';
+import { SafeAreaView } from 'react-native-safe-area-context';
 import { Ionicons } from '@expo/vector-icons';
 
 interface SuspendedScreenProps {
@@ -9,7 +10,8 @@ interface SuspendedScreenProps {
 
 export const SuspendedScreen: React.FC<SuspendedScreenProps> = ({ reason, onLogout }) => {
   return (
-    <View style={styles.container}>
+    <SafeAreaView style={styles.safeContainer}>
+      <View style={styles.container}>
       <ScrollView contentContainerStyle={styles.content} showsVerticalScrollIndicator={false}>
         {/* Icon */}
         <View style={styles.iconCircle}>
@@ -48,14 +50,18 @@ export const SuspendedScreen: React.FC<SuspendedScreenProps> = ({ reason, onLogo
           <Text style={styles.logoutText}>Log Out</Text>
         </TouchableOpacity>
       </ScrollView>
-    </View>
+      </View>
+    </SafeAreaView>
   );
 };
 
 const styles = StyleSheet.create({
-  container: {
+  safeContainer: {
     flex: 1,
     backgroundColor: '#f8fafc',
+  },
+  container: {
+    flex: 1,
   },
   content: {
     flexGrow: 1,

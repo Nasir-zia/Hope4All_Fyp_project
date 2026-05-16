@@ -1,5 +1,6 @@
 import React from 'react';
 import { View, Text, StyleSheet, TouchableOpacity } from 'react-native';
+import { SafeAreaView } from 'react-native-safe-area-context';
 import { Ionicons } from '@expo/vector-icons';
 
 interface PendingVerificationProps {
@@ -8,7 +9,8 @@ interface PendingVerificationProps {
 
 export const PendingVerification: React.FC<PendingVerificationProps> = ({ onLogout }) => {
   return (
-    <View style={styles.container}>
+    <SafeAreaView style={styles.safeContainer}>
+      <View style={styles.container}>
        <View style={styles.content}>
           <View style={styles.iconCircle}>
             <Ionicons name="time" size={48} color="#0077cc" />
@@ -26,12 +28,17 @@ export const PendingVerification: React.FC<PendingVerificationProps> = ({ onLogo
             <Text style={styles.logoutText}>Log Out</Text>
           </TouchableOpacity>
        </View>
-    </View>
+      </View>
+    </SafeAreaView>
   );
 };
 
 const styles = StyleSheet.create({
-  container: { flex: 1, backgroundColor: '#fff', justifyContent: 'center', padding: 40 },
+  safeContainer: {
+    flex: 1,
+    backgroundColor: '#fff',
+  },
+  container: { flex: 1, justifyContent: 'center', padding: 40 },
   content: { alignItems: 'center' },
   iconCircle: { width: 100, height: 100, borderRadius: 50, backgroundColor: '#f0f9ff', justifyContent: 'center', alignItems: 'center', marginBottom: 25 },
   title: { fontSize: 24, fontWeight: '800', color: '#1e293b', marginBottom: 15 },

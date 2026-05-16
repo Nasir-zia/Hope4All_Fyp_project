@@ -46,7 +46,6 @@ export const VolunteerHeader: React.FC<VolunteerHeaderProps> = ({ name, onLogout
 
 const styles = StyleSheet.create({
   header: {
-    paddingTop: Platform.OS === 'ios' ? 60 : 50,
     paddingBottom: 40,
     paddingHorizontal: 25,
     borderBottomLeftRadius: 40,

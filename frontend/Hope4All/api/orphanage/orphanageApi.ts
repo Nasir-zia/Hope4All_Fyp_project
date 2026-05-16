@@ -9,10 +9,10 @@ export const fetchOrphanages = fetchOrphanageOptions;
 
 export const fetchOrphanageProfile = async (userId: string) => {
   try {
-    const data = await apiClient(`/orphanages/profile/${userId}`);
+    const data = await apiClient(`/orphanages/profile/${userId}`, { silent: true });
     return data.orphanage;
   } catch (error: any) {
-    if (error.message.includes('404') || error.message.includes('Orphanage not found')) return null;
+    if (error.status === 404 || error.message.includes('404') || error.message.includes('Orphanage not found')) return null;
     throw error;
   }
 };

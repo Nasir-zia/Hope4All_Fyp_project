@@ -4,6 +4,7 @@ import { AuthProvider, useAuth } from '../hooks/useAuth';
 import { TempSignupProvider } from '../contexts/TempSignupContext';
 import { View, ActivityIndicator, Text } from 'react-native';
 import SplashScreen from '../components/common/SplashScreen';
+import { SafeAreaProvider } from 'react-native-safe-area-context';
 
 function RootLayoutNav() {
   return (
@@ -110,13 +111,15 @@ function AuthRedirector({ children }: { children: React.ReactNode }) {
 
 export default function RootLayout() {
   return (
-    <AuthProvider>
-      <TempSignupProvider>
-        <AuthRedirector>
-          <RootLayoutNav />
-        </AuthRedirector>
-      </TempSignupProvider>
-    </AuthProvider>
+    <SafeAreaProvider>
+      <AuthProvider>
+        <TempSignupProvider>
+          <AuthRedirector>
+            <RootLayoutNav />
+          </AuthRedirector>
+        </TempSignupProvider>
+      </AuthProvider>
+    </SafeAreaProvider>
   );
 }
 

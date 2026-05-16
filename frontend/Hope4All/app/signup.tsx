@@ -10,6 +10,7 @@ import {
   ScrollView,
   Image,
 } from 'react-native';
+import { SafeAreaView } from 'react-native-safe-area-context';
 import { Ionicons } from '@expo/vector-icons';
 import { router } from 'expo-router';
 import { useTempSignup } from '@/contexts/TempSignupContext';
@@ -40,7 +41,8 @@ const handleSignup = async () => {
   };
 
   return (
-    <ScrollView style={styles.container}>
+    <SafeAreaView style={styles.safeContainer}>
+      <ScrollView contentContainerStyle={styles.container}>
       <Image 
         source={require('../assets/images/photo-1574758324765-a29c77fb9c91.jpg')} 
         style={styles.heroImage} 
@@ -93,15 +95,18 @@ const handleSignup = async () => {
       <TouchableOpacity style={styles.link} onPress={() => router.push('/login' as any)}>
         <Text style={styles.linkText}>Already have an account? Sign In</Text>
       </TouchableOpacity>
-    </ScrollView>
+      </ScrollView>
+    </SafeAreaView>
   );
 }
 
 const styles = StyleSheet.create({
-  container: {
+  safeContainer: {
     flex: 1,
-    padding: 24,
     backgroundColor: '#f5f7fa',
+  },
+  container: {
+    padding: 24,
   },
   heroImage: {
     width: '100%',

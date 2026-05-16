@@ -9,6 +9,7 @@ import {
   ActivityIndicator,
   Image,
 } from 'react-native';
+import { SafeAreaView } from 'react-native-safe-area-context';
 import { Ionicons } from '@expo/vector-icons';
 import { router } from 'expo-router';
 import { useAuth } from '@/hooks/useAuth';
@@ -40,7 +41,8 @@ export default function LoginPage() {
   };
 
   return (
-    <View style={styles.container}>
+    <SafeAreaView style={styles.safeContainer}>
+      <View style={styles.container}>
       <Image 
         source={require('../assets/images/photo-1574758324765-a29c77fb9c91.jpg')} 
         style={styles.heroImage} 
@@ -87,14 +89,18 @@ export default function LoginPage() {
         <Text style={styles.linkText}>Don&apos;t have an account? Sign Up</Text>
       </TouchableOpacity>
     </View>
+  </SafeAreaView>
   );
 }
 
 const styles = StyleSheet.create({
+  safeContainer: {
+    flex: 1,
+    backgroundColor: '#f5f7fa',
+  },
   container: {
     flex: 1,
     padding: 24,
-    backgroundColor: '#f5f7fa',
     justifyContent: 'center',
   },
   heroImage: {

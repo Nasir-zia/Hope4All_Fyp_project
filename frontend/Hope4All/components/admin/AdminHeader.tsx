@@ -30,7 +30,6 @@ export const AdminHeader: React.FC<AdminHeaderProps> = ({ onLogout }) => {
 
 const styles = StyleSheet.create({
   header: {
-    paddingTop: Platform.OS === 'ios' ? 50 : 40,
     paddingHorizontal: 20,
     paddingBottom: 15,
     backgroundColor: 'transparent',

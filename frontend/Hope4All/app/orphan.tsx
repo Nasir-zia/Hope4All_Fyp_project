@@ -1,5 +1,6 @@
 import React from 'react';
 import { View, Text, Image, Linking, TouchableOpacity, ScrollView, StyleSheet, ActivityIndicator, Alert, Platform } from 'react-native';
+import { SafeAreaView } from 'react-native-safe-area-context';
 import { Ionicons } from '@expo/vector-icons';
 import { router } from 'expo-router';
 import { useOrphanDashboard } from '@/hooks/useOrphanDashboard';
@@ -76,7 +77,8 @@ export default function OrphanDashboard() {
   }
 
   return (
-    <View style={styles.container}>
+    <SafeAreaView style={styles.safeContainer}>
+      <View style={styles.container}>
       <ScrollView
         showsVerticalScrollIndicator={false}
         contentContainerStyle={styles.scrollContent}
@@ -273,14 +275,18 @@ export default function OrphanDashboard() {
         onSave={handleAddProgress}
         loading={submittingProg}
       />
-    </View>
+      </View>
+    </SafeAreaView>
   );
 }
 
 const styles = StyleSheet.create({
-  container: {
+  safeContainer: {
     flex: 1,
     backgroundColor: '#ffffff',
+  },
+  container: {
+    flex: 1,
   },
   scrollContent: {
     paddingBottom: 50,

@@ -12,6 +12,7 @@ import {
   ActivityIndicator,
   Alert
 } from 'react-native';
+import { SafeAreaView } from 'react-native-safe-area-context';
 import { Ionicons } from '@expo/vector-icons';
 import { router, useLocalSearchParams } from 'expo-router';
 import { LinearGradient } from 'expo-linear-gradient';
@@ -87,7 +88,7 @@ export default function MessagesScreen() {
   // Main list view
   if (!selectedUser) {
     return (
-      <View style={styles.container}>
+      <SafeAreaView style={styles.container} edges={['top']}>
         <View style={styles.header}>
           <TouchableOpacity onPress={() => router.back()}>
             <Ionicons name="arrow-back" size={24} color="#1e293b" />
@@ -164,13 +165,13 @@ export default function MessagesScreen() {
             />
           )}
         </ScrollView>
-      </View>
+      </SafeAreaView>
     );
   }
 
   // Chat view
   return (
-    <View style={styles.container}>
+    <SafeAreaView style={styles.container} edges={['top']}>
       <ChatHeader 
         user={selectedUser} 
         onBack={() => setSelectedUser(null)} 
@@ -198,14 +199,13 @@ export default function MessagesScreen() {
       >
         <MessageInput onSend={handleSend} sending={sending} />
       </KeyboardAvoidingView>
-    </View>
+    </SafeAreaView>
   );
 }
 
 const styles = StyleSheet.create({
   container: { flex: 1, backgroundColor: '#fff' },
   header: {
-    paddingTop: Platform.OS === 'ios' ? 60 : 40,
     paddingBottom: 15,
     paddingHorizontal: 20,
     flexDirection: 'row',

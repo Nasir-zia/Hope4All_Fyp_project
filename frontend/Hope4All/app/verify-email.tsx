@@ -10,6 +10,7 @@ import {
   ScrollView,
   Keyboard,
 } from 'react-native';
+import { SafeAreaView } from 'react-native-safe-area-context';
 import { Ionicons } from '@expo/vector-icons';
 import { router, useLocalSearchParams } from 'expo-router';
 import { apiClient } from '@/utils/apiClient';
@@ -136,7 +137,8 @@ export default function VerifyEmailPage() {
   };
 
   return (
-    <ScrollView contentContainerStyle={styles.container} keyboardShouldPersistTaps="handled">
+    <SafeAreaView style={styles.safeContainer}>
+      <ScrollView contentContainerStyle={styles.container} keyboardShouldPersistTaps="handled">
       <View style={styles.header}>
         <View style={styles.iconCircle}>
           <Ionicons name="shield-checkmark" size={40} color="#0d8ddb" />
@@ -204,15 +206,19 @@ export default function VerifyEmailPage() {
         <Ionicons name="arrow-back" size={16} color="#94a3b8" />
         <Text style={styles.backBtnText}>Back to Login</Text>
       </TouchableOpacity>
-    </ScrollView>
+      </ScrollView>
+    </SafeAreaView>
   );
 }
 
 const styles = StyleSheet.create({
+  safeContainer: {
+    flex: 1,
+    backgroundColor: '#fff',
+  },
   container: {
     flexGrow: 1,
     padding: 24,
-    backgroundColor: '#fff',
     justifyContent: 'center',
   },
   header: {

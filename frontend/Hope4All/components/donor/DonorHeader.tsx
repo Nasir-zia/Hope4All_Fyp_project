@@ -61,7 +61,6 @@ export const DonorHeader: React.FC<DonorHeaderProps> = ({
 const styles = StyleSheet.create({
   header: {
     paddingHorizontal: 20,
-    paddingTop: 50,
     paddingBottom: 30,
     backgroundColor: '#fff',
     borderBottomLeftRadius: 35,

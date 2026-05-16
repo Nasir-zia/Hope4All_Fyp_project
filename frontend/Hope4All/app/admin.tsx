@@ -9,6 +9,7 @@ import {
   TouchableOpacity,
   Platform
 } from 'react-native';
+import { SafeAreaView } from 'react-native-safe-area-context';
 import { Ionicons } from '@expo/vector-icons';
 import { useAuth } from '@/hooks/useAuth';
 import {
@@ -214,7 +215,8 @@ export default function AdminDashboard() {
   if (loading && !refreshing) return <View style={styles.centered}><ActivityIndicator size="large" color="#0f172a" /><Text style={styles.loadingText}>Loading...</Text></View>;
 
   return (
-    <View style={styles.container}>
+    <SafeAreaView style={styles.safeContainer}>
+      <View style={styles.container}>
       <AdminHeader onLogout={logout} />
       <View style={styles.tabBarWrapper}>
         <ScrollView horizontal showsHorizontalScrollIndicator={false} contentContainerStyle={styles.tabBar}>
@@ -245,6 +247,7 @@ export default function AdminDashboard() {
       </ScrollView>
       <CourseModal visible={showCourseModal} onClose={() => setShowCourseModal(false)} onSubmit={handleAdminCourseSubmit} loading={submittingCourse} title={courseTitle} setTitle={setCourseTitle} desc={courseDesc} setDesc={setCourseDesc} link={courseLink} setLink={setCourseLink} category={courseCategory} setCategory={setCourseCategory} />
       <TaskModal visible={showTaskModal} onClose={() => setShowTaskModal(false)} onConfirm={handleCreateTask} submitting={submittingTask} taskTitle={taskTitle} setTaskTitle={setTaskTitle} taskDesc={taskDesc} setTaskDesc={setTaskDesc} volunteers={volunteers} selectedVolunteer={selectedVolunteer} setSelectedVolunteer={setSelectedVolunteer} />
-    </View>
+      </View>
+    </SafeAreaView>
   );
 }

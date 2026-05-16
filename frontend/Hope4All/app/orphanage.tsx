@@ -1,5 +1,6 @@
 import React from 'react';
 import { View, Text, StyleSheet, ScrollView, ActivityIndicator, Alert, TouchableOpacity, TextInput, Image, Linking } from 'react-native';
+import { SafeAreaView } from 'react-native-safe-area-context';
 import { Ionicons } from '@expo/vector-icons';
 import { getDownloadableUrl } from '../utils/cloudinaryUtils';
 
@@ -139,7 +140,8 @@ export default function OrphanageDashboard() {
   }
 
   return (
-    <View style={styles.container}>
+    <SafeAreaView style={styles.safeContainer}>
+      <View style={styles.container}>
       <View style={styles.header}>
         <View>
           <Text style={styles.welcomeText}>Welcome back,</Text>
@@ -249,15 +251,17 @@ export default function OrphanageDashboard() {
         onSubmit={handleAddRequirement} 
         loading={submittingReq} 
       />
-    </View>
+      </View>
+    </SafeAreaView>
   );
 }
 
 const styles = StyleSheet.create({
-  container: { flex: 1, backgroundColor: '#f8fafc' },
+  safeContainer: { flex: 1, backgroundColor: '#f8fafc' },
+  container: { flex: 1 },
   centerContainer: { flex: 1, justifyContent: 'center', alignItems: 'center', backgroundColor: '#fff' },
   loadingText: { marginTop: 15, color: '#64748b', fontWeight: '600' },
-  header: { padding: 25, paddingTop: 60, backgroundColor: '#fff', flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center', borderBottomLeftRadius: 30, borderBottomRightRadius: 30, elevation: 4 },
+  header: { padding: 25, backgroundColor: '#fff', flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center', borderBottomLeftRadius: 30, borderBottomRightRadius: 30, elevation: 4 },
   welcomeText: { fontSize: 14, color: '#64748b' },
   orphanageName: { fontSize: 22, fontWeight: '800', color: '#1e293b' },
   iconBtn: { width: 45, height: 45, borderRadius: 15, backgroundColor: '#fef2f2', justifyContent: 'center', alignItems: 'center' },
@@ -270,7 +274,7 @@ const styles = StyleSheet.create({
   placeholderCard: { backgroundColor: '#fff', padding: 40, borderRadius: 30, alignItems: 'center', borderStyle: 'dashed', borderWidth: 2, borderColor: '#e2e8f0' },
   placeholderText: { textAlign: 'center', color: '#64748b', marginTop: 15, lineHeight: 22 },
   
-  regContainer: { padding: 30, paddingTop: 60, backgroundColor: '#fff' },
+  regContainer: { padding: 30, backgroundColor: '#fff' },
   regTitle: { fontSize: 28, fontWeight: '800', color: '#1e293b', marginBottom: 10 },
   regSubtitle: { fontSize: 16, color: '#64748b', marginBottom: 30 },
   inputGroup: { marginBottom: 20 },

@@ -1,5 +1,6 @@
 import React, { useState } from 'react';
 import { View, TextInput, TouchableOpacity, ActivityIndicator, StyleSheet, Platform, Image, Text, Alert } from 'react-native';
+import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { Ionicons } from '@expo/vector-icons';
 import * as ImagePicker from 'expo-image-picker';
 import * as DocumentPicker from 'expo-document-picker';
@@ -10,6 +11,7 @@ interface MessageInputProps {
 }
 
 export const MessageInput: React.FC<MessageInputProps> = ({ onSend, sending }) => {
+  const insets = useSafeAreaInsets();
   const [message, setMessage] = useState('');
   const [attachment, setAttachment] = useState<any>(null);
 
@@ -83,7 +85,7 @@ export const MessageInput: React.FC<MessageInputProps> = ({ onSend, sending }) =
   };
 
   return (
-    <View style={styles.inputAreaWrapper}>
+    <View style={[styles.inputAreaWrapper, { paddingBottom: Math.max(insets.bottom, 12) }]}>
       {attachment && (
         <View style={styles.previewContainer}>
           {attachment.type === 'image' ? (
@@ -143,7 +145,7 @@ const styles = StyleSheet.create({
     left: 0,
     right: 0,
     paddingHorizontal: 15,
-    paddingVertical: 12,
+    paddingTop: 12,
     backgroundColor: '#fff',
     borderTopWidth: 1,
     borderTopColor: '#f1f5f9',
