@@ -1,0 +1,19 @@
+services:
+  - type: web
+    name: hope4all-backend
+    env: node
+    rootDir: Backend
+    buildCommand: npm install
+    startCommand: npm start
+    envVars:
+      - key: NODE_ENV
+        value: production
+      - key: PORT
+        value: 5001
+      # IMPORTANT: Add the following environment variables manually in the Render Dashboard:
+      # - MONGO_URI
+      # - JWT_SECRET
+      # - CLOUDINARY_CLOUD_NAME
+      # - CLOUDINARY_API_KEY
+      # - CLOUDINARY_API_SECRET
+      # - FRONTEND_URL (if you plan to restrict CORS)
