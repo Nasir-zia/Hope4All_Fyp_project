@@ -457,7 +457,13 @@ export const getMatchedOrphans = async (req, res) => {
       orphanFilter.location = { $in: preferredAreas.map(l => new RegExp(l, 'i')) };
     }
 
-    const orphans = await Orphan.find(orphanFilter).populate('orphanageId').sort({ createdAt: -1 });
+    let orphans = await Orphan.find(orphanFilter).populate('orphanageId').sort({ createdAt: -1 });
+
+    // Fallback: If no orphans match the preferred areas, return all orphans so they never see a blank screen
+    if (orphans.length === 0) {
+      orphans = await Orphan.find({}).populate('orphanageId').sort({ createdAt: -1 });
+    }
+
     res.status(200).json({ orphans });
   } catch (error) {
     res.status(500).json({ message: 'Error fetching matched orphans', error: error.message });
@@ -626,7 +632,7 @@ export const getMatchedRequests = async (req, res) => {
         if (reqDoc.orphanId) {
           const prefLevels = preferences.schoolLevel.map(l => l.toLowerCase());
           const classLevel = reqDoc.orphanId.classLevel?.toLowerCase();
-          if (!classLevel || !prefLevels.includes(classLevel)) {
+          if (classLevel && !prefLevels.includes(classLevel)) {
             return false;
           }
         }
@@ -634,12 +640,12 @@ export const getMatchedRequests = async (req, res) => {
 
       // 4. Area/City matching
       if (preferences.area?.length > 0) {
-        const prefAreas = preferences.area.map(a => a.toLowerCase());
-        const orphanCity = reqDoc.orphanId?.location?.toLowerCase();
-        const orphanageCity = reqDoc.orphanageId?.location?.city?.toLowerCase() || reqDoc.orphanageId?.location?.toLowerCase();
+        const prefAreas = preferences.area.map(a => a.trim().toLowerCase());
+        const orphanCity = reqDoc.orphanId?.location?.trim().toLowerCase();
+        const orphanageCity = (reqDoc.orphanageId?.location?.city || reqDoc.orphanageId?.location)?.trim().toLowerCase();
         
-        const matchesOrphanArea = orphanCity && prefAreas.includes(orphanCity);
-        const matchesOrphanageArea = orphanageCity && prefAreas.includes(orphanageCity);
+        const matchesOrphanArea = orphanCity && prefAreas.some(pref => orphanCity.includes(pref) || pref.includes(orphanCity));
+        const matchesOrphanageArea = orphanageCity && prefAreas.some(pref => orphanageCity.includes(pref) || pref.includes(orphanageCity));
 
         if (!matchesOrphanArea && !matchesOrphanageArea) {
           return false;

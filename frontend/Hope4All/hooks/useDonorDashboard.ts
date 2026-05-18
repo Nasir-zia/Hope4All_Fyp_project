@@ -147,9 +147,10 @@ export const useDonorDashboard = () => {
         name,
         phone,
         city,
-        preferences: { causeType: [], area: [], schoolLevel: [] }
+        preferences: { causeType: [], area: [city], schoolLevel: [] }
       });
       setDonorProfile(profile);
+      loadDashboardData(profile._id);
     } catch (err: any) {
       Alert.alert('Error', err.message || 'Could not save profile');
     } finally {
@@ -568,28 +569,31 @@ export const useDonorDashboard = () => {
 
       return matchCause && matchUrgent && matchCity && matchLevel;
     }),
-    filteredOrphans: orphans.filter(orphan => {
-      const preferredAreas = (donorProfile?.preferences?.area || []).map((a: string) => a.toLowerCase());
-      const orphanCity = orphan.location?.toLowerCase();
-      
-      let matchCity = true;
-      if (preferredAreas.length > 0) {
-        matchCity = false;
-        if (orphanCity && preferredAreas.some((pref: string) => orphanCity.includes(pref) || pref.includes(orphanCity))) {
-          matchCity = true;
+    filteredOrphans: (() => {
+      const res = orphans.filter(orphan => {
+        const preferredAreas = (donorProfile?.preferences?.area || []).map((a: string) => a.toLowerCase());
+        const orphanCity = orphan.location?.toLowerCase();
+        
+        let matchCity = true;
+        if (preferredAreas.length > 0) {
+          matchCity = false;
+          if (orphanCity && preferredAreas.some((pref: string) => orphanCity.includes(pref) || pref.includes(orphanCity))) {
+            matchCity = true;
+          }
         }
-      }
 
-      const matchLevel = !donorProfile?.preferences?.schoolLevel?.length ||
-        !orphan.classLevel ||
-        donorProfile.preferences.schoolLevel.some((pref: string) => {
-          const classLvl = orphan.classLevel.toLowerCase();
-          const pf = pref.toLowerCase();
-          return classLvl.includes(pf) || pf.includes(classLvl);
-        });
+        const matchLevel = !donorProfile?.preferences?.schoolLevel?.length ||
+          !orphan.classLevel ||
+          donorProfile.preferences.schoolLevel.some((pref: string) => {
+            const classLvl = orphan.classLevel.toLowerCase();
+            const pf = pref.toLowerCase();
+            return classLvl.includes(pf) || pf.includes(classLvl);
+          });
 
-      return matchCity && matchLevel;
-    }),
+        return matchCity && matchLevel;
+      });
+      return res.length > 0 ? res : orphans;
+    })(),
     selectedOrphanForProfile, handleViewOrphanProfile,
     orphanProgress, loadingOrphanData,
     selectedOrphanage, setSelectedOrphanage,
