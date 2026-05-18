@@ -81,9 +81,9 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
     }
   };
 
-  const login = async (token: string, userData: Partial<User>) => {
+  const login = async (token: string, userData: Partial<User> & { _id?: string }) => {
     const fullUser = {
-      id: userData.id!,
+      id: userData.id || userData._id || '',
       token,
       role: userData.role || 'orphan',
       ...userData,

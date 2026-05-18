@@ -52,6 +52,13 @@ export const fetchMatchedOrphans = async (donorId: string) => {
   }
 };
 
+export const toggleMatchOrphanApi = async (donorId: string, orphanId: string) => {
+  return apiClient<any>('/donors/match-orphan', {
+    method: 'POST',
+    body: { donorId, orphanId },
+  });
+};
+
 export const makeDonation = async (data: DonationData, token?: string) => {
   return apiClient('/donors/donate', {
     method: 'POST',

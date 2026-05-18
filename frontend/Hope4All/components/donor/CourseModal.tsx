@@ -26,6 +26,11 @@ interface CourseModalProps {
   setLink: (val: string) => void;
   category: string;
   setCategory: (val: string) => void;
+  duration?: string;
+  setDuration?: (val: string) => void;
+  assignedOrphan?: string;
+  setAssignedOrphan?: (val: string) => void;
+  orphans?: any[];
 }
 
 export const CourseModal: React.FC<CourseModalProps> = ({
@@ -40,9 +45,14 @@ export const CourseModal: React.FC<CourseModalProps> = ({
   link,
   setLink,
   category,
-  setCategory
+  setCategory,
+  duration,
+  setDuration,
+  assignedOrphan,
+  setAssignedOrphan,
+  orphans
 }) => {
-  const categories = ['Academic', 'Skills', 'Religious', 'Language', 'Other'];
+  const categories = ['Academic', 'Skills', 'Tech', 'Language', 'Other'];
 
   return (
     <Modal visible={visible} animationType="slide" transparent={true}>
@@ -100,6 +110,45 @@ export const CourseModal: React.FC<CourseModalProps> = ({
               onChangeText={setLink}
               autoCapitalize="none"
             />
+
+            {setDuration && (
+              <View>
+                <Text style={styles.label}>Duration</Text>
+                <TextInput
+                  style={styles.input}
+                  placeholder="e.g. 4 Weeks, 12 Hours"
+                  value={duration}
+                  onChangeText={setDuration}
+                />
+              </View>
+            )}
+
+            {orphans && setAssignedOrphan && (
+              <View>
+                <Text style={styles.label}>Assign to Orphan (Optional)</Text>
+                <ScrollView horizontal showsHorizontalScrollIndicator={false} style={styles.orphanScroller}>
+                  <TouchableOpacity
+                    style={[styles.orphanChip, !assignedOrphan && styles.orphanChipActive]}
+                    onPress={() => setAssignedOrphan('')}
+                  >
+                    <Text style={[styles.orphanChipText, !assignedOrphan && styles.orphanChipTextActive]}>
+                      All Orphans (General)
+                    </Text>
+                  </TouchableOpacity>
+                  {orphans.map(o => (
+                    <TouchableOpacity
+                      key={o._id}
+                      style={[styles.orphanChip, assignedOrphan === o._id && styles.orphanChipActive]}
+                      onPress={() => setAssignedOrphan(o._id)}
+                    >
+                      <Text style={[styles.orphanChipText, assignedOrphan === o._id && styles.orphanChipTextActive]}>
+                        {o.name}
+                      </Text>
+                    </TouchableOpacity>
+                  ))}
+                </ScrollView>
+              </View>
+            )}
 
             <TouchableOpacity
               style={[styles.submitBtn, loading && styles.btnDisabled]}
@@ -201,5 +250,30 @@ const styles = StyleSheet.create({
   },
   btnDisabled: {
     opacity: 0.6,
+  },
+  orphanScroller: {
+    flexDirection: 'row',
+    paddingVertical: 5,
+  },
+  orphanChip: {
+    paddingHorizontal: 15,
+    paddingVertical: 10,
+    borderRadius: 20,
+    backgroundColor: '#f1f5f9',
+    marginRight: 10,
+    borderWidth: 1,
+    borderColor: '#e2e8f0',
+  },
+  orphanChipActive: {
+    backgroundColor: '#0284c7',
+    borderColor: '#0284c7',
+  },
+  orphanChipText: {
+    color: '#475569',
+    fontSize: 13,
+    fontWeight: '600',
+  },
+  orphanChipTextActive: {
+    color: '#fff',
   },
 });

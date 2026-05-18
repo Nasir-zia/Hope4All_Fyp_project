@@ -8,7 +8,8 @@ import {
   ScrollView, 
   ActivityIndicator,
   RefreshControl,
-  FlatList 
+  FlatList,
+  Platform
 } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { Ionicons } from '@expo/vector-icons';
@@ -71,21 +72,32 @@ export default function VolunteerDashboard() {
     if (!result.canceled) {
       const uri = result.assets[0].uri;
       const formData = new FormData();
-      formData.append('proofImage', {
-        uri,
-        name: `proof_${taskId}.jpg`,
-        type: 'image/jpeg',
-      } as any);
-      // We keep it in_progress but we could change it to 'review_pending' if we had that status
-      // For now, we just update the image
-      formData.append('status', 'in_progress'); 
-
+      
       try {
         setLoading(true);
+        
+        // Handle cross-platform file append (Web vs Mobile native)
+        if (Platform.OS === 'web') {
+          const response = await fetch(uri);
+          const blob = await response.blob();
+          formData.append('proofImage', blob, `proof_${taskId}.jpg`);
+        } else {
+          formData.append('proofImage', {
+            uri,
+            name: `proof_${taskId}.jpg`,
+            type: 'image/jpeg',
+          } as any);
+        }
+
+        // We keep it in_progress but we could change it to 'review_pending' if we had that status
+        // For now, we just update the image
+        formData.append('status', 'in_progress'); 
+
         await updateTaskStatusApi(taskId, formData, user?.token, true);
-        Alert.alert('Success', 'Proof image submitted! Admin will verify soon.');
+        Alert.alert('Success', 'Submitted successfully!');
         loadDashboardData();
       } catch (err) {
+        console.error('Upload Error:', err);
         Alert.alert('Error', 'Failed to upload proof');
       } finally {
         setLoading(false);

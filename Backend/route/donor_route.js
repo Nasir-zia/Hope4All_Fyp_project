@@ -14,6 +14,7 @@ import {
   getNotifications,
   markNotificationRead,
   getMatchedOrphans,
+  matchOrphan,
   getPreferenceOptions,
   getOrphanAid,
   deleteDonor,
@@ -74,6 +75,9 @@ router.put("/notifications/:notificationId/read", markNotificationRead);
 
 // Route to get matched orphans
 router.get("/matched-orphans/:id", getMatchedOrphans);
+
+// Route to toggle matching status manually
+router.post("/match-orphan", matchOrphan);
 
 // Route to get matched requests based on donor preferences
 router.get("/matched-requests/:id", getMatchedRequests);

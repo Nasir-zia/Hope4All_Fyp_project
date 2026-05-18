@@ -16,11 +16,13 @@ interface DonationSectionProps {
   onOpenPreferences: () => void;
   onMessage: (orphan: any) => void;
   onViewOrphan: (orphan: any) => void;
+  submitting?: boolean;
 }
 
 export const DonationSection: React.FC<DonationSectionProps> = ({
   requests, selectedRequest, setSelectedRequest, units, setUnits, requestPhoto, onPickPhoto,
-  handleDonate, handleApproveRequest, handleRejectRequest, onOpenPreferences, onMessage, onViewOrphan
+  handleDonate, handleApproveRequest, handleRejectRequest, onOpenPreferences, onMessage, onViewOrphan,
+  submitting
 }) => {
   return (
     <View style={styles.container}>
@@ -132,8 +134,14 @@ export const DonationSection: React.FC<DonationSectionProps> = ({
                   keyboardType="numeric"
                 />
               </View>
-              <TouchableOpacity style={styles.donateBtn} onPress={handleDonate}>
-                <Text style={styles.donateBtnText}>Confirm Donation</Text>
+              <TouchableOpacity 
+                style={[styles.donateBtn, submitting && { opacity: 0.7 }]} 
+                onPress={handleDonate}
+                disabled={submitting}
+              >
+                <Text style={styles.donateBtnText}>
+                  {submitting ? 'Submitting...' : 'Confirm Donation'}
+                </Text>
               </TouchableOpacity>
            </View>
         </View>

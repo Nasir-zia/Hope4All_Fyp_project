@@ -31,6 +31,23 @@ const courseSchema = new mongoose.Schema({
     type: String,
     enum: ['pending', 'approved', 'rejected'],
     default: 'pending'
+  },
+  duration: {
+    type: String,
+    default: 'N/A'
+  },
+  thumbnail: {
+    type: String,
+    default: ''
+  },
+  assignedOrphan: {
+    type: mongoose.Schema.Types.ObjectId,
+    ref: 'User',
+    required: false
+  },
+  progress: {
+    type: Number,
+    default: 0
   }
 }, { timestamps: true });
 

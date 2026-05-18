@@ -15,10 +15,12 @@ interface AddDonationModalProps {
   onPickPhoto: () => void;
   onSubmit: () => void;
   recipientName?: string;
+  submitting?: boolean;
 }
 
 export const AddDonationModal: React.FC<AddDonationModalProps> = ({
-  visible, onClose, manualType, setManualType, manualUnits, setManualUnits, manualDesc, setManualDesc, manualPhoto, onPickPhoto, onSubmit, recipientName
+  visible, onClose, manualType, setManualType, manualUnits, setManualUnits, manualDesc, setManualDesc, manualPhoto, onPickPhoto, onSubmit, recipientName,
+  submitting
 }) => {
   return (
     <Modal visible={visible} transparent={true} animationType="slide" onRequestClose={onClose}>
@@ -73,8 +75,14 @@ export const AddDonationModal: React.FC<AddDonationModalProps> = ({
               </TouchableOpacity>
             </View>
 
-            <TouchableOpacity style={styles.submitBtn} onPress={onSubmit}>
-              <Text style={styles.submitBtnText}>{recipientName ? 'Confirm Donation' : 'Save Record'}</Text>
+            <TouchableOpacity 
+              style={[styles.submitBtn, submitting && { opacity: 0.7 }]} 
+              onPress={onSubmit}
+              disabled={submitting}
+            >
+              <Text style={styles.submitBtnText}>
+                {submitting ? 'Submitting...' : (recipientName ? 'Confirm Donation' : 'Save Record')}
+              </Text>
             </TouchableOpacity>
           </ScrollView>
         </View>

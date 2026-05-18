@@ -5,12 +5,14 @@ import { adminStyles as styles } from './AdminStyles';
 
 interface CoursesTabProps {
   pendingCourses: any[];
+  approvedCourses: any[];
   onAddPress: () => void;
   onUpdateStatus: (id: string, status: string) => void;
 }
 
 export const CoursesTab: React.FC<CoursesTabProps> = ({ 
   pendingCourses, 
+  approvedCourses = [],
   onAddPress, 
   onUpdateStatus 
 }) => {
@@ -31,7 +33,7 @@ export const CoursesTab: React.FC<CoursesTabProps> = ({
       {pendingCourses.length === 0 ? (
         <View style={styles.emptyContainer}>
           <Ionicons name="school-outline" size={60} color="#cbd5e1" />
-          <Text style={styles.emptyText}>All courses are up to date.</Text>
+          <Text style={styles.emptyText}>All pending courses are up to date.</Text>
         </View>
       ) : (
         pendingCourses.map((course) => (
@@ -58,6 +60,34 @@ export const CoursesTab: React.FC<CoursesTabProps> = ({
               </TouchableOpacity>
               <TouchableOpacity style={styles.rejectBtn} onPress={() => onUpdateStatus(course._id, 'rejected')}>
                 <Text style={styles.btnText}>Decline</Text>
+              </TouchableOpacity>
+            </View>
+          </View>
+        ))
+      )}
+
+      <Text style={[styles.sectionTitle, { marginTop: 25, fontSize: 16 }]}>Active Academy Courses</Text>
+      {approvedCourses.length === 0 ? (
+        <View style={styles.emptyContainer}>
+          <Ionicons name="school-outline" size={60} color="#cbd5e1" />
+          <Text style={styles.emptyText}>No active courses available.</Text>
+        </View>
+      ) : (
+        approvedCourses.map((course) => (
+          <View key={course._id} style={styles.courseCard}>
+            <View style={styles.cardHeader}>
+              <View style={[styles.courseBadge, { backgroundColor: '#e0f2fe' }]}>
+                <Text style={[styles.courseBadgeText, { color: '#0369a1' }]}>{course.category}</Text>
+              </View>
+              <Text style={[styles.pendingLabel, { color: '#059669', backgroundColor: '#d1fae5' }]}>ACTIVE</Text>
+            </View>
+            <Text style={styles.courseTitle}>{course.title}</Text>
+            <Text style={styles.courseDesc} numberOfLines={2}>{course.description}</Text>
+
+            <View style={styles.courseMeta}>
+              <Text style={styles.instructorText}>By {course.instructorName}</Text>
+              <TouchableOpacity onPress={() => Linking.openURL(course.link)}>
+                <Text style={styles.linkText}>View Source</Text>
               </TouchableOpacity>
             </View>
           </View>

@@ -26,6 +26,7 @@ import {
   deleteUserApi,
   fetchAllDonations,
   fetchPendingCourses,
+  fetchApprovedCourses,
   updateCourseStatusApi,
   addCourseApi,
   fetchOrphanageOptions,
@@ -63,6 +64,7 @@ export default function AdminDashboard() {
   const [usersList, setUsersList] = useState<any[]>([]);
   const [donations, setDonations] = useState<any[]>([]);
   const [pendingCourses, setPendingCourses] = useState<any[]>([]);
+  const [approvedCourses, setApprovedCourses] = useState<any[]>([]);
   const [orphanagesList, setOrphanagesList] = useState<any[]>([]);
   const [tasks, setTasks] = useState<any[]>([]);
   const [loading, setLoading] = useState(true);
@@ -82,6 +84,8 @@ export default function AdminDashboard() {
   const [courseDesc, setCourseDesc] = useState('');
   const [courseLink, setCourseLink] = useState('');
   const [courseCategory, setCourseCategory] = useState('Academic');
+  const [courseDuration, setCourseDuration] = useState('');
+  const [assignedOrphan, setAssignedOrphan] = useState('');
   const [submittingCourse, setSubmittingCourse] = useState(false);
 
   useEffect(() => { loadAllData(); }, []);
@@ -89,21 +93,26 @@ export default function AdminDashboard() {
   const loadAllData = async () => {
     setLoading(true);
     try {
-      const [statsD, reqsD, volD, usersD, dontD, coursesD, orphanagesD, tasksD] = await Promise.all([
-        fetchAdminStats(), fetchAllRequests(), fetchAllVolunteers(), fetchAllUsers(), fetchAllDonations(), fetchPendingCourses(), fetchOrphanageOptions(), fetchAllTasks()
+      const [statsD, reqsD, volD, usersD, dontD, pendingCoursesD, approvedCoursesD, orphanagesD, tasksD] = await Promise.all([
+        fetchAdminStats(), 
+        fetchAllRequests(), 
+        fetchAllVolunteers(), 
+        fetchAllUsers(), 
+        fetchAllDonations(), 
+        fetchPendingCourses(user?.token), 
+        fetchApprovedCourses(),
+        fetchOrphanageOptions(), 
+        fetchAllTasks()
       ]);
       setStats(statsD.stats);
       setRequests(reqsD);
       setVolunteers(volD);
       setUsersList(usersD);
       setDonations(dontD);
-      setPendingCourses(coursesD);
+      setPendingCourses(pendingCoursesD);
+      setApprovedCourses(approvedCoursesD);
       setOrphanagesList(orphanagesD);
       setTasks(tasksD);
-
-      // We can also store the recent lists if needed, but for now we'll update StatsTab to use them from the statsD object if we pass it correctly.
-      // Actually, let's keep setStats(statsD) and update StatsTab to handle the nesting, or better, pass everything.
-      // Let's go with setStats(statsD) and fix StatsTab.
       setStats(statsD);
     } catch (err) { console.error(err); } finally { setLoading(false); }
   };
@@ -165,11 +174,54 @@ export default function AdminDashboard() {
   };
 
   const handleAdminCourseSubmit = async () => {
+    if (!courseTitle.trim() || !courseDesc.trim() || !courseLink.trim() || !courseCategory.trim()) {
+      Alert.alert('Validation Error', 'Please fill in all required fields (Title, Description, Link, and Category)');
+      return;
+    }
+
     setSubmittingCourse(true);
     try {
-      await addCourseApi({ title: courseTitle, description: courseDesc, link: courseLink, category: courseCategory, instructorId: user!.id });
-      Alert.alert('Success', 'Course added!'); setShowCourseModal(false); loadAllData();
-    } catch (err: any) { Alert.alert('Error', err.message); } finally { setSubmittingCourse(false); }
+      console.log("[AdminDashboard] Submitting new course details:", {
+        title: courseTitle,
+        description: courseDesc,
+        link: courseLink,
+        category: courseCategory,
+        instructorId: user!.id,
+        duration: courseDuration,
+        assignedOrphan
+      });
+
+      await addCourseApi(
+        { 
+          title: courseTitle, 
+          description: courseDesc, 
+          link: courseLink, 
+          category: courseCategory, 
+          instructorId: user!.id,
+          duration: courseDuration,
+          assignedOrphan: assignedOrphan || undefined
+        }, 
+        user?.token
+      );
+
+      Alert.alert('Success', 'Course added successfully!');
+      
+      // Reset form states
+      setCourseTitle('');
+      setCourseDesc('');
+      setCourseLink('');
+      setCourseCategory('Academic');
+      setCourseDuration('');
+      setAssignedOrphan('');
+      
+      setShowCourseModal(false);
+      loadAllData();
+    } catch (err: any) { 
+      console.error("[AdminDashboard] Course creation failed:", err);
+      Alert.alert('Error', err.message || 'Failed to add course'); 
+    } finally { 
+      setSubmittingCourse(false); 
+    }
   };
 
   const handleForwardDonation = async (id: string) => {
@@ -242,10 +294,28 @@ export default function AdminDashboard() {
         {activeTab === 'donations' && <DonationsTab donations={donations} onUpdateStatus={handleUpdateDonationStatus} onForward={handleForwardDonation} onComplete={handleCompleteDonation} />}
         {activeTab === 'users' && <UsersTab users={usersList} onUpdateStatus={handleUpdateUserStatus} onDelete={handleDeleteUser} />}
         {activeTab === 'orphanages' && <OrphanagesTab orphanages={orphanagesList} onUpdateStatus={handleUpdateUserStatus} onDelete={handleDeleteUser} />}
-        {activeTab === 'courses' && <CoursesTab pendingCourses={pendingCourses} onAddPress={() => setShowCourseModal(true)} onUpdateStatus={handleUpdateCourseStatus} />}
+        {activeTab === 'courses' && <CoursesTab pendingCourses={pendingCourses} approvedCourses={approvedCourses} onAddPress={() => setShowCourseModal(true)} onUpdateStatus={handleUpdateCourseStatus} />}
         {activeTab === 'tasks' && <TasksTab tasks={tasks} onAssignNew={() => setShowTaskModal(true)} onComplete={handleCompleteTask} />}
       </ScrollView>
-      <CourseModal visible={showCourseModal} onClose={() => setShowCourseModal(false)} onSubmit={handleAdminCourseSubmit} loading={submittingCourse} title={courseTitle} setTitle={setCourseTitle} desc={courseDesc} setDesc={setCourseDesc} link={courseLink} setLink={setCourseLink} category={courseCategory} setCategory={setCourseCategory} />
+      <CourseModal 
+        visible={showCourseModal} 
+        onClose={() => setShowCourseModal(false)} 
+        onSubmit={handleAdminCourseSubmit} 
+        loading={submittingCourse} 
+        title={courseTitle} 
+        setTitle={setCourseTitle} 
+        desc={courseDesc} 
+        setDesc={setCourseDesc} 
+        link={courseLink} 
+        setLink={setCourseLink} 
+        category={courseCategory} 
+        setCategory={setCourseCategory}
+        duration={courseDuration}
+        setDuration={setCourseDuration}
+        assignedOrphan={assignedOrphan}
+        setAssignedOrphan={setAssignedOrphan}
+        orphans={usersList.filter(u => u.role === 'orphan')}
+      />
       <TaskModal visible={showTaskModal} onClose={() => setShowTaskModal(false)} onConfirm={handleCreateTask} submitting={submittingTask} taskTitle={taskTitle} setTaskTitle={setTaskTitle} taskDesc={taskDesc} setTaskDesc={setTaskDesc} volunteers={volunteers} selectedVolunteer={selectedVolunteer} setSelectedVolunteer={setSelectedVolunteer} />
       </View>
     </SafeAreaView>

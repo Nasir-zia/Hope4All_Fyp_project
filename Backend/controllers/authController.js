@@ -116,7 +116,7 @@ export const login = async (req, res) => {
         success: true,
         message: 'Admin login successful',
         token,
-        user: adminUser
+        user: { id: adminUser._id, ...adminUser }
       });
     }
 

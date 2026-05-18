@@ -47,7 +47,7 @@ export default function DonorDashboard() {
     handleOpenPreferenceModal, handleMessage, handleUploadDonationPhoto, handlePickDonationPhoto, manualPhoto, handlePickRequestPhoto, requestPhoto,
     handleViewOrphanProfile, orphanProgress, loadingOrphanData,
     orphanages,
-    directRecipient, setDirectRecipient, handleOpenDirectDonation
+    directRecipient, setDirectRecipient, handleOpenDirectDonation, handleToggleMatchOrphan
   } = useDonorDashboard();
 
   if (user?.status === 'suspended') {
@@ -121,6 +121,7 @@ export default function DonorDashboard() {
             onOpenPreferences={handleOpenPreferenceModal}
             onMessage={handleMessage}
             onViewOrphan={handleViewOrphanProfile}
+            submitting={saving}
           />
 
           <FeeSection
@@ -140,9 +141,11 @@ export default function DonorDashboard() {
 
           <OrphanSection
             orphans={filteredOrphans}
+            matchedOrphanIds={donorProfile?.matchedOrphans || []}
             onViewOrphan={handleViewOrphanProfile}
             onMessage={handleMessage}
             onDonate={handleOpenDirectDonation}
+            onToggleMatch={handleToggleMatchOrphan}
           />
 
           <OrphanageSection
@@ -201,6 +204,7 @@ export default function DonorDashboard() {
           onPickPhoto={handlePickDonationPhoto}
           onSubmit={handleManualDonation}
           recipientName={directRecipient?.name}
+          submitting={saving}
         />
 
         <CourseModal

@@ -9,8 +9,9 @@ export const addCourseApi = async (data: CourseData, token?: string) => {
   });
 };
 
-export const fetchApprovedCourses = async () => {
-  const data = await apiClient('/courses/approved');
+export const fetchApprovedCourses = async (orphanId?: string) => {
+  const endpoint = orphanId ? `/courses/approved?orphanId=${orphanId}` : '/courses/approved';
+  const data = await apiClient(endpoint);
   return data.courses || [];
 };
 

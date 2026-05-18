@@ -7,6 +7,7 @@ import {
   registerDonorProfile,
   fetchMatchedRequests,
   fetchMatchedOrphans,
+  toggleMatchOrphanApi,
   makeDonation,
   fetchAvailableFees,
   pledgeFee,
@@ -157,6 +158,7 @@ export const useDonorDashboard = () => {
   };
 
   const handleDonate = async () => {
+    if (saving) return;
     if (!selectedRequest || !units) {
       Alert.alert("Error", "Please select a request and enter units.");
       return;
@@ -207,8 +209,8 @@ export const useDonorDashboard = () => {
       }
 
       Alert.alert(
-        "Donation Confirmed",
-        "Thank you! Please send your donated items to our main office:\n\n Address: Faisalabad D Ground, Office #12\n\nPlease mention your Donation ID on the package.",
+        "Success",
+        "Submitted successfully!",
         [{ text: "OK" }]
       );
       setUnits('');
@@ -269,13 +271,32 @@ export const useDonorDashboard = () => {
         category: courseCategory,
         instructorId: user!.id
       });
-      Alert.alert("Success", "Course submitted for approval");
+      Alert.alert("Success", "Course added successfully!");
       setShowCourseModal(false);
+      setCourseTitle('');
+      setCourseDesc('');
+      setCourseLink('');
+      setCourseCategory('Academic');
       loadDashboardData(donorProfile._id);
     } catch (err: any) {
       Alert.alert("Error", err.message);
     } finally {
       setSubmittingCourse(false);
+    }
+  };
+
+  const handleToggleMatchOrphan = async (orphan: any) => {
+    if (!donorProfile) return;
+    try {
+      const res = await toggleMatchOrphanApi(donorProfile._id, orphan._id);
+      Alert.alert("Success", res.message);
+      const profile = await fetchDonorProfile(user!.id);
+      if (profile) {
+        setDonorProfile(profile);
+        await loadDashboardData(profile._id);
+      }
+    } catch (err: any) {
+      Alert.alert("Error", err.message || "Failed to update match.");
     }
   };
 
@@ -346,6 +367,7 @@ export const useDonorDashboard = () => {
   };
 
   const handleManualDonation = async () => {
+    if (saving) return;
     if (!manualUnits || !manualType) {
       Alert.alert("Error", "Please enter units and type.");
       return;
@@ -389,8 +411,8 @@ export const useDonorDashboard = () => {
       }
 
       Alert.alert(
-        "Donation Confirmed",
-        "Thank you! Please send your donated items to our main office:\n\n Address: Faisalabad D Ground, Office #12\n\nPlease mention your Donation ID on the package.",
+        "Success",
+        "Submitted successfully!",
         [{ text: "OK" }]
       );
       setShowAddDonationModal(false);
@@ -398,6 +420,7 @@ export const useDonorDashboard = () => {
       setManualUnits('');
       setManualDesc('');
       setManualPhoto(null);
+      setManualType('');
       loadDashboardData(donorProfile._id);
     } catch (err: any) {
       Alert.alert("Error", err.message);
@@ -591,6 +614,6 @@ export const useDonorDashboard = () => {
     handleRegister, handleDonate, handlePledgeFee, handleApproveRequest, handleRejectRequest,
     handleCourseSubmit, handleOpenDoc, handleUpdatePreferences, handleManualDonation, handleDeleteDonation,
     handleOpenPreferenceModal, handleMessage, handleUploadDonationPhoto, handlePickDonationPhoto, manualPhoto, handlePickRequestPhoto, requestPhoto,
-    directRecipient, setDirectRecipient, handleOpenDirectDonation
+    directRecipient, setDirectRecipient, handleOpenDirectDonation, handleToggleMatchOrphan
   };
 };

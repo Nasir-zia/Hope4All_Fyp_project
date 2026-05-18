@@ -7,6 +7,16 @@ import asyncHandler from '../utils/asyncHandler.js';
 export const createTask = asyncHandler(async (req, res, next) => {
     const { volunteerId, title, description, type, school, orphanageId, date, priority, notes, assignedBy } = req.body;
 
+    let actualAssignedBy = assignedBy;
+    if (assignedBy === 'admin-fixed-id') {
+      const adminUser = await User.findOne({ role: 'admin' });
+      if (adminUser) {
+        actualAssignedBy = adminUser._id;
+      } else {
+        actualAssignedBy = undefined;
+      }
+    }
+
     if (volunteerId === 'all') {
       const volunteers = await User.find({ role: 'volunteer' });
       const tasks = volunteers.map(v => ({
@@ -18,7 +28,7 @@ export const createTask = asyncHandler(async (req, res, next) => {
         orphanageId,
         date: date || new Date(),
         priority: priority || 'medium',
-        assignedBy: assignedBy || v._id,
+        assignedBy: actualAssignedBy || v._id,
         notes,
       }));
 
@@ -45,7 +55,7 @@ export const createTask = asyncHandler(async (req, res, next) => {
       orphanageId,
       date: date || new Date(),
       priority: priority || 'medium',
-      assignedBy: assignedBy || volunteerId,
+      assignedBy: actualAssignedBy || volunteerId,
       notes,
     });
 
@@ -88,11 +98,21 @@ export const getAllTasks = asyncHandler(async (req, res, next) => {
 });
 
 export const updateTaskStatus = asyncHandler(async (req, res, next) => {
+    console.log(`[TaskController] updateTaskStatus called for taskId: ${req.params.taskId}`);
+    console.log("[TaskController] Body parameters received:", req.body);
+    if (req.file) {
+      console.log("[TaskController] File uploaded successfully via Multer:", req.file);
+    } else {
+      console.log("[TaskController] No file uploaded in this request");
+    }
+
     const { status, notes } = req.body;
     let updateData = { status, notes, updatedAt: Date.now() };
 
     if (req.file) {
-      updateData.proofImage = req.file.path || req.file.url || req.file.secure_url;
+      const rawPath = req.file.path || req.file.url || req.file.secure_url || '';
+      updateData.proofImage = rawPath.replace(/\\/g, '/');
+      console.log(`[TaskController] Set proofImage path to: ${updateData.proofImage}`);
     }
 
     const updatedTask = await Task.findByIdAndUpdate(
@@ -102,8 +122,11 @@ export const updateTaskStatus = asyncHandler(async (req, res, next) => {
     ).populate('volunteerId', 'username');
 
     if (!updatedTask) {
+      console.error(`[TaskController] Task NOT found in database: ${req.params.taskId}`);
       return next(new AppError('Task not found', 404));
     }
+
+    console.log(`[TaskController] Task updated successfully:`, updatedTask);
 
     // Create notification
     const notification = new Notification({

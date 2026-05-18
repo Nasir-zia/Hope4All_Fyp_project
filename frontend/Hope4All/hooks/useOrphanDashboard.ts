@@ -123,7 +123,7 @@ export const useOrphanDashboard = () => {
         fetchOrphanRequests(targetId),
         fetchOrphanProgress(targetId),
         fetchIncomingDonations(targetId),
-        fetchApprovedCourses()
+        fetchApprovedCourses(user?.id)
       ]);
       setMaterialRequests(reqs);
       setProgressReports(progress);

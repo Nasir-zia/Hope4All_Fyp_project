@@ -73,4 +73,7 @@ export interface CourseData {
   link: string;
   category: string;
   instructorId: string;
+  duration?: string;
+  thumbnail?: string;
+  assignedOrphan?: string;
 }

@@ -1,12 +1,23 @@
 import React from 'react';
 import { View, Text, StyleSheet, TouchableOpacity, ScrollView, Image } from 'react-native';
 import { Ionicons } from '@expo/vector-icons';
+import { CONFIG } from '../../constants/Config';
 
 interface TasksTabProps {
   tasks: any[];
   onAssignNew: () => void;
   onComplete: (id: string) => void;
 }
+
+const getProofImageUri = (path: string) => {
+  if (!path) return '';
+  if (path.startsWith('http://') || path.startsWith('https://')) {
+    return path;
+  }
+  const normalizedPath = path.replace(/\\/g, '/');
+  const baseUrl = CONFIG.API_BASE_URL.replace('/api', '');
+  return `${baseUrl}/${normalizedPath}`;
+};
 
 export const TasksTab: React.FC<TasksTabProps> = ({ tasks, onAssignNew, onComplete }) => {
   return (
@@ -37,7 +48,11 @@ export const TasksTab: React.FC<TasksTabProps> = ({ tasks, onAssignNew, onComple
             {task.proofImage && (
               <View style={styles.proofContainer}>
                 <Text style={styles.proofLabel}>Submission Proof:</Text>
-                <Image source={{ uri: task.proofImage }} style={styles.proofImage} />
+                <Image 
+                  source={{ uri: getProofImageUri(task.proofImage) }} 
+                  style={styles.proofImage} 
+                  resizeMode="cover"
+                />
               </View>
             )}
             

@@ -1,12 +1,23 @@
 import React from 'react';
-import { View, Text, TouchableOpacity, StyleSheet } from 'react-native';
+import { View, Text, TouchableOpacity, StyleSheet, Image } from 'react-native';
 import { Ionicons } from '@expo/vector-icons';
+import { CONFIG } from '../../constants/Config';
 
 interface VolunteerTaskCardProps {
   task: any;
   onUpdateStatus: (id: string, status: string) => void;
   onSubmitProof: (id: string) => void;
 }
+
+const getProofImageUri = (path: string) => {
+  if (!path) return '';
+  if (path.startsWith('http://') || path.startsWith('https://')) {
+    return path;
+  }
+  const normalizedPath = path.replace(/\\/g, '/');
+  const baseUrl = CONFIG.API_BASE_URL.replace('/api', '');
+  return `${baseUrl}/${normalizedPath}`;
+};
 
 export const VolunteerTaskCard: React.FC<VolunteerTaskCardProps> = ({ task, onUpdateStatus, onSubmitProof }) => {
   return (
@@ -19,6 +30,18 @@ export const VolunteerTaskCard: React.FC<VolunteerTaskCardProps> = ({ task, onUp
       </View>
       <Text style={styles.taskTitle}>{task.title}</Text>
       <Text style={styles.taskDesc}>{task.description}</Text>
+      
+      {task.proofImage && (
+        <View style={styles.proofContainer}>
+          <Text style={styles.proofLabel}>Submitted Proof:</Text>
+          <Image 
+            source={{ uri: getProofImageUri(task.proofImage) }} 
+            style={styles.proofImage} 
+            resizeMode="cover"
+          />
+        </View>
+      )}
+
       <View style={styles.taskFooter}>
         <Ionicons name="location-outline" size={14} color="#666" />
         <Text style={styles.taskLocation}>{task.orphanageId?.name || 'Central Office'}</Text>
@@ -135,5 +158,24 @@ const styles = StyleSheet.create({
   actionBtnText: {
     color: '#fff',
     fontWeight: 'bold',
+  },
+  proofContainer: {
+    marginTop: 5,
+    marginBottom: 15,
+    borderTopWidth: 1,
+    borderTopColor: '#f1f5f9',
+    paddingTop: 15,
+  },
+  proofLabel: {
+    fontSize: 13,
+    fontWeight: 'bold',
+    color: '#475569',
+    marginBottom: 8,
+  },
+  proofImage: {
+    width: '100%',
+    height: 180,
+    borderRadius: 12,
+    backgroundColor: '#f1f5f9',
   },
 });

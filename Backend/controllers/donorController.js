@@ -654,3 +654,39 @@ export const getMatchedRequests = async (req, res) => {
     res.status(500).json({ message: 'Error fetching matched requests', error: error.message });
   }
 };
+
+export const matchOrphan = async (req, res) => {
+  try {
+    const { donorId, orphanId } = req.body;
+    
+    if (!donorId || !orphanId) {
+      return res.status(400).json({ success: false, message: 'donorId and orphanId are required' });
+    }
+
+    const donor = await Donor.findById(donorId);
+    if (!donor) {
+      return res.status(404).json({ success: false, message: 'Donor not found' });
+    }
+
+    if (!donor.matchedOrphans) {
+      donor.matchedOrphans = [];
+    }
+
+    const orphanIdStr = orphanId.toString();
+    const isAlreadyMatched = donor.matchedOrphans.some(id => id && id.toString() === orphanIdStr);
+
+    if (isAlreadyMatched) {
+      // Unmatch
+      donor.matchedOrphans = donor.matchedOrphans.filter(id => id && id.toString() !== orphanIdStr);
+      await donor.save();
+      return res.status(200).json({ success: true, message: 'Orphan unmatched successfully', isMatched: false, matchedOrphans: donor.matchedOrphans });
+    } else {
+      // Match
+      donor.matchedOrphans.push(orphanId);
+      await donor.save();
+      return res.status(200).json({ success: true, message: 'Orphan matched successfully', isMatched: true, matchedOrphans: donor.matchedOrphans });
+    }
+  } catch (error) {
+    res.status(500).json({ success: false, message: 'Error matching orphan', error: error.message });
+  }
+};

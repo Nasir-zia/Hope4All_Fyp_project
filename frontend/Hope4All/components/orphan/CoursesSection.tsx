@@ -1,5 +1,5 @@
 import React from 'react';
-import { View, Text, StyleSheet, ScrollView, TouchableOpacity, Linking } from 'react-native';
+import { View, Text, StyleSheet, ScrollView, TouchableOpacity, Linking, Image } from 'react-native';
 import { Ionicons } from '@expo/vector-icons';
 
 interface CoursesSectionProps {
@@ -32,13 +32,22 @@ export const CoursesSection: React.FC<CoursesSectionProps> = ({ courses }) => {
               onPress={() => Linking.openURL(course.link)}
             >
               <View style={styles.courseImage}>
-                 <Ionicons name="school" size={40} color="#0077cc" />
+                 {course.thumbnail ? (
+                   <Image source={{ uri: course.thumbnail }} style={styles.thumbnailImg} resizeMode="cover" />
+                 ) : (
+                   <Ionicons name="school" size={40} color="#0077cc" />
+                 )}
                  <View style={styles.playBadge}>
                     <Ionicons name="play" size={16} color="#fff" />
                  </View>
               </View>
               <View style={styles.courseInfo}>
-                <Text style={styles.courseCategory}>{course.category.toUpperCase()}</Text>
+                <View style={styles.categoryRow}>
+                  <Text style={styles.courseCategory}>{course.category.toUpperCase()}</Text>
+                  {course.duration && course.duration !== 'N/A' && (
+                    <Text style={styles.courseDuration}>{course.duration}</Text>
+                  )}
+                </View>
                 <Text style={styles.courseTitle} numberOfLines={1}>{course.title}</Text>
                 <Text style={styles.courseDesc} numberOfLines={2}>{course.description}</Text>
                 <View style={styles.instructorRow}>
@@ -68,9 +77,12 @@ const styles = StyleSheet.create({
   emptyText: { color: '#94a3b8', fontStyle: 'italic' },
   courseCard: { width: 260, backgroundColor: '#fff', borderRadius: 32, marginRight: 18, elevation: 6, shadowColor: '#000', shadowOffset: { width: 0, height: 6 }, shadowOpacity: 0.08, shadowRadius: 15, borderWidth: 1, borderColor: '#f1f5f9', overflow: 'hidden' },
   courseImage: { height: 140, backgroundColor: '#fff7ed', justifyContent: 'center', alignItems: 'center', position: 'relative' },
+  thumbnailImg: { width: '100%', height: '100%' },
   playBadge: { position: 'absolute', width: 48, height: 48, borderRadius: 24, backgroundColor: '#FF6B35', justifyContent: 'center', alignItems: 'center', bottom: -24, right: 25, borderWidth: 4, borderColor: '#fff', elevation: 4, shadowColor: '#FF6B35', shadowOpacity: 0.3, shadowRadius: 10 },
   courseInfo: { padding: 22, paddingTop: 30 },
-  courseCategory: { fontSize: 10, fontWeight: '900', color: '#FF6B35', marginBottom: 8, letterSpacing: 1 },
+  categoryRow: { flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center', marginBottom: 8 },
+  courseCategory: { fontSize: 10, fontWeight: '900', color: '#FF6B35', letterSpacing: 1 },
+  courseDuration: { fontSize: 10, fontWeight: '700', color: '#64748b', backgroundColor: '#f1f5f9', paddingHorizontal: 8, paddingVertical: 2, borderRadius: 8 },
   courseTitle: { fontSize: 18, fontWeight: '800', color: '#1e293b', marginBottom: 8 },
   courseDesc: { fontSize: 12, color: '#64748b', lineHeight: 18, marginBottom: 18 },
   instructorRow: { flexDirection: 'row', alignItems: 'center', gap: 10 },
