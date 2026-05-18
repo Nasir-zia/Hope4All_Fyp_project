@@ -61,13 +61,6 @@ function AuthRedirector({ children }: { children: React.ReactNode }) {
 
   const [isSplashDone, setIsSplashDone] = React.useState(false);
 
-  React.useEffect(() => {
-    const timer = setTimeout(() => {
-      setIsSplashDone(true);
-    }, 2500); // 2.5 seconds minimum splash screen
-    return () => clearTimeout(timer);
-  }, []);
-
   const isActuallyLoading = loading || !isSplashDone;
 
   React.useEffect(() => {
@@ -100,10 +93,10 @@ function AuthRedirector({ children }: { children: React.ReactNode }) {
       console.log('[AuthRedirector] Logged out, redirecting to login...');
       router.replace('/login');
     }
-  }, [user, loading, segments]);
+  }, [user, loading, segments, isActuallyLoading]);
 
   if (isActuallyLoading) {
-    return <SplashScreen />;
+    return <SplashScreen onComplete={() => setIsSplashDone(true)} />;
   }
 
   return <>{children}</>;

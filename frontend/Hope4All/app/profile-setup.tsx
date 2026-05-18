@@ -159,7 +159,7 @@ export default function ProfileSetupPage() {
   };
 
   return (
-    <SafeAreaView style={styles.safeContainer}>
+    <SafeAreaView style={styles.safeContainer} edges={['right', 'bottom', 'left']}>
       <ScrollView contentContainerStyle={styles.container}>
       <Text style={styles.title}>Complete Your Profile</Text>
 

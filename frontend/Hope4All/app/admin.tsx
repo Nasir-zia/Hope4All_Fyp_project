@@ -215,7 +215,7 @@ export default function AdminDashboard() {
   if (loading && !refreshing) return <View style={styles.centered}><ActivityIndicator size="large" color="#0f172a" /><Text style={styles.loadingText}>Loading...</Text></View>;
 
   return (
-    <SafeAreaView style={styles.safeContainer}>
+    <SafeAreaView style={styles.safeContainer} edges={['right', 'bottom', 'left']}>
       <View style={styles.container}>
       <AdminHeader onLogout={logout} />
       <View style={styles.tabBarWrapper}>

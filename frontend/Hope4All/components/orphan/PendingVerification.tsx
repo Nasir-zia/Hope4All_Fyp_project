@@ -9,7 +9,7 @@ interface PendingVerificationProps {
 
 export const PendingVerification: React.FC<PendingVerificationProps> = ({ onLogout }) => {
   return (
-    <SafeAreaView style={styles.safeContainer}>
+    <SafeAreaView style={styles.safeContainer} edges={['right', 'bottom', 'left']}>
       <View style={styles.container}>
        <View style={styles.content}>
           <View style={styles.iconCircle}>

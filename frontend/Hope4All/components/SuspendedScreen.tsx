@@ -10,7 +10,7 @@ interface SuspendedScreenProps {
 
 export const SuspendedScreen: React.FC<SuspendedScreenProps> = ({ reason, onLogout }) => {
   return (
-    <SafeAreaView style={styles.safeContainer}>
+    <SafeAreaView style={styles.safeContainer} edges={['right', 'bottom', 'left']}>
       <View style={styles.container}>
       <ScrollView contentContainerStyle={styles.content} showsVerticalScrollIndicator={false}>
         {/* Icon */}

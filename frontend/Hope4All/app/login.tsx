@@ -41,7 +41,7 @@ export default function LoginPage() {
   };
 
   return (
-    <SafeAreaView style={styles.safeContainer}>
+    <SafeAreaView style={styles.safeContainer} edges={['right', 'bottom', 'left']}>
       <View style={styles.container}>
       <Image 
         source={require('../assets/images/photo-1574758324765-a29c77fb9c91.jpg')} 

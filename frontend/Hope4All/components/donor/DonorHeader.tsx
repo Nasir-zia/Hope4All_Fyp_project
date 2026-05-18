@@ -1,5 +1,5 @@
 import React from 'react';
-import { View, Text, StyleSheet, TouchableOpacity, Image } from 'react-native';
+import { View, Text, StyleSheet, TouchableOpacity, Image, Platform } from 'react-native';
 import { Ionicons } from '@expo/vector-icons';
 import BackButton from '@/components/BackButton';
 
@@ -60,6 +60,7 @@ export const DonorHeader: React.FC<DonorHeaderProps> = ({
 
 const styles = StyleSheet.create({
   header: {
+    paddingTop: Platform.OS === 'ios' ? 45 : 35,
     paddingHorizontal: 20,
     paddingBottom: 30,
     backgroundColor: '#fff',

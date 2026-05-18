@@ -1,5 +1,5 @@
 import React from 'react';
-import { View, Text, StyleSheet, ScrollView, ActivityIndicator, Alert, TouchableOpacity, TextInput, Image, Linking } from 'react-native';
+import { View, Text, StyleSheet, ScrollView, ActivityIndicator, Alert, TouchableOpacity, TextInput, Image, Linking, Platform } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { Ionicons } from '@expo/vector-icons';
 import { getDownloadableUrl } from '../utils/cloudinaryUtils';
@@ -140,7 +140,7 @@ export default function OrphanageDashboard() {
   }
 
   return (
-    <SafeAreaView style={styles.safeContainer}>
+    <SafeAreaView style={styles.safeContainer} edges={['right', 'bottom', 'left']}>
       <View style={styles.container}>
       <View style={styles.header}>
         <View>
@@ -261,7 +261,18 @@ const styles = StyleSheet.create({
   container: { flex: 1 },
   centerContainer: { flex: 1, justifyContent: 'center', alignItems: 'center', backgroundColor: '#fff' },
   loadingText: { marginTop: 15, color: '#64748b', fontWeight: '600' },
-  header: { padding: 25, backgroundColor: '#fff', flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center', borderBottomLeftRadius: 30, borderBottomRightRadius: 30, elevation: 4 },
+  header: { 
+    paddingTop: Platform.OS === 'ios' ? 45 : 35,
+    paddingHorizontal: 25, 
+    paddingBottom: 25,
+    backgroundColor: '#fff', 
+    flexDirection: 'row', 
+    justifyContent: 'space-between', 
+    alignItems: 'center', 
+    borderBottomLeftRadius: 30, 
+    borderBottomRightRadius: 30, 
+    elevation: 4 
+  },
   welcomeText: { fontSize: 14, color: '#64748b' },
   orphanageName: { fontSize: 22, fontWeight: '800', color: '#1e293b' },
   iconBtn: { width: 45, height: 45, borderRadius: 15, backgroundColor: '#fef2f2', justifyContent: 'center', alignItems: 'center' },

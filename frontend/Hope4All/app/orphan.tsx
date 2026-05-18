@@ -77,7 +77,7 @@ export default function OrphanDashboard() {
   }
 
   return (
-    <SafeAreaView style={styles.safeContainer}>
+    <SafeAreaView style={styles.safeContainer} edges={['right', 'bottom', 'left']}>
       <View style={styles.container}>
       <ScrollView
         showsVerticalScrollIndicator={false}

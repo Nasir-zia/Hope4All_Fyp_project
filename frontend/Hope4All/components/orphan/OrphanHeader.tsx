@@ -1,5 +1,5 @@
 import React from 'react';
-import { View, Text, StyleSheet, TouchableOpacity, Image } from 'react-native';
+import { View, Text, StyleSheet, TouchableOpacity, Image, Platform } from 'react-native';
 import { Ionicons } from '@expo/vector-icons';
 import { router } from 'expo-router';
 
@@ -77,6 +77,7 @@ const styles = StyleSheet.create({
     backgroundColor: '#f8fafc',
   },
   header: {
+    paddingTop: Platform.OS === 'ios' ? 45 : 35,
     paddingHorizontal: 20,
     paddingBottom: 40,
     borderBottomLeftRadius: 40,

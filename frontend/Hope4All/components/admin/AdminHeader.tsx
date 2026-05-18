@@ -1,5 +1,5 @@
 import React from 'react';
-import { View, Text, TouchableOpacity, StyleSheet, Dimensions } from 'react-native';
+import { View, Text, TouchableOpacity, StyleSheet, Dimensions, Platform } from 'react-native';
 import { Ionicons } from '@expo/vector-icons';
 
 const { width } = Dimensions.get('window');
@@ -30,6 +30,7 @@ export const AdminHeader: React.FC<AdminHeaderProps> = ({ onLogout }) => {
 
 const styles = StyleSheet.create({
   header: {
+    paddingTop: Platform.OS === 'ios' ? 50 : 35,
     paddingHorizontal: 20,
     paddingBottom: 15,
     backgroundColor: 'transparent',

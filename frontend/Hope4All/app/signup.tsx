@@ -41,7 +41,7 @@ const handleSignup = async () => {
   };
 
   return (
-    <SafeAreaView style={styles.safeContainer}>
+    <SafeAreaView style={styles.safeContainer} edges={['right', 'bottom', 'left']}>
       <ScrollView contentContainerStyle={styles.container}>
       <Image 
         source={require('../assets/images/photo-1574758324765-a29c77fb9c91.jpg')} 

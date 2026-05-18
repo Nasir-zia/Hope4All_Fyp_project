@@ -24,7 +24,7 @@ const Page: React.FC = () => {
   };
 
   return (
-    <SafeAreaView style={styles.safeContainer}>
+    <SafeAreaView style={styles.safeContainer} edges={['right', 'bottom', 'left']}>
       <View style={styles.container}>
         
         {/* Top Image */}

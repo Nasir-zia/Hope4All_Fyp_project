@@ -64,7 +64,7 @@ export default function DonorDashboard() {
 
   if (donorProfile) {
     return (
-      <SafeAreaView style={styles.safeContainer}>
+      <SafeAreaView style={styles.safeContainer} edges={['right', 'bottom', 'left']}>
         <View style={styles.container}>
         <DonorHeader
           name={donorProfile.name}

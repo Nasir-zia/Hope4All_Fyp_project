@@ -117,7 +117,7 @@ export default function VolunteerDashboard() {
   }
 
   return (
-    <SafeAreaView style={styles.safeContainer}>
+    <SafeAreaView style={styles.safeContainer} edges={['right', 'bottom', 'left']}>
       <View style={styles.container}>
       <VolunteerHeader 
         name={user?.username || 'Volunteer'} 
