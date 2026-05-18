@@ -32,6 +32,16 @@ export const fetchApprovedRequests = async () => {
   return data.requests || [];
 };
 
+export const fetchMatchedRequests = async (donorId: string) => {
+  try {
+    const data = await apiClient(`/donors/matched-requests/${donorId}`);
+    return data.requests || [];
+  } catch (error) {
+    console.error('Error fetching matched requests:', error);
+    return [];
+  }
+};
+
 export const fetchMatchedOrphans = async (donorId: string) => {
   try {
     const data = await apiClient(`/donors/matched-orphans/${donorId}`);

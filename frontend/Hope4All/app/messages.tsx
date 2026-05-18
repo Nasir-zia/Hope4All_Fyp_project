@@ -88,7 +88,7 @@ export default function MessagesScreen() {
   // Main list view
   if (!selectedUser) {
     return (
-      <SafeAreaView style={styles.container} edges={['right', 'bottom', 'left']}>
+      <SafeAreaView style={styles.container} edges={['top', 'right', 'bottom', 'left']}>
         <View style={styles.header}>
           <TouchableOpacity onPress={() => router.back()}>
             <Ionicons name="arrow-back" size={24} color="#1e293b" />
@@ -171,7 +171,7 @@ export default function MessagesScreen() {
 
   // Chat view
   return (
-    <SafeAreaView style={styles.container} edges={['right', 'bottom', 'left']}>
+    <SafeAreaView style={styles.container} edges={['top', 'right', 'bottom', 'left']}>
       <ChatHeader 
         user={selectedUser} 
         onBack={() => setSelectedUser(null)} 

@@ -19,7 +19,8 @@ import {
   deleteDonor,
   approveDonor,
   rejectDonor,
-  uploadDonationPhoto
+  uploadDonationPhoto,
+  getMatchedRequests
 } from "../controllers/donorController.js";
 import upload from "../middleware/uploadMiddleware.js";
 
@@ -73,6 +74,9 @@ router.put("/notifications/:notificationId/read", markNotificationRead);
 
 // Route to get matched orphans
 router.get("/matched-orphans/:id", getMatchedOrphans);
+
+// Route to get matched requests based on donor preferences
+router.get("/matched-requests/:id", getMatchedRequests);
 
 
 // Route to get preference options

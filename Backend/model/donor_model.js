@@ -30,7 +30,8 @@ const donorSchema = new mongoose.Schema({
   preferences: {
     causeType: [{ type: String }],
     schoolLevel: [{ type: String }],
-    area: [{ type: String }]
+    area: [{ type: String }],
+    urgentOnly: { type: Boolean, default: false }
   },
 
   notificationSettings: {

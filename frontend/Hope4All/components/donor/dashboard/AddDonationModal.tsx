@@ -14,24 +14,29 @@ interface AddDonationModalProps {
   manualPhoto: string | null;
   onPickPhoto: () => void;
   onSubmit: () => void;
+  recipientName?: string;
 }
 
 export const AddDonationModal: React.FC<AddDonationModalProps> = ({
-  visible, onClose, manualType, setManualType, manualUnits, setManualUnits, manualDesc, setManualDesc, manualPhoto, onPickPhoto, onSubmit
+  visible, onClose, manualType, setManualType, manualUnits, setManualUnits, manualDesc, setManualDesc, manualPhoto, onPickPhoto, onSubmit, recipientName
 }) => {
   return (
     <Modal visible={visible} transparent={true} animationType="slide" onRequestClose={onClose}>
       <View style={styles.overlay}>
         <View style={styles.container}>
           <View style={styles.header}>
-            <Text style={styles.title}>Log Manual Donation</Text>
+            <Text style={styles.title}>{recipientName ? `Donate to ${recipientName}` : 'Log Manual Donation'}</Text>
             <TouchableOpacity onPress={onClose} style={styles.closeBtn}>
               <Ionicons name="close" size={24} color="#64748b" />
             </TouchableOpacity>
           </View>
 
           <ScrollView showsVerticalScrollIndicator={false} contentContainerStyle={styles.scroll}>
-            <Text style={styles.instruction}>Already made a contribution? Log it here to keep track of your impact.</Text>
+            <Text style={styles.instruction}>
+              {recipientName 
+                ? `Specify details of the donation package you are sending directly to support ${recipientName}.` 
+                : 'Already made a contribution? Log it here to keep track of your impact.'}
+            </Text>
 
             <View style={styles.inputGroup}>
               <Text style={styles.label}>Donation Type</Text>
@@ -69,7 +74,7 @@ export const AddDonationModal: React.FC<AddDonationModalProps> = ({
             </View>
 
             <TouchableOpacity style={styles.submitBtn} onPress={onSubmit}>
-              <Text style={styles.submitBtnText}>Save Record</Text>
+              <Text style={styles.submitBtnText}>{recipientName ? 'Confirm Donation' : 'Save Record'}</Text>
             </TouchableOpacity>
           </ScrollView>
         </View>

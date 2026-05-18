@@ -46,7 +46,8 @@ export default function DonorDashboard() {
     handleCourseSubmit, handleOpenDoc, handleUpdatePreferences, handleManualDonation, handleDeleteDonation,
     handleOpenPreferenceModal, handleMessage, handleUploadDonationPhoto, handlePickDonationPhoto, manualPhoto, handlePickRequestPhoto, requestPhoto,
     handleViewOrphanProfile, orphanProgress, loadingOrphanData,
-    orphanages
+    orphanages,
+    directRecipient, setDirectRecipient, handleOpenDirectDonation
   } = useDonorDashboard();
 
   if (user?.status === 'suspended') {
@@ -94,6 +95,18 @@ export default function DonorDashboard() {
             orphansCount={filteredOrphans.length}
           />
 
+          {/* Elegant Office Address Banner */}
+          <View style={styles.addressCard}>
+            <View style={styles.addressIconCircle}>
+              <Ionicons name="location" size={22} color="#0077cc" />
+            </View>
+            <View style={styles.addressTextContent}>
+              <Text style={styles.addressTitle}>Main Head Office</Text>
+              <Text style={styles.addressDetails}>Faisalabad D Ground, Office #12</Text>
+              <Text style={styles.addressNote}>Send donation packages here with your Donation ID.</Text>
+            </View>
+          </View>
+
           <DonationSection
             requests={filteredRequests}
             selectedRequest={selectedRequest}
@@ -129,6 +142,7 @@ export default function DonorDashboard() {
             orphans={filteredOrphans}
             onViewOrphan={handleViewOrphanProfile}
             onMessage={handleMessage}
+            onDonate={handleOpenDirectDonation}
           />
 
           <OrphanageSection
@@ -179,13 +193,14 @@ export default function DonorDashboard() {
 
         <AddDonationModal
           visible={showAddDonationModal}
-          onClose={() => setShowAddDonationModal(false)}
+          onClose={() => { setShowAddDonationModal(false); setDirectRecipient(null); }}
           manualType={manualType} setManualType={setManualType}
           manualUnits={manualUnits} setManualUnits={setManualUnits}
           manualDesc={manualDesc} setManualDesc={setManualDesc}
           manualPhoto={manualPhoto}
           onPickPhoto={handlePickDonationPhoto}
           onSubmit={handleManualDonation}
+          recipientName={directRecipient?.name}
         />
 
         <CourseModal
@@ -315,5 +330,50 @@ const styles = StyleSheet.create({
     color: '#ef4444',
     fontWeight: '700',
     fontSize: 15,
+  },
+  addressCard: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: 16,
+    backgroundColor: '#fff',
+    borderRadius: 24,
+    padding: 20,
+    marginHorizontal: 20,
+    marginTop: 15,
+    elevation: 4,
+    shadowColor: '#000',
+    shadowOffset: { width: 0, height: 4 },
+    shadowOpacity: 0.05,
+    shadowRadius: 10,
+    borderWidth: 1,
+    borderColor: '#f1f5f9',
+  },
+  addressIconCircle: {
+    width: 48,
+    height: 48,
+    borderRadius: 16,
+    backgroundColor: '#f0f9ff',
+    justifyContent: 'center',
+    alignItems: 'center',
+  },
+  addressTextContent: {
+    flex: 1,
+  },
+  addressTitle: {
+    fontSize: 15,
+    fontWeight: '800',
+    color: '#1e293b',
+    marginBottom: 2,
+  },
+  addressDetails: {
+    fontSize: 13,
+    fontWeight: '700',
+    color: '#0077cc',
+    marginBottom: 4,
+  },
+  addressNote: {
+    fontSize: 11,
+    color: '#64748b',
+    fontWeight: '500',
   },
 });

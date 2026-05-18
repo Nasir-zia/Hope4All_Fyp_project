@@ -5,7 +5,7 @@ import { useAuth } from '@/hooks/useAuth';
 import {
   fetchDonorProfile,
   registerDonorProfile,
-  fetchApprovedRequests,
+  fetchMatchedRequests,
   fetchMatchedOrphans,
   makeDonation,
   fetchAvailableFees,
@@ -40,6 +40,7 @@ export const useDonorDashboard = () => {
 
   // Profile View States
   const [selectedOrphanForProfile, setSelectedOrphanForProfile] = useState<any>(null);
+  const [directRecipient, setDirectRecipient] = useState<any>(null);
   const [orphanProgress, setOrphanProgress] = useState<any[]>([]);
   const [loadingOrphanData, setLoadingOrphanData] = useState(false);
   const [selectedOrphanage, setSelectedOrphanage] = useState<any>(null);
@@ -114,7 +115,7 @@ export const useDonorDashboard = () => {
   const loadDashboardData = async (donorId: string) => {
     try {
       const [reqsData, orphansData, feesData, coursesData, donationsData, orphanagesData] = await Promise.all([
-        fetchApprovedRequests(),
+        fetchMatchedRequests(donorId),
         fetchMatchedOrphans(donorId), // Keep this for "Matches" if we want, but we'll prioritize all
         fetchAvailableFees(),
         fetchDonorCourses(user!.id),
@@ -357,7 +358,7 @@ export const useDonorDashboard = () => {
 
     setSaving(true);
     try {
-      const res = await makeDonation({
+      const donationPayload: any = {
         donorId: donorProfile._id,
         units: Number(manualUnits),
         type: manualType,
@@ -365,7 +366,15 @@ export const useDonorDashboard = () => {
         itemName: manualDesc || manualType,
         city: donorProfile.city || '',
         unitType: manualType === 'Cash' ? 'PKR' : 'Units'
-      }, user?.token);
+      };
+
+      if (directRecipient) {
+        donationPayload.recipientId = directRecipient._id;
+        donationPayload.recipientName = directRecipient.name;
+        donationPayload.orphanageId = directRecipient.orphanageId?._id || directRecipient.orphanageId;
+      }
+
+      const res = await makeDonation(donationPayload, user?.token);
 
       const donationId = res.donation?._id;
 
@@ -379,8 +388,13 @@ export const useDonorDashboard = () => {
         await uploadDonationPhotoApi(donationId, formData, user!.token);
       }
 
-      Alert.alert("Success", "Donation recorded successfully!");
+      Alert.alert(
+        "Donation Confirmed",
+        "Thank you! Please send your donated items to our main office:\n\n Address: Faisalabad D Ground, Office #12\n\nPlease mention your Donation ID on the package.",
+        [{ text: "OK" }]
+      );
       setShowAddDonationModal(false);
+      setDirectRecipient(null);
       setManualUnits('');
       setManualDesc('');
       setManualPhoto(null);
@@ -459,6 +473,15 @@ export const useDonorDashboard = () => {
     setShowPreferenceModal(true);
   };
 
+  const handleOpenDirectDonation = (orphan: any) => {
+    setDirectRecipient(orphan);
+    setManualType('Books');
+    setManualUnits('');
+    setManualDesc('');
+    setManualPhoto(null);
+    setShowAddDonationModal(true);
+  };
+
   const handleMessage = (orphan: any) => {
     // Messaging MUST use User IDs, not Profile IDs
     const targetUserId = orphan?.userId?._id || orphan?.userId || orphan?._id;
@@ -495,39 +518,54 @@ export const useDonorDashboard = () => {
         donorProfile.preferences.causeType.some((pref: string) => req.type.toLowerCase() === pref.toLowerCase());
       const matchUrgent = !donorProfile?.preferences?.urgentOnly || req.isUrgent;
       
-      // Location matching (City and Area)
-      const donorCity = donorProfile?.city?.toLowerCase();
+      const matchLevel = !donorProfile?.preferences?.schoolLevel?.length ||
+        !req.orphanId ||
+        !req.orphanId.classLevel ||
+        donorProfile.preferences.schoolLevel.some((pref: string) => {
+          const classLvl = req.orphanId.classLevel.toLowerCase();
+          const pf = pref.toLowerCase();
+          return classLvl.includes(pf) || pf.includes(classLvl);
+        });
+      
+      // Location matching (Preferred Areas substring match)
       const preferredAreas = (donorProfile?.preferences?.area || []).map((a: string) => a.toLowerCase());
-      
       const orphanCity = req.orphanId?.location?.toLowerCase();
-      const orphanageCity = req.orphanageId?.location?.city?.toLowerCase();
+      const orphanageCity = req.orphanageId?.location?.city?.toLowerCase() || req.orphanageId?.location?.toLowerCase();
       
-      const hasLocationFilter = donorCity || preferredAreas.length > 0;
       let matchCity = true;
-      
-      if (hasLocationFilter) {
+      if (preferredAreas.length > 0) {
         matchCity = false;
-        if (donorCity && (orphanCity === donorCity || orphanageCity === donorCity)) {
+        if (orphanCity && preferredAreas.some((pref: string) => orphanCity.includes(pref) || pref.includes(orphanCity))) {
           matchCity = true;
         }
-        if (!matchCity && preferredAreas.length > 0) {
-          if (preferredAreas.includes(orphanCity) || preferredAreas.includes(orphanageCity)) {
-            matchCity = true;
-          }
+        if (!matchCity && orphanageCity && preferredAreas.some((pref: string) => orphanageCity.includes(pref) || pref.includes(orphanageCity))) {
+          matchCity = true;
         }
       }
 
-      return matchCause && matchUrgent && matchCity;
+      return matchCause && matchUrgent && matchCity && matchLevel;
     }),
     filteredOrphans: orphans.filter(orphan => {
-      const donorCity = donorProfile?.city?.toLowerCase();
       const preferredAreas = (donorProfile?.preferences?.area || []).map((a: string) => a.toLowerCase());
       const orphanCity = orphan.location?.toLowerCase();
       
-      if (!donorCity && preferredAreas.length === 0) return true;
-      if (donorCity && orphanCity === donorCity) return true;
-      if (preferredAreas.includes(orphanCity)) return true;
-      return false;
+      let matchCity = true;
+      if (preferredAreas.length > 0) {
+        matchCity = false;
+        if (orphanCity && preferredAreas.some((pref: string) => orphanCity.includes(pref) || pref.includes(orphanCity))) {
+          matchCity = true;
+        }
+      }
+
+      const matchLevel = !donorProfile?.preferences?.schoolLevel?.length ||
+        !orphan.classLevel ||
+        donorProfile.preferences.schoolLevel.some((pref: string) => {
+          const classLvl = orphan.classLevel.toLowerCase();
+          const pf = pref.toLowerCase();
+          return classLvl.includes(pf) || pf.includes(classLvl);
+        });
+
+      return matchCity && matchLevel;
     }),
     selectedOrphanForProfile, handleViewOrphanProfile,
     orphanProgress, loadingOrphanData,
@@ -537,7 +575,7 @@ export const useDonorDashboard = () => {
     showPreferenceModal, setShowPreferenceModal,
     showAddDonationModal, setShowAddDonationModal,
     name, setName, phone, setPhone, city, setCity, selectedCauses, setSelectedCauses,
-    areaOptions: ['Karachi', 'Lahore', 'Islamabad', 'Faisalabad', 'Multan', 'Quetta', 'Peshawar'],
+    areaOptions: ['Faisalabad'],
     levelOptions: ['Primary', 'Secondary', 'Higher'],
     tempCauses, setTempCauses,
     tempAreas, setTempAreas,
@@ -552,6 +590,7 @@ export const useDonorDashboard = () => {
     causeOptions, toggleCause, toggleTempCause,
     handleRegister, handleDonate, handlePledgeFee, handleApproveRequest, handleRejectRequest,
     handleCourseSubmit, handleOpenDoc, handleUpdatePreferences, handleManualDonation, handleDeleteDonation,
-    handleOpenPreferenceModal, handleMessage, handleUploadDonationPhoto, handlePickDonationPhoto, manualPhoto, handlePickRequestPhoto, requestPhoto
+    handleOpenPreferenceModal, handleMessage, handleUploadDonationPhoto, handlePickDonationPhoto, manualPhoto, handlePickRequestPhoto, requestPhoto,
+    directRecipient, setDirectRecipient, handleOpenDirectDonation
   };
 };

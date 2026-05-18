@@ -10,8 +10,8 @@ export const addCourse = async (req, res) => {
       return res.status(404).json({ success: false, message: "User not found" });
     }
 
-    // Admins are auto-approved, donors are pending
-    const status = user.role === 'admin' ? 'approved' : 'pending';
+    // Auto-approve all courses so they show up immediately for orphans
+    const status = 'approved';
 
     const newCourse = new Course({
       title,
@@ -32,6 +32,9 @@ export const addCourse = async (req, res) => {
 
 export const getApprovedCourses = async (req, res) => {
   try {
+    // Auto-approve any pending courses so previously added courses show up instantly
+    await Course.updateMany({ status: 'pending' }, { status: 'approved' });
+
     const courses = await Course.find({ status: 'approved' }).sort({ createdAt: -1 });
     res.status(200).json({ success: true, courses });
   } catch (err) {

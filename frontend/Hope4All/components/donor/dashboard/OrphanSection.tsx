@@ -6,9 +6,10 @@ interface OrphanSectionProps {
   orphans: any[];
   onViewOrphan: (o: any) => void;
   onMessage: (o: any) => void;
+  onDonate?: (o: any) => void;
 }
 
-export const OrphanSection: React.FC<OrphanSectionProps> = ({ orphans, onViewOrphan, onMessage }) => {
+export const OrphanSection: React.FC<OrphanSectionProps> = ({ orphans, onViewOrphan, onMessage, onDonate }) => {
   return (
     <View style={styles.container}>
       <View style={styles.headerRow}>
@@ -43,10 +44,17 @@ export const OrphanSection: React.FC<OrphanSectionProps> = ({ orphans, onViewOrp
                  <Text style={styles.age}>{o.age} years • {o.location}</Text>
               </TouchableOpacity>
               
-              <TouchableOpacity style={styles.msgBtn} onPress={() => onMessage(o)}>
-                 <Ionicons name="chatbubble-ellipses-outline" size={16} color="#0077cc" />
-                 <Text style={styles.msgBtnText}>Message</Text>
-              </TouchableOpacity>
+              <View style={styles.actionRow}>
+                <TouchableOpacity style={styles.actionBtn} onPress={() => onMessage(o)}>
+                   <Ionicons name="chatbubble-ellipses-outline" size={13} color="#0077cc" />
+                   <Text style={styles.actionBtnText}>Chat</Text>
+                </TouchableOpacity>
+
+                <TouchableOpacity style={[styles.actionBtn, styles.donateBtnAccent]} onPress={() => onDonate && onDonate(o)}>
+                   <Ionicons name="heart-outline" size={13} color="#ec4899" />
+                   <Text style={[styles.actionBtnText, { color: '#ec4899' }]}>Donate</Text>
+                </TouchableOpacity>
+              </View>
             </View>
           ))
         )}
@@ -64,7 +72,7 @@ const styles = StyleSheet.create({
   scroller: { paddingVertical: 10 },
   emptyCard: { width: 300, padding: 30, justifyContent: 'center', alignItems: 'center', backgroundColor: '#f8fafc', borderRadius: 28, borderStyle: 'dashed', borderWidth: 1, borderColor: '#cbd5e1' },
   emptyText: { color: '#94a3b8', fontStyle: 'italic', textAlign: 'center' },
-  card: { width: 160, backgroundColor: '#fff', borderRadius: 28, padding: 15, marginRight: 15, elevation: 3, shadowColor: '#000', shadowOpacity: 0.05, shadowRadius: 10, borderWidth: 1, borderColor: '#f1f5f9', alignItems: 'center' },
+  card: { width: 180, backgroundColor: '#fff', borderRadius: 28, padding: 15, marginRight: 15, elevation: 3, shadowColor: '#000', shadowOpacity: 0.05, shadowRadius: 10, borderWidth: 1, borderColor: '#f1f5f9', alignItems: 'center' },
   profileBox: { alignItems: 'center', marginBottom: 15 },
   avatarContainer: { width: 70, height: 70, borderRadius: 24, overflow: 'hidden', marginBottom: 12, backgroundColor: '#f1f5f9' },
   avatar: { width: '100%', height: '100%' },
@@ -72,6 +80,8 @@ const styles = StyleSheet.create({
   initials: { color: '#fff', fontSize: 24, fontWeight: '800' },
   name: { fontSize: 16, fontWeight: '800', color: '#1e293b', marginBottom: 2 },
   age: { fontSize: 11, color: '#64748b', fontWeight: '500' },
-  msgBtn: { flexDirection: 'row', alignItems: 'center', gap: 6, backgroundColor: '#f0f9ff', paddingHorizontal: 12, paddingVertical: 8, borderRadius: 12 },
-  msgBtnText: { fontSize: 12, fontWeight: '700', color: '#0077cc' },
+  actionRow: { flexDirection: 'row', gap: 6, width: '100%', justifyContent: 'center' },
+  actionBtn: { flex: 1, flexDirection: 'row', alignItems: 'center', justifyContent: 'center', gap: 4, backgroundColor: '#f0f9ff', paddingVertical: 8, borderRadius: 12 },
+  actionBtnText: { fontSize: 11, fontWeight: '700', color: '#0077cc' },
+  donateBtnAccent: { backgroundColor: '#fdf2f8' },
 });

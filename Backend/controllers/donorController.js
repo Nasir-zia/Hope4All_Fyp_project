@@ -192,7 +192,7 @@ export const updateDonorProfile = async (req, res) => {
 export const makeDonation = async (req, res) => {
   try {
     console.log('Incoming Donation Request:', req.body);
-    const { donorId, requestId, units, recipientName, type, description, unitType, itemName, city } = req.body;
+    const { donorId, requestId, units, recipientName, recipientId, orphanageId, type, description, unitType, itemName, city } = req.body;
 
     let donationData = {
       donorId,
@@ -246,6 +246,21 @@ export const makeDonation = async (req, res) => {
       }
     } else {
       donationData.recipientName = recipientName || 'General Donation';
+      if (recipientId) donationData.recipientId = recipientId;
+      if (orphanageId) donationData.orphanageId = orphanageId;
+
+      // Add orphan to donor's matched orphans if direct donation is logged
+      if (recipientId) {
+        const donor = await Donor.findById(donorId);
+        if (donor) {
+          const orphanIdStr = recipientId.toString();
+          const alreadyMatched = donor.matchedOrphans.some(id => id.toString() === orphanIdStr);
+          if (!alreadyMatched) {
+            donor.matchedOrphans.push(recipientId);
+            await donor.save();
+          }
+        }
+      }
     }
 
     donationData.status = 'pending-approval';
@@ -432,16 +447,14 @@ export const getMatchedOrphans = async (req, res) => {
       return res.status(404).json({ message: 'Donor not found' });
     }
 
-    const donorCity = donor.city?.toLowerCase();
     const preferredAreas = (donor.preferences?.area || []).map(a => a.toLowerCase());
 
     // Build filter for orphans
     let orphanFilter = {};
     
-    // If donor has location preferences, filter orphans by city
-    if (donorCity || preferredAreas.length > 0) {
-      const locations = [donorCity, ...preferredAreas].filter(l => l);
-      orphanFilter.location = { $in: locations.map(l => new RegExp(`^${l}$`, 'i')) };
+    // Only apply location filter if preferred areas are explicitly selected
+    if (preferredAreas.length > 0) {
+      orphanFilter.location = { $in: preferredAreas.map(l => new RegExp(l, 'i')) };
     }
 
     const orphans = await Orphan.find(orphanFilter).populate('orphanageId').sort({ createdAt: -1 });
@@ -554,5 +567,90 @@ export const uploadDonationPhoto = async (req, res) => {
     res.status(200).json({ message: 'Photo uploaded successfully', donation });
   } catch (error) {
     res.status(500).json({ message: 'Error uploading photo', error: error.message });
+  }
+};
+
+// Get matched requests based on donor preferences
+export const getMatchedRequests = async (req, res) => {
+  try {
+    const { id } = req.params;
+    let donor;
+
+    if (id.match(/^[0-9a-fA-F]{24}$/)) {
+      donor = await Donor.findById(id);
+    }
+
+    if (!donor) {
+      donor = await Donor.findOne({ userId: id });
+    }
+
+    if (!donor) {
+      return res.status(404).json({ message: 'Donor not found' });
+    }
+
+    // Get all approved requests
+    const requests = await Request.find({ status: 'approved' })
+      .populate('orphanId')
+      .populate('orphanageId')
+      .sort({ createdAt: -1 });
+
+    const preferences = donor.preferences || {};
+    const hasPreferences = (preferences.causeType?.length > 0) || 
+                          (preferences.schoolLevel?.length > 0) || 
+                          (preferences.area?.length > 0) || 
+                          preferences.urgentOnly;
+
+    // If no preferences exist, return all approved requests
+    if (!hasPreferences) {
+      return res.status(200).json({ requests });
+    }
+
+    // Apply matching filters
+    const matchedRequests = requests.filter(reqDoc => {
+      // 1. Cause matching (case-insensitive)
+      if (preferences.causeType?.length > 0) {
+        const prefCauses = preferences.causeType.map(c => c.toLowerCase());
+        if (!reqDoc.type || !prefCauses.includes(reqDoc.type.toLowerCase())) {
+          return false;
+        }
+      }
+
+      // 2. Urgent matching
+      if (preferences.urgentOnly && !reqDoc.isUrgent) {
+        return false;
+      }
+
+      // 3. School Level matching
+      if (preferences.schoolLevel?.length > 0) {
+        // If request has an orphanId, check its classLevel
+        if (reqDoc.orphanId) {
+          const prefLevels = preferences.schoolLevel.map(l => l.toLowerCase());
+          const classLevel = reqDoc.orphanId.classLevel?.toLowerCase();
+          if (!classLevel || !prefLevels.includes(classLevel)) {
+            return false;
+          }
+        }
+      }
+
+      // 4. Area/City matching
+      if (preferences.area?.length > 0) {
+        const prefAreas = preferences.area.map(a => a.toLowerCase());
+        const orphanCity = reqDoc.orphanId?.location?.toLowerCase();
+        const orphanageCity = reqDoc.orphanageId?.location?.city?.toLowerCase() || reqDoc.orphanageId?.location?.toLowerCase();
+        
+        const matchesOrphanArea = orphanCity && prefAreas.includes(orphanCity);
+        const matchesOrphanageArea = orphanageCity && prefAreas.includes(orphanageCity);
+
+        if (!matchesOrphanArea && !matchesOrphanageArea) {
+          return false;
+        }
+      }
+
+      return true;
+    });
+
+    res.status(200).json({ requests: matchedRequests });
+  } catch (error) {
+    res.status(500).json({ message: 'Error fetching matched requests', error: error.message });
   }
 };
