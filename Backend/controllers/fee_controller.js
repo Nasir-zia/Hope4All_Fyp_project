@@ -9,6 +9,11 @@ export const createFee = async (req, res) => {
       return res.status(400).json({ success: false, message: "Missing required fields" });
     }
 
+    const dateTimestamp = Date.parse(dueDate);
+    if (isNaN(dateTimestamp)) {
+      return res.status(400).json({ success: false, message: "Invalid due date format. Please use YYYY-MM-DD." });
+    }
+
     const newFee = new Fee({
       orphanId,
       title,

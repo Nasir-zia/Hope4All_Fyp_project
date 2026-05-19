@@ -66,6 +66,14 @@ export const createOrphanAge = async (req, res) => {
     });
   } catch (error) {
     console.error(error);
+    try {
+      const fs = await import('fs');
+      const path = await import('path');
+      const logMessage = `${new Date().toISOString()} - Orphanage Registration Error:\n${error.message}\nStack: ${error.stack}\n\n`;
+      fs.appendFileSync(path.join(process.cwd(), 'error_log.txt'), logMessage);
+    } catch (logErr) {
+      console.error('Failed to log registration error:', logErr);
+    }
     res.status(500).json({
       success: false,
       message: "Internal Server Error.",

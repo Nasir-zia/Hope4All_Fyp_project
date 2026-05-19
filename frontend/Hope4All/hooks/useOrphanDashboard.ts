@@ -22,6 +22,38 @@ import {
   reportDonationIssueApi
 } from '@/constants/api';
 
+const parseAndFormatDate = (dateStr: string): string | null => {
+  const cleanStr = dateStr.trim();
+  const match = cleanStr.match(/^(\d{4})[-/](\d{1,2})[-/](\d{1,2})$/);
+  if (!match) return null;
+
+  const year = parseInt(match[1], 10);
+  const part1 = parseInt(match[2], 10);
+  const part2 = parseInt(match[3], 10);
+
+  let month = part1;
+  let day = part2;
+
+  // If part1 is > 12, it must be the day (e.g. YYYY/DD/MM)
+  if (part1 > 12) {
+    day = part1;
+    month = part2;
+  }
+
+  if (month < 1 || month > 12 || day < 1 || day > 31) {
+    return null;
+  }
+
+  // Verify it's a real calendar date (e.g., February 30th is invalid)
+  const dateObj = new Date(year, month - 1, day);
+  if (dateObj.getFullYear() !== year || dateObj.getMonth() !== month - 1 || dateObj.getDate() !== day) {
+    return null;
+  }
+
+  // Return standard YYYY-MM-DD
+  return `${year}-${String(month).padStart(2, '0')}-${String(day).padStart(2, '0')}`;
+};
+
 export const useOrphanDashboard = () => {
   const { user, logout, updateUser } = useAuth();
 
@@ -215,13 +247,20 @@ export const useOrphanDashboard = () => {
       Alert.alert("Missing Fields", "Please enter title, amount, and due date (YYYY-MM-DD).");
       return;
     }
+
+    const formattedDate = parseAndFormatDate(feeDate);
+    if (!formattedDate) {
+      Alert.alert("Invalid Date", "Please enter a valid date in YYYY-MM-DD format (e.g., 2026-11-20).");
+      return;
+    }
+
     setSubmittingFee(true);
     try {
       await createOrphanFee({
         orphanId: orphanProfile._id,
         title: feeTitle,
         amount: Number(feeAmount),
-        dueDate: feeDate,
+        dueDate: formattedDate,
         paymentNumber: feePaymentNumber
       });
       Alert.alert("Success", "Fee request added successfully!");
