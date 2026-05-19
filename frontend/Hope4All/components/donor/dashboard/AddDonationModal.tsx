@@ -84,6 +84,15 @@ export const AddDonationModal: React.FC<AddDonationModalProps> = ({
                 {submitting ? 'Submitting...' : (recipientName ? 'Confirm Donation' : 'Save Record')}
               </Text>
             </TouchableOpacity>
+
+            <View style={styles.addressInfoCard}>
+              <Ionicons name="information-circle" size={24} color="#0284c7" />
+              <View style={{ flex: 1 }}>
+                <Text style={styles.addressInfoTitle}>Shipping Address</Text>
+                <Text style={styles.addressInfoDetails}>Main Head Office, Faisalabad D Ground, Office #12</Text>
+                <Text style={styles.addressInfoNote}>Please send your donation packages here and include your Donation ID.</Text>
+              </View>
+            </View>
           </ScrollView>
         </View>
       </View>
@@ -108,4 +117,8 @@ const styles = StyleSheet.create({
   photoPreview: { width: '100%', height: '100%' },
   photoPlaceholder: { flex: 1, justifyContent: 'center', alignItems: 'center', gap: 10 },
   photoPlaceholderText: { fontSize: 13, color: '#94a3b8', fontWeight: '600' },
+  addressInfoCard: { flexDirection: 'row', backgroundColor: '#f0f9ff', padding: 16, borderRadius: 16, marginTop: 20, gap: 12, borderWidth: 1, borderColor: '#bae6fd', alignItems: 'flex-start' },
+  addressInfoTitle: { fontSize: 14, fontWeight: '800', color: '#0369a1', marginBottom: 4 },
+  addressInfoDetails: { fontSize: 13, fontWeight: '700', color: '#0284c7', marginBottom: 6 },
+  addressInfoNote: { fontSize: 12, color: '#0c4a6e', lineHeight: 18 },
 });

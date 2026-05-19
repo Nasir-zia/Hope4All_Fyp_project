@@ -210,8 +210,8 @@ export const useDonorDashboard = () => {
       }
 
       Alert.alert(
-        "Success",
-        "Submitted successfully!",
+        "Donation Confirmed!",
+        `Thank you for your generous support.\n\nPlease send your donation package to:\nMain Head Office\nFaisalabad D Ground, Office #12\n\nInclude your Donation ID: ${donationId}`,
         [{ text: "OK" }]
       );
       setUnits('');
@@ -412,8 +412,8 @@ export const useDonorDashboard = () => {
       }
 
       Alert.alert(
-        "Success",
-        "Submitted successfully!",
+        "Donation Confirmed!",
+        `Thank you for your generous support.\n\nPlease send your donation package to:\nMain Head Office\nFaisalabad D Ground, Office #12\n\nInclude your Donation ID: ${donationId}`,
         [{ text: "OK" }]
       );
       setShowAddDonationModal(false);

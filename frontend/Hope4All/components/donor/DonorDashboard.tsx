@@ -98,7 +98,7 @@ export default function DonorDashboard() {
           {/* Elegant Office Address Banner */}
           <View style={styles.addressCard}>
             <View style={styles.addressIconCircle}>
-              <Ionicons name="location" size={22} color="#0077cc" />
+              <Ionicons name="location" size={28} color="#2563eb" />
             </View>
             <View style={styles.addressTextContent}>
               <Text style={styles.addressTitle}>Main Head Office</Text>
@@ -339,24 +339,24 @@ const styles = StyleSheet.create({
     flexDirection: 'row',
     alignItems: 'center',
     gap: 16,
-    backgroundColor: '#fff',
+    backgroundColor: '#eff6ff',
     borderRadius: 24,
-    padding: 20,
+    padding: 24,
     marginHorizontal: 20,
-    marginTop: 15,
-    elevation: 4,
-    shadowColor: '#000',
-    shadowOffset: { width: 0, height: 4 },
-    shadowOpacity: 0.05,
-    shadowRadius: 10,
-    borderWidth: 1,
-    borderColor: '#f1f5f9',
+    marginTop: 20,
+    elevation: 8,
+    shadowColor: '#0077cc',
+    shadowOffset: { width: 0, height: 6 },
+    shadowOpacity: 0.15,
+    shadowRadius: 12,
+    borderWidth: 2,
+    borderColor: '#bfdbfe',
   },
   addressIconCircle: {
-    width: 48,
-    height: 48,
-    borderRadius: 16,
-    backgroundColor: '#f0f9ff',
+    width: 56,
+    height: 56,
+    borderRadius: 20,
+    backgroundColor: '#dbeafe',
     justifyContent: 'center',
     alignItems: 'center',
   },
@@ -364,20 +364,21 @@ const styles = StyleSheet.create({
     flex: 1,
   },
   addressTitle: {
-    fontSize: 15,
-    fontWeight: '800',
-    color: '#1e293b',
-    marginBottom: 2,
-  },
-  addressDetails: {
-    fontSize: 13,
-    fontWeight: '700',
-    color: '#0077cc',
+    fontSize: 18,
+    fontWeight: '900',
+    color: '#1e3a8a',
     marginBottom: 4,
   },
+  addressDetails: {
+    fontSize: 15,
+    fontWeight: '800',
+    color: '#2563eb',
+    marginBottom: 6,
+  },
   addressNote: {
-    fontSize: 11,
-    color: '#64748b',
-    fontWeight: '500',
+    fontSize: 13,
+    color: '#475569',
+    fontWeight: '600',
+    lineHeight: 18,
   },
 });
