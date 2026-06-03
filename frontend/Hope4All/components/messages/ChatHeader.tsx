@@ -1,7 +1,6 @@
 import React from 'react';
 import { View, Text, TouchableOpacity, StyleSheet, Platform } from 'react-native';
 import { Ionicons } from '@expo/vector-icons';
-import { LinearGradient } from 'expo-linear-gradient';
 
 interface ChatHeaderProps {
   user: any;
@@ -11,13 +10,13 @@ interface ChatHeaderProps {
 
 export const ChatHeader: React.FC<ChatHeaderProps> = ({ user, onBack, isConnected }) => {
   const displayName = user.name || user.username;
-  
+
   return (
     <View style={styles.chatHeader}>
       <TouchableOpacity onPress={onBack} style={styles.backBtn}>
         <Ionicons name="arrow-back" size={26} color="#1e293b" />
       </TouchableOpacity>
-      
+
       <View style={styles.headerUser}>
         <View style={styles.headerAvatar}>
           <Text style={styles.headerAvatarText}>{displayName?.charAt(0).toUpperCase()}</Text>
@@ -39,24 +38,24 @@ export const ChatHeader: React.FC<ChatHeaderProps> = ({ user, onBack, isConnecte
 };
 
 const styles = StyleSheet.create({
-  chatHeader: { 
-    flexDirection: 'row', 
-    alignItems: 'center', 
-    paddingBottom: 12, 
-    paddingHorizontal: 20, 
+  chatHeader: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    paddingBottom: 12,
+    paddingHorizontal: 20,
     backgroundColor: '#fff',
-    borderBottomWidth: 1, 
-    borderBottomColor: '#f1f5f9' 
+    borderBottomWidth: 1,
+    borderBottomColor: '#f1f5f9'
   },
   backBtn: { marginRight: 15 },
   headerUser: { flex: 1, flexDirection: 'row', alignItems: 'center' },
-  headerAvatar: { 
-    width: 44, 
-    height: 44, 
-    borderRadius: 22, 
+  headerAvatar: {
+    width: 44,
+    height: 44,
+    borderRadius: 22,
     backgroundColor: '#f1f5f9',
-    justifyContent: 'center', 
-    alignItems: 'center', 
+    justifyContent: 'center',
+    alignItems: 'center',
     marginRight: 12,
     position: 'relative'
   },

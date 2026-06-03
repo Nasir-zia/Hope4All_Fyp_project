@@ -19,10 +19,11 @@ export default function SignupPage() {
   const [username, setUsername] = useState('');
   const [email, setEmail] = useState('');
   const [password, setPassword] = useState('');
-const [loading, setLoading] = useState(false);
-const { setTempData } = useTempSignup();
 
-const handleSignup = async () => {
+  const [loading, setLoading] = useState(false);
+  const { setTempData } = useTempSignup();
+
+  const handleSignup = async () => {
     if (!username || !email || !password) {
       Alert.alert('Error', 'Please fill all fields');
       return;
@@ -43,60 +44,65 @@ const handleSignup = async () => {
   return (
     <SafeAreaView style={styles.safeContainer} edges={['right', 'bottom', 'left']}>
       <ScrollView contentContainerStyle={styles.container}>
-      <Image 
-        source={require('../assets/images/photo-1574758324765-a29c77fb9c91.jpg')} 
-        style={styles.heroImage} 
-      />
-      <Text style={styles.title}>Create Account</Text>
-      <Text style={styles.subtitle}>Join Hope4All today</Text>
-
-      <View style={styles.inputContainer}>
-        <Ionicons name="person-outline" size={24} color="#666" style={styles.inputIcon} />
-        <TextInput
-          style={styles.input}
-          placeholder="Username"
-          value={username}
-          onChangeText={setUsername}
-          autoCapitalize="none"
+        <Image
+          source={require('../assets/images/photo-1574758324765-a29c77fb9c91.jpg')}
+          style={styles.heroImage}
         />
-      </View>
+        <Text style={styles.title}>Create Account</Text>
+        <Text style={styles.subtitle}>Join Hope4All today</Text>
 
-      <View style={styles.inputContainer}>
-        <Ionicons name="mail-outline" size={24} color="#666" style={styles.inputIcon} />
-        <TextInput
-          style={styles.input}
-          placeholder="Email"
-          value={email}
-          onChangeText={setEmail}
-          keyboardType="email-address"
-          autoCapitalize="none"
-        />
-      </View>
+        <View style={styles.inputContainer}>
+          <Ionicons name="person-outline" size={24} color="#666" style={styles.inputIcon} />
+          <TextInput
+            style={styles.input}
+            placeholder="Username"
+            value={username}
+            onChangeText={setUsername}
+            autoCapitalize="none"
+          />
+        </View>
 
-      <View style={styles.inputContainer}>
-        <Ionicons name="lock-closed-outline" size={24} color="#666" style={styles.inputIcon} />
-        <TextInput
-          style={styles.input}
-          placeholder="Password"
-          value={password}
-          onChangeText={setPassword}
-          secureTextEntry
-        />
-      </View>
+        <View style={styles.inputContainer}>
+          <Ionicons name="mail-outline" size={24} color="#666" style={styles.inputIcon} />
+          <TextInput
+            style={styles.input}
+            placeholder="Email"
+            value={email}
+            onChangeText={setEmail}
+            keyboardType="email-address"
+            autoCapitalize="none"
+          />
+        </View>
 
-      <TouchableOpacity style={[styles.button, loading && styles.buttonDisabled]} onPress={handleSignup} disabled={loading}>
-        {loading ? (
-          <ActivityIndicator color="#fff" />
-        ) : (
-          <Text style={styles.buttonText}>Sign Up</Text>
-        )}
-      </TouchableOpacity>
+        <View style={styles.inputContainer}>
+          <Ionicons name="lock-closed-outline" size={24} color="#666" style={styles.inputIcon} />
+          <TextInput
+            style={styles.input}
+            placeholder="Password"
+            value={password}
+            onChangeText={setPassword}
+            secureTextEntry
+          />
+        </View>
 
-      <TouchableOpacity style={styles.link} onPress={() => router.push('/login' as any)}>
-        <Text style={styles.linkText}>Already have an account? Sign In</Text>
-      </TouchableOpacity>
+        <TouchableOpacity style={[styles.button, loading && styles.buttonDisabled]} onPress={handleSignup} disabled={loading}>
+          {loading ? (
+            <ActivityIndicator color="#fff" />
+          ) : (
+            <Text style={styles.buttonText}>Sign Up</Text>
+          )}
+        </TouchableOpacity>
+
+        <TouchableOpacity style={styles.link} onPress={() => router.push('/login' as any)}>
+          <Text style={styles.linkText}>Already have an account? Sign In</Text>
+        </TouchableOpacity>
+
+
+
       </ScrollView>
     </SafeAreaView>
+
+
   );
 }
 

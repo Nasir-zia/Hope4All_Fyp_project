@@ -13,7 +13,12 @@ if (Platform.OS === 'web') {
 console.log(`[Config] Running on ${Platform.OS}. Detected Host IP:`, hostIP);
 
 export const CONFIG = {
-  API_BASE_URL: process.env.EXPO_PUBLIC_API_URL || `http://${hostIP}:5000/api`,
-  SOCKET_URL: process.env.EXPO_PUBLIC_SOCKET_URL || `http://${hostIP}:5000`,
-  ENVIRONMENT: 'development',
+  // Production URL (Railway)
+  API_BASE_URL: process.env.EXPO_PUBLIC_API_URL || `https://hope4all-production.up.railway.app/api`,
+  SOCKET_URL: process.env.EXPO_PUBLIC_SOCKET_URL || `https://hope4all-production.up.railway.app`,
+
+  // Local Development (Uncomment to use local IP instead)
+  // API_BASE_URL: `http://${hostIP}:5000/api`,
+  // SOCKET_URL: `http://${hostIP}:5000`,
+  ENVIRONMENT: 'production',
 };

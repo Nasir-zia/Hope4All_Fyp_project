@@ -3,6 +3,7 @@ node_modules/
 
 # Environment variables
 .env
+scratch/
 
 # Logs
 npm-debug.log*
