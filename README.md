@@ -156,12 +156,3 @@ To bundle the React Native application for stores or deploy it as a web app:
   ```bash
   npx expo export --platform web
   ```
-
----
-
-## 🔒 Security & Git Policies
-
-Please follow these guidelines to prevent credential leaks:
-1. **Never commit `.env` files**: All local environment configurations are ignored by Git under `.gitignore`.
-2. **Use `.env.example` files**: When adding new configurations or environment dependencies, update the relevant `.env.example` template files with descriptive placeholder keys.
-3. **Ignore testing scripts**: Do not commit local scratchpad scripts (`Backend/scratch/`) containing hardcoded credentials.
